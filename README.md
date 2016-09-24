@@ -1,4 +1,4 @@
-# CoralReefCI
+# CoralReefCI&trade;
 
 ## Description
 
@@ -20,9 +20,7 @@ seamless integration of countless species into their ecosystem.
 ## Team
 
 **John Forstmeier**  
-*Project Lead*  
-[GitHub](https://github.com/forstmeier)  
+*Project Lead*   
 
 **Mike Taylor**  
 *Technical Lead*  
-[GitHub](https://github.com/taylormike)

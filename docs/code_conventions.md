@@ -1,0 +1,2 @@
+- [StackOverflow discussion](http://stackoverflow.com/questions/26228839/golang-code-organisation-with-structs-variables-and-interfaces)
+  - Primarily discusses how to group code blobs within the actual files

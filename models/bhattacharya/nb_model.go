@@ -1,4 +1,4 @@
-package models
+package bhattacharya
 
 type NBModel struct {
 }
