@@ -3,7 +3,7 @@
 ## Description
 
 ### *Dive into your code*
-
+-
 **CoralReefCI** is a machine learning-powered *contributor integration*
 service with the goal of providing fast, accurate issue assignment for
 software development projects. The bulk of the platform has been
