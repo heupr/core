@@ -1,5 +1,5 @@
 # CoralReefCI&trade;
--Repo Commit Merge Test
+
 ## Description
 
 ### *Dive into your code*
