@@ -5,10 +5,12 @@ import (
 	"testing"
 )
 
-func generateIssues() []issues.Issue {
+var letterRandomizers = []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"}
+
+func generateRandomIssues() []issues.Issue {
 	list := []issues.Issue{}
-	for i := 0; i < 10; i++ {
-		list = append(list, issues.Issue{Body: string(i) + "random text"})
+	for _, value := range letterRandomizers {
+		list = append(list, issues.Issue{Body: value + "random text"})
 	}
 	return list
 }
@@ -16,8 +18,8 @@ func generateIssues() []issues.Issue {
 const seed = 0
 
 func TestShuffle(t *testing.T) {
-	originalList := generateIssues()
-	shuffledList := generateIssues()
+	originalList := generateRandomIssues()
+	shuffledList := generateRandomIssues()
 	Shuffle(shuffledList, seed)
 
 	for index, _ := range originalList {
