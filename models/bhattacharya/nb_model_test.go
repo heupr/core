@@ -2,7 +2,7 @@ package bhattacharya
 
 import (
 	"testing"
-	"../issues"
+	"coralreef-ci/models/issues"
 )
 
 func TestModel(t *testing.T) {

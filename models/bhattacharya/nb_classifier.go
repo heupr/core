@@ -3,7 +3,7 @@ package bhattacharya
 import (
   "strings"
   "github.com/jbrukh/bayesian"
-  "../issues"
+  "coralreef-ci/models/issues"
 )
 
 type NbClassifer struct {

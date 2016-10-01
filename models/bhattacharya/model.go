@@ -1,8 +1,8 @@
 package bhattacharya
 
 import (
-	"../issues"
-	"../../models"
+	"coralreef-ci/models/issues"
+	"coralreef-ci/models"
 )
 
 // Model...
