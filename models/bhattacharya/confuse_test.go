@@ -16,7 +16,7 @@ var metrics = map[string]float64{
 	"FullCount": 9.0,
 	"Precision": 0.25,
 	"Recall":    0.33,
-    "Accuracy":  0.22,
+	"Accuracy":  0.22,
 }
 
 func generateIssues(assignees []string) []issues.Issue {
@@ -80,12 +80,12 @@ func TestBuildMatrix(t *testing.T) {
 			"\nACTUAL:    ", classRecall)
 	}
 
-    fullAccuracy := getAccuracy(matrix)
-    if metrics["Accuracy"] != fullAccuracy {
-        t.Error("\nALL TESTS INACCURATE",
-            "\nEXPECTED:  ", metrics["Accuracy"],
-            "\nACTUAL:    ", fullAccuracy)
-    }
+	fullAccuracy := getAccuracy(matrix)
+	if metrics["Accuracy"] != fullAccuracy {
+		t.Error("\nALL TESTS INACCURATE",
+			"\nEXPECTED:  ", metrics["Accuracy"],
+			"\nACTUAL:    ", fullAccuracy)
+	}
 
 	fullCount := getTestCount(matrix)
 	if metrics["FullCount"] != fullCount {
