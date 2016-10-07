@@ -1,21 +1,18 @@
 package bhattacharya
 
 import (
-	"coralreef-ci/models/issues"
 	"coralreef-ci/models"
+	"coralreef-ci/models/issues"
 )
 
-// Model...
 type Model struct {
 	classifier models.Classifier
 }
 
 func (model *Model) Learn(issues []issues.Issue) {
-	//TODO: Implement Learn Unit Test
-	//TODO: Implement Learn
-	//TODO: Add shuffle (argument seed)
-	//TODO: Add Logging
 	removeStopWords(issues)
+	// TODO: implement the stemming functionality here
+	// TODO: implement the shuffling functionality here
 	model.classifier.Learn(issues)
 }
 
@@ -25,6 +22,6 @@ func (model *Model) Predict(issue issues.Issue) string {
 
 func removeStopWords(issues []issues.Issue) {
 	for i := 0; i < len(issues); i++ {
-    issues[i].Body = RemoveStopWords(issues[i].Body)
-  }
+		issues[i].Body = RemoveStopWords(issues[i].Body)
+	}
 }

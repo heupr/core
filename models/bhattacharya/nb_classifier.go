@@ -1,28 +1,27 @@
 package bhattacharya
 
 import (
-  "strings"
-  "github.com/jbrukh/bayesian"
-  "coralreef-ci/models/issues"
+	"coralreef-ci/models/issues"
+	"github.com/jbrukh/bayesian"
+	"strings"
 )
 
-type NbClassifer struct {
-  classifier *bayesian.Classifier
-  assignees []bayesian.Class
+type NBClassifier struct {
+	classifier *bayesian.Classifier
+	assignees  []bayesian.Class
 }
 
-func (c *NbClassifer) Learn(issues []issues.Issue) {
-  c.assignees = distinctAssignees(issues)
-  c.classifier = bayesian.NewClassifierTfIdf(c.assignees...)
-  for i :=0; i < len(issues); i++ {
+func (c *NBClassifier) Learn(issues []issues.Issue) {
+	c.assignees = distinctAssignees(issues)
+	c.classifier = bayesian.NewClassifierTfIdf(c.assignees...)
+	for i := 0; i < len(issues); i++ {
 		c.classifier.Learn(strings.Split(issues[i].Body, " "), bayesian.Class(issues[i].Assignee))
 	}
-  c.classifier.ConvertTermsFreqToTfIdf()
+	c.classifier.ConvertTermsFreqToTfIdf()
 }
 
-func (c *NbClassifer) Predict(issue issues.Issue) string {
-  //TODO:
-  return ""
+func (c *NBClassifier) Predict(issue issues.Issue) string {
+	return string(c.assignees[0])
 }
 
 func distinctAssignees(issues []issues.Issue) []bayesian.Class {
