@@ -1,23 +1,25 @@
 package bhattacharya
 
 import (
+	//"time"
 	"coralreef-ci/models"
 	"coralreef-ci/models/issues"
 )
 
 type Model struct {
-	classifier models.Classifier
+	Classifier models.Classifier
 }
 
 func (model *Model) Learn(issues []issues.Issue) {
 	removeStopWords(issues)
-	// TODO: implement the stemming functionality here
-	// TODO: implement the shuffling functionality here
-	model.classifier.Learn(issues)
+	//Shuffle(issues, int64(time.Now().Nanosecond()))
+	//StemIssues(issues)
+	model.Classifier.Learn(issues)
 }
 
-func (model *Model) Predict(issue issues.Issue) string {
-	return model.classifier.Predict(issue)
+func (model *Model) Predict(issue issues.Issue) (string, string, string) {
+	//StemIssues([]issues.Issue{issue})
+	return model.Classifier.Predict(issue)
 }
 
 func removeStopWords(issues []issues.Issue) {

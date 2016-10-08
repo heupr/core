@@ -37,7 +37,7 @@ func CreateUnassignedIssues() []issues.Issue {
 }
 
 func TestLearn(t *testing.T) {
-	nbModel := Model{classifier: &NBClassifier{}}
+	nbModel := Model{Classifier: &NBClassifier{}}
 	trainingSet := CreateTrainingIssues()
 	validationSet := CreateValidationIssues()
 

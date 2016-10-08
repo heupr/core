@@ -20,8 +20,10 @@ func (c *NBClassifier) Learn(issues []issues.Issue) {
 	c.classifier.ConvertTermsFreqToTfIdf()
 }
 
-func (c *NBClassifier) Predict(issue issues.Issue) string {
-	return string(c.assignees[0])
+func (c *NBClassifier) Predict(issue issues.Issue) (string, string, string) {
+	scores, _, _ := c.classifier.LogScores(strings.Split(issue.Body, " "))
+	first, second, third, _ := topThree(scores)
+	return string(c.assignees[first]), string(c.assignees[second]), string(c.assignees[third])
 }
 
 func distinctAssignees(issues []issues.Issue) []bayesian.Class {
@@ -38,4 +40,41 @@ func distinctAssignees(issues []issues.Issue) []bayesian.Class {
 		}
 	}
 	return result
+}
+
+// findMax finds the maximum of a set of scores; if the
+// maximum is strict -- that is, it is the single unique
+// maximum from the set -- then strict has return value
+// true. Otherwise it is false.
+func findMax(scores []float64) (inx int, strict bool) {
+	inx = 0
+	strict = true
+	for i := 1; i < len(scores); i++ {
+		if scores[inx] < scores[i] {
+			inx = i
+			strict = true
+		} else if scores[inx] == scores[i] {
+			strict = false
+		}
+	}
+	return
+}
+
+func topThree(scores []float64) (first int, second int, third int, strict bool) {
+	first = 0
+	second = 0
+	third = 0
+	strict = true
+	for i := 1; i < len(scores); i++ {
+		if (scores[i] > scores[first]) {
+			third = second
+			second = first
+			first = i
+		} else if (scores[i] > scores[second] && scores[i] < scores[first]) {
+			second = i
+		} else if (scores[i] > scores[third] && scores[i] < scores[second]) {
+			third = i
+		}
+	}
+	return
 }
