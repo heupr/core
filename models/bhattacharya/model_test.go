@@ -1,44 +1,43 @@
 package bhattacharya
 
 import (
-	"testing"
 	"coralreef-ci/models/issues"
+	"testing"
 )
 
 func TestModel(t *testing.T) {
 	v := 1
 	if v != 1 {
-		t.Error(
-			"For", v,
-			"expected", 1,
-			"got", v,
+		t.Error("\nFOR:   ", v,
+			"\nEXPECTED:  ", 1,
+			"\nACTUAL:    ", v,
 		)
 	}
 }
 
 func CreateTrainingIssues() []issues.Issue {
 	return []issues.Issue{
-		issues.Issue { Body: "parallel test body", Assignee: "Mike"},
-		issues.Issue { Body: "fxcore test body and", Assignee: "John"},
-		issues.Issue { Body: "fxcore test body or", Assignee: "John"}}
+		issues.Issue{Body: "parallel test body", Assignee: "Mike"},
+		issues.Issue{Body: "fxcore test body and", Assignee: "John"},
+		issues.Issue{Body: "fxcore test body or", Assignee: "John"}}
 }
 
 func CreateValidationIssues() []issues.Issue {
 	return []issues.Issue{
-		issues.Issue { Body: "parallel test code", Assignee: "Mike"},
-		issues.Issue { Body : "fxcore test code and", Assignee: "John"},
-		issues.Issue { Body: "fxcore test code or", Assignee: "John"}}
-	}
+		issues.Issue{Body: "parallel test code", Assignee: "Mike"},
+		issues.Issue{Body: "fxcore test code and", Assignee: "Mike"},
+		issues.Issue{Body: "fxcore test code or", Assignee: "Mike"}}
+}
 
 func CreateUnassignedIssues() []issues.Issue {
 	return []issues.Issue{
-		issues.Issue { Body: "parallel test code"},
-		issues.Issue { Body : "fxcore test code and"},
-		issues.Issue { Body: "fxcore test code or"}}
+		issues.Issue{Body: "parallel test code"},
+		issues.Issue{Body: "fxcore test code and"},
+		issues.Issue{Body: "fxcore test code or"}}
 }
 
 func TestLearn(t *testing.T) {
-	nbModel := Model{ classifier: &NbClassifer{}}
+	nbModel := Model{classifier: &NBClassifier{}}
 	trainingSet := CreateTrainingIssues()
 	validationSet := CreateValidationIssues()
 
@@ -63,11 +62,11 @@ func TestStopWords(t *testing.T) {
 }
 
 func Assert(t *testing.T, expected string, actual string, input string) {
-	if (actual != expected) {
+	if actual != expected {
 		t.Error(
-			"\nFOR     : ", input,
-			"\nEXPECTED: ", expected,
-			"\nGOT     : ", actual,
+			"\nFOR:       ", input,
+			"\nEXPECTED:  ", expected,
+			"\nACTUAL:    ", actual,
 		)
 	}
 }
