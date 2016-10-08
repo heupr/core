@@ -71,7 +71,7 @@ func getClassFN(class string, m matrix) float64 {
 }
 
 func round(number float64) float64 {
-	return float64(int(number*100)) / 100
+	return float64(int(number*100)) / float64(100)
 }
 
 func getPrecision(class string, m matrix) float64 {
@@ -97,7 +97,7 @@ func getAccuracy(m matrix) float64 {
 			total += float64(m[columnHead][rowHead])
 		}
 	}
-	return round(correct / total)
+	return float64(correct) / float64(total)
 }
 
 func getTestCount(m matrix) float64 {
@@ -133,8 +133,8 @@ func classSummary(class string, m matrix) {
 	fmt.Printf("RECALL:           %d\n", getRecall(class, m))
 }
 
-func fullSummary(m matrix) {
+func FullSummary(m matrix) {
 	fmt.Println("SUMMARY RESULTS FOR FULL MATRIX\n")
-	fmt.Printf("TOTAL TESTS:     %d\n", getTestCount(m))
-	fmt.Printf("TOTAL ACCURACY:  %d\n", getAccuracy(m))
+	fmt.Printf("TOTAL TESTS:     %f\n", getTestCount(m))
+	fmt.Printf("TOTAL ACCURACY:  %f\n", getAccuracy(m))
 }
