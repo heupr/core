@@ -1,4 +1,4 @@
-package bhattacharya
+package syntaxnet
 
 import (
   "testing"
