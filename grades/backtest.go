@@ -39,25 +39,29 @@ func readFile(filePath string) []issues.Issue {
 func(t *BackTestRunner) Run() {
   filePath := t.Context.File
   trainingSet := readFile(filePath)
-  testSet := readFile(filePath)//make([]issues.Issue, len(trainingSet))
+  testComparsionSet := make([]issues.Issue, len(trainingSet))
+  testSet := make([]issues.Issue, len(trainingSet))
   copy(testSet, trainingSet)
+  copy(testComparsionSet, trainingSet)
   t.Context.Model.Learn(trainingSet)
   correctCount := 0
   for i := 0; i < len(trainingSet); i++ {
-    first, second, third := t.Context.Model.Predict(testSet[i])
-    if testSet[i].Assignee == first {
-      testSet[i].Assignee = first
+    assignees := t.Context.Model.Predict(testSet[i])
+  /*  testSet[i].Assignee = assignees[0]
+    fmt.Println("BackTest Assignee: ", testSet[i].Assignee)
+    fmt.Println("Expected Assignee: ", testComparsionSet[i].Assignee)
+    if (testComparsionSet[i].Assignee == assignees[0]) {
       correctCount++
-    } else if testSet[i].Assignee == second {
-      testSet[i].Assignee = second
-      correctCount++
-    } else if testSet[i].Assignee == third {
-      testSet[i].Assignee = third
-      correctCount++
-    } else {
-      testSet[i].Assignee = first
-    }
+      //break
+    } */
 
+    for j := 0; j < len(assignees); j++ {
+      testSet[i].Assignee = assignees[j]
+      if testComparsionSet[i].Assignee == assignees[j] {
+        correctCount++
+        break;
+      }
+    }
   }
 
   matrix,_ := bhattacharya.BuildMatrix(trainingSet, testSet)

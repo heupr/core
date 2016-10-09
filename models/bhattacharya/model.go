@@ -17,7 +17,7 @@ func (model *Model) Learn(issues []issues.Issue) {
 	model.Classifier.Learn(issues)
 }
 
-func (model *Model) Predict(issue issues.Issue) (string, string, string) {
+func (model *Model) Predict(issue issues.Issue) []string {
 	//StemIssues([]issues.Issue{issue})
 	return model.Classifier.Predict(issue)
 }

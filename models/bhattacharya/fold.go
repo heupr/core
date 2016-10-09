@@ -23,8 +23,9 @@ func (model *Model) Fold(issues []issues.Issue) (float64, error) {
 		model.Learn(issues[0:trainCount])
 
 		for j := trainCount + 1; j < testCount; j++ {
-			assignee := model.Predict(issues[j])
-			if assignee == issues[j].Assignee {
+			//TODO: loop through assignee's
+			assignees := model.Predict(issues[j])
+			if assignees[0] == issues[j].Assignee {
 				correct += 1
 			} else {
 				continue

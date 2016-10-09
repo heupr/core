@@ -20,10 +20,10 @@ func (c *NBClassifier) Learn(issues []issues.Issue) {
 	c.classifier.ConvertTermsFreqToTfIdf()
 }
 
-func (c *NBClassifier) Predict(issue issues.Issue) (string, string, string) {
+func (c *NBClassifier) Predict(issue issues.Issue) []string {
 	scores, _, _ := c.classifier.LogScores(strings.Split(issue.Body, " "))
 	first, second, third, _ := topThree(scores)
-	return string(c.assignees[first]), string(c.assignees[second]), string(c.assignees[third])
+	return []string{string(c.assignees[first]), string(c.assignees[second]), string(c.assignees[third])}
 }
 
 func distinctAssignees(issues []issues.Issue) []bayesian.Class {
