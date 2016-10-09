@@ -2,7 +2,7 @@ package bhattacharya
 
 import (
 	//"time"
-	"coralreef-ci/models"
+	"coralreef-ci/models/classifier"
 	"coralreef-ci/models/issues"
 )
 
