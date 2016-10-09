@@ -8,7 +8,8 @@ import (
 func TestModel(t *testing.T) {
 	v := 1
 	if v != 1 {
-		t.Error("\nFOR:   ", v,
+		t.Error(
+			"\nFOR:       ", v,
 			"\nEXPECTED:  ", 1,
 			"\nACTUAL:    ", v,
 		)
@@ -25,8 +26,8 @@ func CreateTrainingIssues() []issues.Issue {
 func CreateValidationIssues() []issues.Issue {
 	return []issues.Issue{
 		issues.Issue{Body: "parallel test code", Assignee: "Mike"},
-		issues.Issue{Body: "fxcore test code and", Assignee: "Mike"},
-		issues.Issue{Body: "fxcore test code or", Assignee: "Mike"}}
+		issues.Issue{Body: "fxcore test code and", Assignee: "John"},
+		issues.Issue{Body: "fxcore test code or", Assignee: "John"}}
 }
 
 func CreateUnassignedIssues() []issues.Issue {
@@ -46,8 +47,8 @@ func TestLearn(t *testing.T) {
 	for i := 0; i < len(validationSet); i++ {
 		input := validationSet[i].Body
 		expected := validationSet[i].Assignee
-		actual := nbModel.Predict(validationSet[i])
-		Assert(t, expected, actual, input)
+		actual := nbModel.Predict(validationSet[i]) // now a slice variable
+		Assert(t, expected, actual[0], input)
 	}
 }
 
