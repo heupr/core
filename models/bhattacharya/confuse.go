@@ -123,18 +123,18 @@ func fillMatrix(m matrix) matrix {
 	return m
 }
 
-func classSummary(class string, m matrix) {
-	fmt.Printf("SUMMARY RESULTS FOR CLASS %d\n", class)
-	fmt.Printf("TRUE POSITIVES:   %d\n", getClassTP(class, m))
-	fmt.Printf("TRUE NEGATIVES:   %d\n", getClassTN(class, m))
-	fmt.Printf("FALSE POSITIVES:  %d\n", getClassFP(class, m))
-	fmt.Printf("FALSE NEGATIVES:  %d\n", getClassFN(class, m))
-	fmt.Printf("PRECISION:        %d\n", getPrecision(class, m))
-	fmt.Printf("RECALL:           %d\n", getRecall(class, m))
+func ClassSummary(class string, m matrix) {
+	fmt.Printf("SUMMARY RESULTS FOR CLASS %s\n", class)
+	fmt.Printf("TRUE POSITIVES:   %f\n", getClassTP(class, m))
+	fmt.Printf("TRUE NEGATIVES:   %f\n", getClassTN(class, m))
+	fmt.Printf("FALSE POSITIVES:  %f\n", getClassFP(class, m))
+	fmt.Printf("FALSE NEGATIVES:  %f\n", getClassFN(class, m))
+	fmt.Printf("PRECISION:        %f\n", getPrecision(class, m))
+	fmt.Printf("RECALL:           %f\n", getRecall(class, m))
 }
 
 func FullSummary(m matrix) {
-	fmt.Println("SUMMARY RESULTS FOR FULL MATRIX\n")
+	fmt.Printf("SUMMARY RESULTS FOR FULL MATRIX\n")
 	fmt.Printf("TOTAL TESTS:     %f\n", getTestCount(m))
 	fmt.Printf("TOTAL ACCURACY:  %f\n", getAccuracy(m))
 }
