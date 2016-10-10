@@ -1,4 +1,4 @@
-package main
+package grades
 
 import (
 	"encoding/csv"
@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-func main() {
+func generate() {
 
 	// authentication
 	//we may not need OAUTH for this method
@@ -59,18 +59,18 @@ func main() {
 			//title column (information column that will only need to be included for now to help develop labels)
 			record = append(record, *issue.Title)
 
-			if (issue.Body != nil)	{		
+			if (issue.Body != nil)	{
 				record = append(record, *issue.Body)
 			} else {
 				record = append(record, "No description")
 			}
                         //username column (prediction value)
-			record = append(record, *issue.User.Login)		
+			record = append(record, *issue.User.Login)
 
 			/*
                         //labels column
-			if len(issue.Labels) <= 0 { 
-				record = append(record, "NOLABEL")				
+			if len(issue.Labels) <= 0 {
+				record = append(record, "NOLABEL")
 			} else {
                         	sep := []byte(",")
 				buffer.WriteString(*issue.Labels[0].Name)
@@ -79,9 +79,9 @@ func main() {
 					buffer.WriteString(*label.Name)
 				}
 				record = append(record, buffer.String())
-				buffer.Reset() 
+				buffer.Reset()
 			} */
-                        w.Write(record)	
+                        w.Write(record)
 		}
 		if resp.NextPage == 0 {
 			break
@@ -91,4 +91,3 @@ func main() {
 	}
 	w.Flush()
 }
-

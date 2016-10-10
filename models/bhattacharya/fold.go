@@ -31,8 +31,8 @@ func (model *Model) Fold(issues []issues.Issue) (float64, error) {
 				continue
 			}
 		}
-		fmt.Print("\nFold ", Round(i * 10))
-		fmt.Print(" Accuracy ", float64(correct) / float64(testCount))
+		fmt.Println("Fold ", Round(i * 10))
+		fmt.Println(" Accuracy ", float64(correct) / float64(testCount))
 		score += float64(correct) / float64(testCount)
 	}
 	return score / 10.00, nil

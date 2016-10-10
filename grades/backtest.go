@@ -63,20 +63,30 @@ func distinctAssignees(issues []issues.Issue) []string {
 
 func(t *BackTestRunner) Run() {
   filePath := t.Context.File
-  trainingSet := readFile(filePath, []string{"dotnet-bot", "dotnet-mc-bot", "00101010b", "stephentoub"})
+  //excludeAssignees := []string{"dotnet-bot", "dotnet-mc-bot", "00101010b"})
+  excludeAssignees := []string{""}
+  trainingSet := readFile(filePath, excludeAssignees)
   testComparsionSet := make([]issues.Issue, len(trainingSet))
   testSet := make([]issues.Issue, len(trainingSet))
   copy(testSet, trainingSet)
   copy(testComparsionSet, trainingSet)
   t.Context.Model.Learn(trainingSet)
 
+  fmt.Println("---------------Two Fold-----------------")
   score,_ := t.Context.Model.TwoFold(trainingSet, 1)
   fmt.Println("Graph Length", 1)
-  fmt.Println("Two Fold Weighted Accuracy:", score)
+  fmt.Println("Weighted Accuracy:", score)
   score,_ = t.Context.Model.TwoFold(trainingSet, 2)
   fmt.Println("Graph Length:", 2)
-  fmt.Println("Two Fold Weighted Accuracy:", score)
+  fmt.Println("Weighted Accuracy:", score)
   score,_ = t.Context.Model.TwoFold(trainingSet, 3)
   fmt.Println("Graph Length:", 3)
-  fmt.Println("Two Fold Weighted Accuracy:", score)
+  fmt.Println("Weighted Accuracy:", score)
+
+  fmt.Println("---------------John's Fold-----------------")
+  score,_ = t.Context.Model.Fold(trainingSet)
+  fmt.Println("Weighted Accuracy:", score)
+  fmt.Println("---------------Mike's Fold-----------------")
+  score,_ = t.Context.Model.TenFold(trainingSet)
+  fmt.Println("Weighted Accuracy:", score)
 }
