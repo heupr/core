@@ -45,7 +45,6 @@ func readFile(filePath string, exclude []string) []issues.Issue {
 	return repoIssues
 }
 
-
 func distinctAssignees(issues []issues.Issue) []string {
 	result := []string{}
 	j := 0
