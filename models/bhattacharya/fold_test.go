@@ -33,7 +33,7 @@ var testingIssues = []issues.Issue{
 }
 
 func TestFold(t *testing.T) {
-	nbModel := Model{Classifier: &NBClassifier{}}
+	nbModel := Model{classifier: &NBClassifier{}}
 	result, _ := nbModel.Fold(testingIssues)
 	if result < 0.00 && result > 1.00 {
 		t.Error("\nRESULT IS OUTSIDE ACCEPTABLE RANGE",

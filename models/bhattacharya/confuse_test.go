@@ -16,7 +16,7 @@ var metrics = map[string]float64{
 	"FullCount": 9.0,
 	"Precision": 0.25,
 	"Recall":    0.33,
-	"Accuracy":  0.2222222222222222,
+	"Accuracy":  0.22,
 }
 
 func generateIssues(assignees []string) []issues.Issue {
