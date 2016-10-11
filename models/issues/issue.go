@@ -1,9 +1,14 @@
 package issues
 
+import (
+    "time"
+)
+
 type Issue struct {
-	RepoId         int
-	IssueId        int
+	RepoID         int
+	IssueID        int
 	Assignee       string
 	Body           string
-	ImportantWords []string
+    Resolved       time.Time
+    Labels         []string
 }
