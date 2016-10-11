@@ -1,23 +1,23 @@
 package grades
 
 import (
+  "encoding/csv"
+  "fmt"
+  "os"
 	"coralreef-ci/models/bhattacharya"
-	"coralreef-ci/models/issues"
-	"encoding/csv"
-	"fmt"
-	"os"
+  "coralreef-ci/models/issues"
 )
 
 type TestContext struct {
-	File  string
-	Model bhattacharya.Model
+  File string
+  Model bhattacharya.Model
 }
 
 type BackTestRunner struct {
-	Context TestContext
+  Context TestContext
 }
 
-func readFile(filePath string) []issues.Issue {
+func readFile(filePath string, exclude []string) []issues.Issue {
 	csvData, _ := os.Open(filePath)
 	defer csvData.Close()
 	reader := csv.NewReader(csvData)
@@ -26,8 +26,17 @@ func readFile(filePath string) []issues.Issue {
 	for {
 		rec, _ := reader.Read()
 		if rec != nil {
-			i := issues.Issue{Body: rec[3], Assignee: rec[4]}
-			repoIssues = append(repoIssues, i)
+      skipRecord := false
+      for i := 0; i < len(exclude); i++ {
+        if rec[4] == exclude[i] {
+          skipRecord = true
+          break
+        }
+      }
+      if (!skipRecord) {
+        i := issues.Issue{Body: rec[3], Assignee: rec[4]}
+        repoIssues = append(repoIssues, i)
+      }
 		} else {
 			break
 		}
@@ -36,38 +45,48 @@ func readFile(filePath string) []issues.Issue {
 	return repoIssues
 }
 
-func (t *BackTestRunner) Run() {
-	filePath := t.Context.File
-	trainingSet := readFile(filePath)
-	testComparsionSet := make([]issues.Issue, len(trainingSet))
-	testSet := make([]issues.Issue, len(trainingSet))
-	copy(testSet, trainingSet)
-	copy(testComparsionSet, trainingSet)
-	t.Context.Model.Learn(trainingSet)
-	correctCount := 0
-	for i := 0; i < len(trainingSet); i++ {
-		assignees := t.Context.Model.Predict(testSet[i])
-		/*  testSet[i].Assignee = assignees[0]
-		    fmt.Println("BackTest Assignee: ", testSet[i].Assignee)
-		    fmt.Println("Expected Assignee: ", testComparsionSet[i].Assignee)
-		    if (testComparsionSet[i].Assignee == assignees[0]) {
-		      correctCount++
-		      //break
-		    } */
-
-		for j := 0; j < len(assignees); j++ {
-			testSet[i].Assignee = assignees[j]
-			if testComparsionSet[i].Assignee == assignees[j] {
-				correctCount++
+func distinctAssignees(issues []issues.Issue) []string {
+	result := []string{}
+	j := 0
+	for i := 0; i < len(issues); i++ {
+		for j = 0; j < len(result); j++ {
+			if issues[i].Assignee == result[j] {
 				break
 			}
 		}
+		if j == len(result) {
+			result = append(result, issues[i].Assignee)
+		}
 	}
+	return result
+}
 
-	matrix, _ := bhattacharya.BuildMatrix(trainingSet, testSet)
-	bhattacharya.FullSummary(matrix)
+func(t *BackTestRunner) Run() {
+  filePath := t.Context.File
+  //excludeAssignees := []string{"dotnet-bot", "dotnet-mc-bot", "00101010b"})
+  excludeAssignees := []string{""}
+  trainingSet := readFile(filePath, excludeAssignees)
+  testComparsionSet := make([]issues.Issue, len(trainingSet))
+  testSet := make([]issues.Issue, len(trainingSet))
+  copy(testSet, trainingSet)
+  copy(testComparsionSet, trainingSet)
+  t.Context.Model.Learn(trainingSet)
 
-	fmt.Printf("\nACCURACY: %f\n", float64(correctCount)/float64(len(testSet)))
-	fmt.Printf("\nCORRECT COUNT: %d\n", correctCount)
-	fmt.Printf("\nTOTAL COUNT: %d\n", len(testSet))
+  fmt.Println("---------------Two Fold-----------------")
+  score,_ := t.Context.Model.TwoFold(trainingSet, 1)
+  fmt.Println("Graph Length", 1)
+  fmt.Println("Weighted Accuracy:", score)
+  score,_ = t.Context.Model.TwoFold(trainingSet, 2)
+  fmt.Println("Graph Length:", 2)
+  fmt.Println("Weighted Accuracy:", score)
+  score,_ = t.Context.Model.TwoFold(trainingSet, 3)
+  fmt.Println("Graph Length:", 3)
+  fmt.Println("Weighted Accuracy:", score)
+
+  fmt.Println("---------------John's Fold-----------------")
+  score,_ = t.Context.Model.Fold(trainingSet)
+  fmt.Println("Weighted Accuracy:", score)
+  fmt.Println("---------------Mike's Fold-----------------")
+  score,_ = t.Context.Model.TenFold(trainingSet)
+  fmt.Println("Weighted Accuracy:", score)
 }

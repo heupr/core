@@ -1,7 +1,7 @@
 package bhattacharya
 
 import (
-	//"time"
+	"time"
 	"coralreef-ci/models/classifier"
 	"coralreef-ci/models/issues"
 )
@@ -12,7 +12,7 @@ type Model struct {
 
 func (model *Model) Learn(issues []issues.Issue) {
 	removeStopWords(issues)
-	//Shuffle(issues, int64(time.Now().Nanosecond()))
+	Shuffle(issues, int64(time.Now().Nanosecond()))
 	//StemIssues(issues)
 	model.Classifier.Learn(issues)
 }
