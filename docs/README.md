@@ -1,7 +1,33 @@
-# CoralReefCI&trade; Documentation
+# CoralReefCI&trade;
+
+### Machine learning-powered contributor integration
+
+## Overview
+
+- GitHub project service
+- maps issues contributors
+- focus building code
 
 ## Description
 
-This module will serve as a storage location for a variety of 
-resources including required conventions, recommended structures,
-and overall build process.  
+- written Go
+- GitHub hosted projects
+- machine learning back end
+- builds profiles
+- optimizes timeline
+- learns continually
+
+## Contributing
+
+- public repos welcome
+- see guidelines
+
+## Authors
+
+**John Forstmeier**  
+Project Lead  
+
+**Mike Taylor**  
+Technical Lead
+
+### *Dive into your code!*
