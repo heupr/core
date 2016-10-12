@@ -1,7 +1,7 @@
 package bhattacharya
 
 import (
-	"coralreef-ci/models/issues"
+	"coralreefci/models/issues"
 	"testing"
 )
 
@@ -47,7 +47,7 @@ func TestLearn(t *testing.T) {
 		input := validationSet[i].Body
 		expected := validationSet[i].Assignee
 		actual := nbModel.Predict(validationSet[i])
-		Assert(t, expected, actual, input)
+		Assert(t, expected, actual[i], input)
 	}
 }
 

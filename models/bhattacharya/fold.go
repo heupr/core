@@ -1,7 +1,7 @@
 package bhattacharya
 
 import (
-	"coralreef-ci/models/issues"
+	"coralreefci/models/issues"
 	"errors"
 	"math"
 	"fmt"

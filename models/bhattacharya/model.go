@@ -2,8 +2,8 @@ package bhattacharya
 
 import (
 	"time"
-	"coralreef-ci/models/classifier"
-	"coralreef-ci/models/issues"
+	"coralreefci/models/classifier"
+	"coralreefci/models/issues"
 )
 
 type Model struct {

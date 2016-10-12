@@ -1,6 +1,6 @@
 package models
 
-import "coralreef-ci/models/issues"
+import "coralreefci/models/issues"
 
 type Classifier interface {
 	Learn(issues []issues.Issue)

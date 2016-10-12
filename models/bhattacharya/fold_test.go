@@ -1,7 +1,7 @@
 package bhattacharya
 
 import (
-	"coralreef-ci/models/issues"
+	"coralreefci/models/issues"
 	"testing"
 )
 
@@ -33,7 +33,7 @@ var testingIssues = []issues.Issue{
 }
 
 func TestFold(t *testing.T) {
-	nbModel := Model{classifier: &NBClassifier{}}
+	nbModel := Model{Classifier: &NBClassifier{}}
 	result, _ := nbModel.Fold(testingIssues)
 	if result < 0.00 && result > 1.00 {
 		t.Error("\nRESULT IS OUTSIDE ACCEPTABLE RANGE",
