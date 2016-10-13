@@ -1,19 +1,11 @@
-# CoralReefCI&trade;
+# CoralReefCI&trade; Core
 
 ## Description
 
-### *Dive into your code*
-
-**CoralReefCI** is a machine learning-powered *contributor integration*
-service with the goal of providing fast, accurate issue assignment for
-software development projects. The bulk of the platform has been
-constructed using the **[Go language](https://golang.org/)**.  
-
-## Name
-
-**CoralReefCI** (pronounced "SEE-eye") takes its name from the great coral
-reefs of our planet and was inspired by the natural beauty, organic growth and
-seamless integration of countless species into their ecosystem.   
+- private repository
+- core code assets
+- some open sourced
+- case-by-case basis
 
 ## License
 
