@@ -19,6 +19,6 @@ contains *action-items*, *code*, and *resources* folders.
 
 #### Bhattacharya
 
-This is the initial model built and focuses on utilizing Navie Bayes
+This is the initial model built and focuses on utilizing Naive Bayes
 classifiers, bug tossing graphs, and other tools, as a means of identifying
 the appropriate developer to assign an issue to.  

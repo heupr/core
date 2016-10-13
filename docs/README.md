@@ -25,8 +25,12 @@ seamless integration of countless species into their ecosystem.
 
 ## Contributing
 
-- public repos welcome
-- see guidelines
+Contributions and community involvement is welcome for all of the public
+CoralReefCI repositories. Please see the guidelines in CONTRIBUTING.md.  
+
+Note that contributions are not merely limited to the code base and could
+include things such as instruction manuals, walkthroughts, documentation,
+feature ideas, issue handling, community discussions, etc.  
 
 ## Authors
 

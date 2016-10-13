@@ -1,4 +1,4 @@
-# CoralReefCI&trade; Comprehensive Infrastructure
+# CoralReefCI&trade; Infrastructure
 
 ## Description
 
