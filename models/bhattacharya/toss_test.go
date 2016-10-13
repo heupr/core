@@ -1,10 +1,10 @@
 package bhattacharya
 
 import (
-	"coralreef-ci/models/issues"
+	"coralreefci/models/issues"
 	"fmt"
 	"testing"
-	// "time"
+	"time"
 )
 
 var testIssues = []issues.Issue{
