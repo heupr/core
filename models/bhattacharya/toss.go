@@ -2,6 +2,7 @@ package bhattacharya
 
 import (
 	"coralreefci/models/issues"
+	"sort"
 	"time"
 )
 
@@ -37,41 +38,45 @@ func BuildProfiles(issues []issues.Issue) Assignees {
 			}
 		}
 	}
-
-    // for each item in the profiles
-    // - filter out profile labels
-    // - insert new filter of labels
-
-    for index, _ := range profiles {
-        cleaned := profileFilter(profiles[index].Profile)
-        profiles[index].Profile = cleaned
-    }
-
+	for index, _ := range profiles {
+		cleaned := profileFilter(profiles[index].Profile)
+		profiles[index].Profile = cleaned
+	}
 	return profiles
 }
 
 func profileFilter(input []string) []string {
-    found := make(map[string]bool)
-    clean := []string{}
-    for i := 0; i < len(input); i ++ {
-        if found[input[i]] != true {
-            found[input[i]] = true
-            clean = append(clean, input[i])
-        }
-    }
-    return clean
+	found := make(map[string]bool)
+	clean := []string{}
+	for i := 0; i < len(input); i++ {
+		if found[input[i]] != true {
+			found[input[i]] = true
+			clean = append(clean, input[i])
+		}
+	}
+	return clean
 }
 
-// taking score from scores in the LogScores
-// in the nb_classifier.go file
-// scores -> []float64
-// look at the topTrhee function
-// primitive tossing graph
+func Tossing(scores []float64, top int) []int {
+	scoreMap := make(map[int]float64)
+	for i := 0; i < len(scores); i++ {
+		scoreMap[i] = scores[i]
+	}
+	values := []float64{}
+	for _, value := range scoreMap {
+		values = append(values, value)
+	}
+	sort.Float64s(values)
+	flipScoreMap := make(map[float64]int)
+	for integer, floater := range scoreMap {
+		flipScoreMap[floater] = integer
+	}
+	topIndex := []int{}
 
-// functions:
-// tossing function
-// - actually acounts for given number of possible assignees
-// ranking function
-// - provides logic for pruning given list
-// profile builder
-// - constructs slice of labels for each assignee
+	for _, value := range values[top-1:] {
+		if _, ok := flipScoreMap[value]; ok {
+			topIndex = append(topIndex, flipScoreMap[value])
+		}
+	}
+	return topIndex
+}
