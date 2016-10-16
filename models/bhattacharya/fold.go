@@ -68,34 +68,44 @@ func Append(slice []issues.Issue, elements ...issues.Issue) []issues.Issue {
     return slice
 }
 
-func (model *Model) FoldImpl(train []issues.Issue, test []issues.Issue, tossingGraphLength int) float64 {
+func (model *Model) FoldImpl(train []issues.Issue, test []issues.Issue, tossingGraphLength int) (float64, matrix) {
 	testCount, correct := len(test), 0
+	predicted := AppendCopy(test[0:])
 	model.Learn(train)
 	for j := 0; j < len(test); j++ {
 		assignees := model.Predict(test[j])
 		if assignees[0] == test[j].Assignee {
 			correct += 1
+			predicted[j].Assignee = assignees[0]
 		} else if assignees[1] == test[j].Assignee && tossingGraphLength > 1 {
 			correct += 1
+			predicted[j].Assignee = assignees[1]
 		} else if assignees[2] == test[j].Assignee && tossingGraphLength == 3 {
 			correct += 1
+			predicted[j].Assignee = assignees[2]
 		} else {
+			predicted[j].Assignee = assignees[0]
 			continue
 		}
 	}
-	return float64(correct) / float64(testCount)
+	mat, err := BuildMatrix(AppendCopy(test[0:]), predicted)
+	if (err != nil) {
+		fmt.Println(err)
+	}
+	return float64(correct) / float64(testCount), mat
 }
 
-func (model *Model) TwoFold(issues []issues.Issue, tossingGraphLength int) (float64, error) {
+func (model *Model) TwoFold(issues []issues.Issue, tossingGraphLength int) (float64, []matrix, error) {
 	length := len(issues)
 	trainEndPos := int(0.50 * float64(length))
 	trainIssues := AppendCopy(issues[0:trainEndPos])
 	testIssues := AppendCopy(issues[trainEndPos+1:length])
-	score := 0.00
 
-	score += model.FoldImpl(trainIssues, testIssues, tossingGraphLength)
-	score += model.FoldImpl(testIssues, trainIssues, tossingGraphLength)
-	return score / 2.00, nil
+	score1, matrix1 := model.FoldImpl(trainIssues, testIssues, tossingGraphLength)
+	score2, matrix2 := model.FoldImpl(testIssues, trainIssues, tossingGraphLength)
+	score := score1 + score2
+
+	return score / 2.00, []matrix{matrix1, matrix2}, nil
 }
 
 func (model *Model) TenFold(issues []issues.Issue) (float64, error) {

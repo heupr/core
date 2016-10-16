@@ -4,8 +4,9 @@ import (
   "encoding/csv"
   "fmt"
   "os"
-	"coralreef-ci/models/bhattacharya"
-  "coralreef-ci/models/issues"
+  . "github.com/ahmetalpbalkan/go-linq"
+	"coralreefci/models/bhattacharya"
+  "coralreefci/models/issues"
 )
 
 type TestContext struct {
@@ -63,30 +64,66 @@ func distinctAssignees(issues []issues.Issue) []string {
 
 func(t *BackTestRunner) Run() {
   filePath := t.Context.File
-  //excludeAssignees := []string{"dotnet-bot", "dotnet-mc-bot", "00101010b"})
-  excludeAssignees := []string{""}
-  trainingSet := readFile(filePath, excludeAssignees)
-  testComparsionSet := make([]issues.Issue, len(trainingSet))
-  testSet := make([]issues.Issue, len(trainingSet))
-  copy(testSet, trainingSet)
-  copy(testComparsionSet, trainingSet)
-  t.Context.Model.Learn(trainingSet)
+  // BOTS: dotnet-bot, dotnet-mc-bot, 00101010b
+  // Project Managers: stephentoub
+  excludeAssignees := []string{"dotnet-bot", "dotnet-mc-bot", "00101010b", "stephentoub"}
+  fileData := readFile(filePath, excludeAssignees)
 
+  trainingSet := []issues.Issue{}
+  assignees := []string{}
+
+  groupby := From(fileData).GroupBy(
+    func(r interface{}) interface{} { return r.(issues.Issue).Assignee },
+    func(r interface{}) interface{} { return r.(issues.Issue) })
+
+  where := groupby.Where(func(groupby interface{}) bool {
+    return len(groupby.(Group).Group) >= 30
+    })
+
+  orderby := where.OrderByDescending(func(where interface{}) interface{} {
+    return len(where.(Group).Group)
+    })
+
+  orderby.SelectMany(func(orderby interface{}) Query {
+    return From(orderby.(Group).Group)
+    }).ToSlice(&trainingSet)
+
+  orderby.Select(func(orderby interface{}) interface{} {
+      return orderby.(Group).Key
+    }).ToSlice(&assignees)
+
+  bhattacharya.Shuffle(trainingSet, int64(1))
+
+  fmt.Println("#Assignees:", len(distinctAssignees(trainingSet)))
+  fmt.Println("#Issues:", len(trainingSet))
   fmt.Println("---------------Two Fold-----------------")
-  score,_ := t.Context.Model.TwoFold(trainingSet, 1)
+  score,mat,_ := t.Context.Model.TwoFold(trainingSet, 1)
+  bhattacharya.FullSummary(mat[0])
+  bhattacharya.FullSummary(mat[1])
   fmt.Println("Graph Length", 1)
   fmt.Println("Weighted Accuracy:", score)
-  score,_ = t.Context.Model.TwoFold(trainingSet, 2)
+  score,mat,_ = t.Context.Model.TwoFold(trainingSet, 2)
+  bhattacharya.FullSummary(mat[0])
+  bhattacharya.FullSummary(mat[1])
   fmt.Println("Graph Length:", 2)
   fmt.Println("Weighted Accuracy:", score)
-  score,_ = t.Context.Model.TwoFold(trainingSet, 3)
+  score,mat,_ = t.Context.Model.TwoFold(trainingSet, 3)
+  bhattacharya.FullSummary(mat[0])
+  for i := 0; i < len(assignees); i++ {
+    bhattacharya.ClassSummary(assignees[i], mat[0])
+  }
+  bhattacharya.FullSummary(mat[1])
   fmt.Println("Graph Length:", 3)
   fmt.Println("Weighted Accuracy:", score)
+
 
   fmt.Println("---------------John's Fold-----------------")
   score,_ = t.Context.Model.Fold(trainingSet)
   fmt.Println("Weighted Accuracy:", score)
+
+ /*
   fmt.Println("---------------Mike's Fold-----------------")
   score,_ = t.Context.Model.TenFold(trainingSet)
   fmt.Println("Weighted Accuracy:", score)
+  */
 }

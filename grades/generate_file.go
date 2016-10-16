@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-func generate() {
+func Generate() {
 
 	// authentication
 	//we may not need OAUTH for this method
@@ -42,6 +42,13 @@ func generate() {
 			fmt.Printf("error fetching rate limit (%v)\n", err)
 		}
 		for _, issue := range issues {
+			//pullrequest indicator
+			if (issue.PullRequestLinks != nil) {
+				continue
+			}
+
+
+
 			//used Buffer because it is faster than concating strings
 			//var buffer bytes.Buffer
 			//may want to replace record[] string with buffer
@@ -64,7 +71,7 @@ func generate() {
 			} else {
 				record = append(record, "No description")
 			}
-                        //username column (prediction value)
+      //username column (prediction value)
 			record = append(record, *issue.User.Login)
 
 			/*
