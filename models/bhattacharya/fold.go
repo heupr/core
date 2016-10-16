@@ -3,8 +3,8 @@ package bhattacharya
 import (
 	"coralreefci/models/issues"
 	"errors"
-	"math"
 	"fmt"
+	"math"
 )
 
 func (model *Model) Fold(issues []issues.Issue) (float64, error) {
@@ -25,47 +25,46 @@ func (model *Model) Fold(issues []issues.Issue) (float64, error) {
 
 		for j := trainCount + 1; j < issueCount; j++ {
 			assignees := model.Predict(issues[j])
-			if assignees[0] == issues[j].Assignee || assignees[1] == issues[j].Assignee || assignees[2] == issues[j].Assignee{
+			if assignees[0] == issues[j].Assignee || assignees[1] == issues[j].Assignee || assignees[2] == issues[j].Assignee {
 				correct += 1
 			} else {
 				continue
 			}
 		}
-		fmt.Println("Fold ", Round(i * 10))
-		fmt.Println(" Accuracy ", float64(correct) / float64(testCount))
+		fmt.Println("Fold ", Round(i*10))
+		fmt.Println(" Accuracy ", float64(correct)/float64(testCount))
 		score += float64(correct) / float64(testCount)
 	}
 	return score / 10.00, nil
 }
 
 func AppendCopy(slice []issues.Issue, elements ...issues.Issue) []issues.Issue {
-    n := len(slice)
-    total := len(slice) + len(elements)
-		newSlice := make([]issues.Issue, total)
-    if total > cap(slice) {
-        // Reallocate. Grow to 1.5 times the new size, so we can still grow.
-        newSize := total*3/2 + 1
-        newSlice = make([]issues.Issue, total, newSize)
-    }
-		copy(newSlice, slice)
-    copy(newSlice[n:], elements)
-    return newSlice
+	n := len(slice)
+	total := len(slice) + len(elements)
+	newSlice := make([]issues.Issue, total)
+	if total > cap(slice) {
+		// Reallocate. Grow to 1.5 times the new size, so we can still grow.
+		newSize := total*3/2 + 1
+		newSlice = make([]issues.Issue, total, newSize)
+	}
+	copy(newSlice, slice)
+	copy(newSlice[n:], elements)
+	return newSlice
 }
 
-
 func Append(slice []issues.Issue, elements ...issues.Issue) []issues.Issue {
-    n := len(slice)
-    total := len(slice) + len(elements)
-    if total > cap(slice) {
-        // Reallocate. Grow to 1.5 times the new size, so we can still grow.
-        newSize := total*3/2 + 1
-        newSlice := make([]issues.Issue, total, newSize)
-        copy(newSlice, slice)
-        slice = newSlice
-    }
-    slice = slice[:total]
-    copy(slice[n:], elements)
-    return slice
+	n := len(slice)
+	total := len(slice) + len(elements)
+	if total > cap(slice) {
+		// Reallocate. Grow to 1.5 times the new size, so we can still grow.
+		newSize := total*3/2 + 1
+		newSlice := make([]issues.Issue, total, newSize)
+		copy(newSlice, slice)
+		slice = newSlice
+	}
+	slice = slice[:total]
+	copy(slice[n:], elements)
+	return slice
 }
 
 func (model *Model) FoldImpl(train []issues.Issue, test []issues.Issue, tossingGraphLength int) (float64, matrix) {
@@ -89,7 +88,7 @@ func (model *Model) FoldImpl(train []issues.Issue, test []issues.Issue, tossingG
 		}
 	}
 	mat, err := BuildMatrix(AppendCopy(test[0:]), predicted)
-	if (err != nil) {
+	if err != nil {
 		fmt.Println(err)
 	}
 	return float64(correct) / float64(testCount), mat
@@ -99,7 +98,7 @@ func (model *Model) TwoFold(issues []issues.Issue, tossingGraphLength int) (floa
 	length := len(issues)
 	trainEndPos := int(0.50 * float64(length))
 	trainIssues := AppendCopy(issues[0:trainEndPos])
-	testIssues := AppendCopy(issues[trainEndPos+1:length])
+	testIssues := AppendCopy(issues[trainEndPos+1 : length])
 
 	score1, matrix1 := model.FoldImpl(trainIssues, testIssues, tossingGraphLength)
 	score2, matrix2 := model.FoldImpl(testIssues, trainIssues, tossingGraphLength)
@@ -125,14 +124,14 @@ func (model *Model) TenFold(issues []issues.Issue) (float64, error) {
 		model.Learn(trainIssues)
 		for j := 0; j < len(testIssues); j++ {
 			assignees := model.Predict(testIssues[j])
-			if assignees[0] == issues[j].Assignee || assignees[1] == issues[j].Assignee || assignees[2] == issues[j].Assignee{
+			if assignees[0] == issues[j].Assignee || assignees[1] == issues[j].Assignee || assignees[2] == issues[j].Assignee {
 				correct += 1
 			} else {
 				continue
 			}
 		}
-		fmt.Println("Fold ", Round(i * 10))
-		fmt.Println("Accuracy ", float64(correct) / float64(testCount))
+		fmt.Println("Fold ", Round(i*10))
+		fmt.Println("Accuracy ", float64(correct)/float64(testCount))
 		fmt.Println("Correct", float64(correct))
 		fmt.Println("Train Count", float64(trainIssuesLength))
 		fmt.Println("Test Count", float64(testCount))

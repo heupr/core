@@ -17,7 +17,7 @@ func (model *Model) Learn(issues []issues.Issue) {
 
 func (model *Model) Predict(issue issues.Issue) []string {
 	issue.Body = RemoveStopWords(issue.Body)
-  //StemIssues([]issues.Issue{issue})
+	//StemIssues([]issues.Issue{issue})
 	return model.Classifier.Predict(issue)
 }
 

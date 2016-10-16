@@ -9,6 +9,6 @@ type Issue struct {
 	IssueID        int
 	Assignee       string
 	Body           string
-    Resolved       time.Time
-    Labels         []string
+  Resolved       time.Time
+  Labels         []string
 }

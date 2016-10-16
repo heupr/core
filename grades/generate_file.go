@@ -43,11 +43,9 @@ func Generate() {
 		}
 		for _, issue := range issues {
 			//pullrequest indicator
-			if (issue.PullRequestLinks != nil) {
+			if issue.PullRequestLinks != nil {
 				continue
 			}
-
-
 
 			//used Buffer because it is faster than concating strings
 			//var buffer bytes.Buffer
@@ -66,29 +64,29 @@ func Generate() {
 			//title column (information column that will only need to be included for now to help develop labels)
 			record = append(record, *issue.Title)
 
-			if (issue.Body != nil)	{
+			if issue.Body != nil {
 				record = append(record, *issue.Body)
 			} else {
 				record = append(record, "No description")
 			}
-      //username column (prediction value)
+			//username column (prediction value)
 			record = append(record, *issue.User.Login)
 
 			/*
-                        //labels column
-			if len(issue.Labels) <= 0 {
-				record = append(record, "NOLABEL")
-			} else {
-                        	sep := []byte(",")
-				buffer.WriteString(*issue.Labels[0].Name)
-				for _, label := range issue.Labels[1:] {
-					buffer.Write(sep)
-					buffer.WriteString(*label.Name)
-				}
-				record = append(record, buffer.String())
-				buffer.Reset()
-			} */
-                        w.Write(record)
+			                        //labels column
+						if len(issue.Labels) <= 0 {
+							record = append(record, "NOLABEL")
+						} else {
+			                        	sep := []byte(",")
+							buffer.WriteString(*issue.Labels[0].Name)
+							for _, label := range issue.Labels[1:] {
+								buffer.Write(sep)
+								buffer.WriteString(*label.Name)
+							}
+							record = append(record, buffer.String())
+							buffer.Reset()
+						} */
+			w.Write(record)
 		}
 		if resp.NextPage == 0 {
 			break
