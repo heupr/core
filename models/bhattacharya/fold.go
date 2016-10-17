@@ -25,7 +25,6 @@ func (model *Model) Fold(issues []issues.Issue) (float64, error) {
 
 		for j := trainCount + 1; j < issueCount; j++ {
 			assignees := model.Predict(issues[j])
-			fmt.Println(assignees)
 			for k := 0; k < len(assignees); k++ {
 				if (assignees[k] == issues[j].Assignee) {
 					correct += 1
