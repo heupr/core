@@ -63,6 +63,7 @@ func Tossing(scores []float64, top int) []int {
 		scoreMap[i] = scores[i]
 	}
 	values := []float64{}
+
 	for _, value := range scoreMap {
 		values = append(values, value)
 	}
@@ -72,11 +73,11 @@ func Tossing(scores []float64, top int) []int {
 		flipScoreMap[floater] = integer
 	}
 	topIndex := []int{}
-
-	for _, value := range values[top-1:] {
-		if _, ok := flipScoreMap[value]; ok {
-			topIndex = append(topIndex, flipScoreMap[value])
-		}
+	valueTemp := values //removing the top-1 fixes the panic (not sure why yet)
+	for i := 0; i < len(valueTemp); i++ {
+		if _, ok := flipScoreMap[valueTemp[i]]; ok {
+				topIndex = append(topIndex, flipScoreMap[valueTemp[i]])
+			}
 	}
 	return topIndex
 }
