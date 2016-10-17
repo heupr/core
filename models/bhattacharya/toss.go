@@ -59,6 +59,7 @@ func profileFilter(input []string) []string {
 
 func Tossing(scores []float64, top int) []int {
 	scoreMap := make(map[int]float64)
+	depth := 1
 	for i := 0; i < len(scores); i++ {
 		scoreMap[i] = scores[i]
 	}
@@ -73,10 +74,15 @@ func Tossing(scores []float64, top int) []int {
 		flipScoreMap[floater] = integer
 	}
 	topIndex := []int{}
-	valueTemp := values //removing the top-1 fixes the panic (not sure why yet)
-	for i := 0; i < len(valueTemp); i++ {
-		if _, ok := flipScoreMap[valueTemp[i]]; ok {
-				topIndex = append(topIndex, flipScoreMap[valueTemp[i]])
+
+	if (len(values) < top) {
+		depth = len(values)
+	} else {
+		depth = top
+	}
+	for i := 0; i < depth; i++ {
+		if _, ok := flipScoreMap[values[i]]; ok {
+				topIndex = append(topIndex, flipScoreMap[values[i]])
 			}
 	}
 	return topIndex
