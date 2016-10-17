@@ -22,8 +22,12 @@ func (c *NBClassifier) Learn(issues []issues.Issue) {
 
 func (c *NBClassifier) Predict(issue issues.Issue) []string {
 	scores, _, _ := c.classifier.LogScores(strings.Split(issue.Body, " "))
-	first, second, third, _ := topThree(scores)
-	return []string{string(c.assignees[first]), string(c.assignees[second]), string(c.assignees[third])}
+    names := []string{}
+    indices := Tossing(scores, 5)
+    for i := 0; i < len(indices); i ++ {
+        names = append(names, string(c.assignees[indices[i]]))
+    }
+	return names
 }
 
 func distinctAssignees(issues []issues.Issue) []bayesian.Class {

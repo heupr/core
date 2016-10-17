@@ -71,7 +71,7 @@ func getClassFN(class string, m matrix) float64 {
 }
 
 func round(number float64) float64 {
-	return float64(int(number*100)) / float64(100)
+	return float64(int(number*100.00)) / 100.00
 }
 
 func getPrecision(class string, m matrix) float64 {
@@ -97,7 +97,7 @@ func getAccuracy(m matrix) float64 {
 			total += float64(m[columnHead][rowHead])
 		}
 	}
-	return float64(correct) / float64(total)
+	return round(float64(correct) / float64(total))
 }
 
 func getTestCount(m matrix) float64 {
