@@ -34,7 +34,7 @@ var testingIssues = []issues.Issue{
 
 func TestFold(t *testing.T) {
 	nbModel := Model{Classifier: &NBClassifier{}}
-	result,_, _ := nbModel.TwoFold(testingIssues, 3) //Fixed using two fold (need to investigate John's fold)
+	result,_ := nbModel.Fold(testingIssues) 
 	if result < 0.00 && result > 1.00 {
 		t.Error("\nRESULT IS OUTSIDE ACCEPTABLE RANGE",
 			"\nEXPECTED BETWEEN 0.00 AND 1.00",

@@ -25,17 +25,20 @@ func (model *Model) Fold(issues []issues.Issue) (float64, error) {
 
 		for j := trainCount + 1; j < issueCount; j++ {
 			assignees := model.Predict(issues[j])
-			if assignees[0] == issues[j].Assignee || assignees[1] == issues[j].Assignee || assignees[2] == issues[j].Assignee {
-				correct += 1
-			} else {
-				continue
+			fmt.Println(assignees)
+			for k := 0; k < len(assignees); k++ {
+				if (assignees[k] == issues[j].Assignee) {
+					correct += 1
+				} else {
+					continue
+				}
 			}
 		}
 		fmt.Println("Fold ", Round(i*10))
 		fmt.Println(" Accuracy ", float64(correct)/float64(testCount))
 		score += float64(correct) / float64(testCount)
 	}
-	return score / 10.00, nil
+	return score / 9.00, nil
 }
 
 func AppendCopy(slice []issues.Issue, elements ...issues.Issue) []issues.Issue {
