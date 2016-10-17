@@ -3,6 +3,7 @@ package bhattacharya
 import (
 	"coralreefci/models/issues"
 	"testing"
+	"strings"
 )
 
 func TestModel(t *testing.T) {
@@ -47,7 +48,7 @@ func TestLearn(t *testing.T) {
 		input := validationSet[i].Body
 		expected := validationSet[i].Assignee
 		actual := nbModel.Predict(validationSet[i])
-		Assert(t, expected, actual[i], input)
+		AssertList(t, expected, actual, input)
 	}
 }
 
@@ -69,4 +70,17 @@ func Assert(t *testing.T, expected string, actual string, input string) {
 			"\nACTUAL:    ", actual,
 		)
 	}
+}
+
+func AssertList(t *testing.T, expected string, actual []string, input string) {
+	for i := 0; i < len(actual); i++ {
+		if (actual[i] == expected) {
+			return
+		}
+	}
+	t.Error(
+		"\nFOR:       ", input,
+		"\nEXPECTED:  ", expected,
+		"\nACTUAL:    ", strings.Join(actual, ","),
+	)
 }
