@@ -2,7 +2,6 @@ package bhattacharya
 
 import (
 	"coralreefci/models/issues"
-	// "sort"
 	"testing"
 	"time"
 )
@@ -14,8 +13,8 @@ var testIssues = []issues.Issue{
 }
 
 var logScores = []float64{1.00, 5.00, 2.00, 7.00, 6.00, 8.00, 3.00, 4.00, 9.00}
-var topSelection = 5
-var topIndex = []int{1, 4, 3, 5, 8}
+var topSelection = 3
+var topIndex = []int{8, 5, 3}
 
 func TestBuildProfiles(t *testing.T) {
 	output := BuildProfiles(testIssues)
@@ -50,15 +49,15 @@ func TestTossing(t *testing.T) {
 		t.Error(
 			"\nINCORRECT NUMBER OF OUTPUTS",
 			"\nEXPECTED: ", topSelection,
-			"\nACTUAL:   ", len(output), output,
+			"\nACTUAL:   ", len(output),
 		)
 	}
-    for i := 0; i < len(output); i ++ {
-        if output[i] != topIndex[i] {
-            t.Error(
-                "\nSORTING ERROR",
-                "\nEXPECTED: ", output[i], ",", "ACTUAL: ", topIndex[i],
-            )
-        }
-    }
+	for i := 0; i < len(output); i++ {
+		if output[i] != topIndex[i] {
+			t.Error(
+				"\nSORTING ERROR",
+				"\nEXPECTED: ", output[i], ",", "ACTUAL: ", topIndex[i],
+			)
+		}
+	}
 }

@@ -59,31 +59,31 @@ func profileFilter(input []string) []string {
 
 func Tossing(scores []float64, top int) []int {
 	scoreMap := make(map[int]float64)
-	depth := 1
 	for i := 0; i < len(scores); i++ {
 		scoreMap[i] = scores[i]
 	}
-	values := []float64{}
 
+	scoreValues := []float64{}
 	for _, value := range scoreMap {
-		values = append(values, value)
+		scoreValues = append(scoreValues, value)
 	}
-	sort.Float64s(values)
+
+	sort.Sort(sort.Reverse(sort.Float64Slice(scoreValues)))
+
 	flipScoreMap := make(map[float64]int)
 	for integer, floater := range scoreMap {
 		flipScoreMap[floater] = integer
 	}
-	topIndex := []int{}
 
-	if (len(values) < top) {
-		depth = len(values)
-	} else {
-		depth = top
+	topIndex := []int{}
+	if len(scores) < top {
+		top = len(scores)
 	}
-	for i := 0; i < depth; i++ {
-		if _, ok := flipScoreMap[values[i]]; ok {
-				topIndex = append(topIndex, flipScoreMap[values[i]])
-			}
+
+	for i := 0; i < top; i++ {
+		if _, ok := flipScoreMap[scoreValues[i]]; ok {
+			topIndex = append(topIndex, flipScoreMap[scoreValues[i]])
+		}
 	}
 	return topIndex
 }
