@@ -1,4 +1,4 @@
-package github-gateway
+package gateway
 
 import (
   "testing"
