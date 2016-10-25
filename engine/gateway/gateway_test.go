@@ -1,8 +1,8 @@
 package gateway
 
 import (
-	"fmt"
 	"github.com/google/go-github/github"
+	"reflect"
 	"testing"
 )
 
@@ -12,6 +12,19 @@ func TestGateway(t *testing.T) {
 	pullRequests := gateway.GetPullRequests()
 	issues := gateway.GetIssues()
 
-	fmt.Println(pullRequests)
-	fmt.Println(issues)
+	if pullRequests == nil {
+		t.Error(
+			"\nEMPTY PULL REQUEST SLICE",
+			"\nEXPECTED: ", reflect.TypeOf(new(github.PullRequest)),
+			"\nRECEIVED: ", reflect.TypeOf(pullRequests[0]),
+		)
+	}
+
+	if issues == nil {
+		t.Error(
+			"\nEMPTY ISSUES SLICE",
+			"\nEXPECTED: ", reflect.TypeOf(new(github.Issue)),
+			"\nRECEIVED: ", reflect.TypeOf(issues[0]),
+		)
+	}
 }
