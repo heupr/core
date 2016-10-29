@@ -2,11 +2,23 @@ package gateway
 
 import (
   "github.com/google/go-github/github"
+  "fmt"
+  "strings"
+  "strconv"
+  "regexp"
 )
+
+var digitRegexp = regexp.MustCompile("[0-9]+")
+
+type SubTask struct {
+  Assignee string
+  Body string
+}
 
 type Conflator struct {
   Issues map[int]github.Issue
-  Pulls map[int]github.PullRequest
+  SubTasks map[int][]SubTask
+  Pulls []github.PullRequest
   Options ConflationOptions
 }
 
@@ -23,13 +35,52 @@ func (c *Conflator) SetIssueEvents(events []github.IssuesEvent) {
 
 }
 
-
 func (c *Conflator) SetPullRequests(pulls []github.PullRequest) {
-
+  c.Pulls = pulls
 }
+
 func (c *Conflator) SetIssueRequests(issues []github.Issue) {
-
+  for i := 0; i < len(issues); i++ {
+    issueNumber := *issues[i].Number
+    c.Issues[issueNumber] = issues[i]
+    if c.Options.OneToMany == true {
+      c.SubTasks[issueNumber] = extractSubTasks(&issues[i])
+    }
+  }
 }
+
+// Might be a better way to do this. Once our unit testing is robust I will play around (if needed for performance)
+func extractIssueId(pull *github.PullRequest) int64 {
+	fixIdx := strings.LastIndex(*pull.Body, "Fixes" )
+  body := string(*pull.Body)
+  body = body[fixIdx:]
+
+  issueIdx := strings.LastIndex(body, "issues/")
+  body = body[issueIdx+7:]
+  digit := digitRegexp.Find([]byte(body))
+  s, _ := strconv.ParseInt(string(digit), 10, 32) //TODO: add error handling and logging (decide what to do if we have an error)
+  return s
+}
+
+
+//TODO: flesh this out
+func (c *Conflator) linkPullRequestsToIssues() {
+  fmt.Println(extractIssueId(&c.Pulls[0]))
+}
+
+func extractSubTasks(issue *github.Issue) []SubTask {
+  rawSubTasks := strings.Split(*issue.Body, "[")
+  length := len(rawSubTasks)
+  subTasks := make([]SubTask, length)
+  for i := 0; i < length; i++ {
+    if strings.HasPrefix(rawSubTasks[i], "x]") {
+      fmt.Println(rawSubTasks[i])
+      subTasks[i] = SubTask{ Body: rawSubTasks[i]}
+    }
+  }
+  return subTasks
+}
+
 
 // 1:1 Algorithm (Naive) (We may need to exclude 1:M issues)
 // (Ideal? Approach 1)  We should be able to just use the closed indicator in corefx/pulls/12923
@@ -54,14 +105,14 @@ func (c *Conflator) otoAlgorithm() {
 // Establish reliable relation between Github Issues and pull requests using the ("reference"? event)
 // Break each relation out into a seperate issue (1 checkbox/pull request)
 func (c *Conflator) otmAlgorithm() {
-
+  c.linkPullRequestsToIssues()
 }
 
 func (c *Conflator) Conflate() {
   if c.Options.OneToMany == true {
-    otmAlgorithm()
+    c.otmAlgorithm()
   } else {
-    otoAlgorithm()
+    c.otoAlgorithm()
   }
 }
 
