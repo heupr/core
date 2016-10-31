@@ -41,8 +41,6 @@ func (c *Conflator) SetIssueRequests(issues []github.Issue) {
 	for i := 0; i < len(issues); i++ {
 		issueNumber := *issues[i].Number
 		c.Context.Issues[issueNumber] = issues[i]
-		//TODO: 1:M Only
-		c.Context.SubTasks[issueNumber] = extractSubTasks(&issues[i])
 	}
 }
 

@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"fmt"
 	"github.com/google/go-github/github"
 	"reflect"
 	"testing"
@@ -9,8 +10,8 @@ import (
 func TestGateway(t *testing.T) {
 	gateway := Gateway{Client: github.NewClient(nil)}
 
-	pullRequests := gateway.GetPullRequests()
-	issues := gateway.GetIssues()
+	pullRequests, _ := gateway.GetPullRequests()
+	issues, _ := gateway.GetIssues()
 
 	if pullRequests == nil {
 		t.Error(

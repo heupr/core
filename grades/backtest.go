@@ -63,6 +63,15 @@ func distinctAssignees(issues []issues.Issue) []string {
 }
 
 func (t *BackTestRunner) Run() {
+
+	// trainingSet := TrainginSet{}
+	// trainingSet.Download()
+	// trainingSet.Records etc....
+	download := DownloadTrainingSet{}
+	download.Run()
+}
+
+func (t *BackTestRunner) Run2() {
 	filePath := t.Context.File
 	// BOTS: dotnet-bot, dotnet-mc-bot, 00101010b
 	// Project Managers: stephentoub

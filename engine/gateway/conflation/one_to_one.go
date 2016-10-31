@@ -3,29 +3,42 @@ package conflation
 import (
 	"github.com/google/go-github/github"
 	"strconv"
+	"strings"
 )
 
 type OneToOne struct {
 	Context *Context
 }
 
+// Might be a better way to do this. Once our unit testing is robust I will play around (if needed for performance)
 func (c *OneToOne) extractIssueId(pull *github.PullRequest) int {
-	//TODO: error handling
-	digit, _ := strconv.ParseInt(string(digitRegexp.Find([]byte(*pull.IssueURL))), 10, 32)
-	return int(digit)
+	fixIdx := strings.LastIndex(*pull.Body, "Fixes")
+	if fixIdx == -1 {
+		return -1
+	}
+	body := string(*pull.Body)
+	body = body[fixIdx:]
+	digit := digitRegexp.Find([]byte(body))
+	s, _ := strconv.ParseInt(string(digit), 10, 32)
+	return int(s)
 }
 
-//TODO: flesh this out
+//TODO: consider a more robust solution
 func (c *OneToOne) linkPullRequestsToIssues() {
 	pulls := c.Context.Pulls
-
 	for i := 0; i < len(pulls); i++ {
-		pull := &pulls[i]
-		issueId := c.extractIssueId(&pulls[i])
-		issue := c.Context.Issues[issueId]
-		//TODO: (Check for err/nil lookup)
-		issue.Assignee = pull.Assignee
-		c.Context.Issues[issueId] = issue
+		if pulls[i].Body != nil {
+			pull := &pulls[i]
+			issueId := c.extractIssueId(&pulls[i])
+			if issueId != -1 {
+				issue := c.Context.Issues[issueId]
+				if issue.Number != nil {
+					//TODO: (Check for err/nil lookup)
+					issue.Assignee = pull.Assignee
+					c.Context.Issues[issueId] = issue
+				}
+			}
+		}
 	}
 }
 
