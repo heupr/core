@@ -2,6 +2,7 @@ package bhattacharya
 
 import (
 	"coralreefci/models/issues"
+	"fmt"  // temporary import
 	"sort"
 	"time"
 )
@@ -68,7 +69,15 @@ func Tossing(scores []float64, top int) []int {
 		scoreValues = append(scoreValues, value)
 	}
 
-	sort.Sort(sort.Reverse(sort.Float64Slice(scoreValues)))
+	sort.Sort(sort.Reverse(sort.Float64Slice(scoreValues)))  // TODO : refactor and check to see if this is appropriate (probably duplicated)
+
+	// check for duplicated scores
+	// THIS IS TEMPORARY CODE
+	for i := 0; i < 5; i++ {
+		if scoreValues[i] == scoreValues[i + 1] {
+			fmt.Printf("DUPLICATE SCORES, %f\n", scoreValues[i])
+		}
+	}
 
 	flipScoreMap := make(map[float64]int)
 	for integer, floater := range scoreMap {

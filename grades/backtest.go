@@ -63,16 +63,10 @@ func distinctAssignees(issues []issues.Issue) []string {
 }
 
 func (t *BackTestRunner) Run() {
-
-	// trainingSet := TrainginSet{}
-	// trainingSet.Download()
-	// trainingSet.Records etc....
-	download := DownloadTrainingSet{}
-	download.Run()
-}
-
-func (t *BackTestRunner) Run2() {
 	filePath := t.Context.File
+
+	data := HistoricalData{}
+	data.Download()
 	// BOTS: dotnet-bot, dotnet-mc-bot, 00101010b
 	// Project Managers: stephentoub
 	excludeAssignees := []string{"dotnet-bot", "dotnet-mc-bot", "00101010b", "stephentoub"}
@@ -86,7 +80,7 @@ func (t *BackTestRunner) Run2() {
 		func(r interface{}) interface{} { return r.(issues.Issue) })
 
 	where := groupby.Where(func(groupby interface{}) bool {
-		return len(groupby.(Group).Group) >= 30
+		return len(groupby.(Group).Group) >= 20
 	})
 
 	orderby := where.OrderByDescending(func(where interface{}) interface{} {
@@ -101,7 +95,7 @@ func (t *BackTestRunner) Run2() {
 		return orderby.(Group).Key
 	}).ToSlice(&assignees)
 
-	bhattacharya.Shuffle(trainingSet, int64(1))
+	bhattacharya.Shuffle(trainingSet, int64(5))
 
 	fmt.Println("#Assignees:", len(distinctAssignees(trainingSet)))
 	fmt.Println("#Issues:", len(trainingSet))
@@ -116,13 +110,13 @@ func (t *BackTestRunner) Run2() {
 	bhattacharya.FullSummary(mat[1])
 	fmt.Println("Graph Length:", 2)
 	fmt.Println("Weighted Accuracy:", score)
-	score, mat, _ = t.Context.Model.TwoFold(trainingSet, 3)
+	score, mat, _ = t.Context.Model.TwoFold(trainingSet, 1)
 	bhattacharya.FullSummary(mat[0])
 	for i := 0; i < len(assignees); i++ {
 		bhattacharya.ClassSummary(assignees[i], mat[0])
 	}
 	bhattacharya.FullSummary(mat[1])
-	fmt.Println("Graph Length:", 3)
+	fmt.Println("Graph Length:", 1)
 	fmt.Println("Weighted Accuracy:", score)
 
 	fmt.Println("---------------John's Fold-----------------")
