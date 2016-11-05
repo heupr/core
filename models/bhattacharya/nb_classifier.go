@@ -9,11 +9,14 @@ import (
 type NBClassifier struct {
 	classifier *bayesian.Classifier
 	assignees  []bayesian.Class
+	graph      *TossingGraph
+	Logger		 *CoralReefLogger
 }
 
 func (c *NBClassifier) Learn(issues []issues.Issue) {
 	c.assignees = distinctAssignees(issues)
 	c.classifier = bayesian.NewClassifierTfIdf(c.assignees...)
+	c.graph = &TossingGraph {Assignees: convertClassToString(c.assignees), GraphDepth:5, Logger: c.Logger}
 	for i := 0; i < len(issues); i++ {
 		c.classifier.Learn(strings.Split(issues[i].Body, " "), bayesian.Class(issues[i].Assignee))
 	}
@@ -23,8 +26,8 @@ func (c *NBClassifier) Learn(issues []issues.Issue) {
 func (c *NBClassifier) Predict(issue issues.Issue) []string {
 	scores, _, _ := c.classifier.LogScores(strings.Split(issue.Body, " "))
     names := []string{}
-    indices := Tossing(scores, 5)
-    for i := 0; i < len(indices); i ++ {
+		indices := c.graph.Tossing(scores)
+	  for i := 0; i < len(indices); i ++ {
         names = append(names, string(c.assignees[indices[i]]))
     }
 	return names
@@ -42,6 +45,14 @@ func distinctAssignees(issues []issues.Issue) []bayesian.Class {
 		if j == len(result) {
 			result = append(result, bayesian.Class(issues[i].Assignee))
 		}
+	}
+	return result
+}
+
+func convertClassToString(assignees []bayesian.Class) []string{
+	result := []string{}
+	for i := 0; i < len(assignees); i++ {
+		result = append(result, string(assignees[i]))
 	}
 	return result
 }

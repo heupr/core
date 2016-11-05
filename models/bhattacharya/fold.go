@@ -3,11 +3,11 @@ package bhattacharya
 import (
 	"coralreefci/models/issues"
 	"errors"
-	"fmt"
+	"fmt"  // currently necessary until logging is ready
 	"math"
 )
 
-func (model *Model) Fold(issues []issues.Issue) (float64, error) {
+func (model *Model) Fold(issues []issues.Issue, graphDepth int) (float64, error) {
 	issueCount := len(issues)
 	if issueCount < 10 {
 		return 0.00, errors.New("LESS THAN 10 ISSUES SUBMITTED")
@@ -15,7 +15,7 @@ func (model *Model) Fold(issues []issues.Issue) (float64, error) {
 
 	score := 0.00
 
-	for i := 0.10; i < 0.90; i += 0.10 {
+	for i := 0.10; i < 0.90; i += 0.10 {  // TODO: double check the logic / math here
 		correct := 0
 
 		trainCount := int(Round(i * float64(issueCount)))
@@ -25,7 +25,7 @@ func (model *Model) Fold(issues []issues.Issue) (float64, error) {
 
 		for j := trainCount + 1; j < issueCount; j++ {
 			assignees := model.Predict(issues[j])
-			for k := 0; k < len(assignees); k++ {
+			for k := 0; k < graphDepth; k++ {
 				if (assignees[k] == issues[j].Assignee) {
 					correct += 1
 				} else {
@@ -34,7 +34,9 @@ func (model *Model) Fold(issues []issues.Issue) (float64, error) {
 			}
 		}
 		fmt.Println("Fold ", Round(i*10))
-		fmt.Println(" Accuracy ", float64(correct)/float64(testCount))
+		fmt.Println("Total ", testCount)
+		fmt.Println("Correct ", correct)
+		fmt.Println("Accuracy ", float64(correct)/float64(testCount))
 		score += float64(correct) / float64(testCount)
 	}
 	return score / 9.00, nil
@@ -84,7 +86,13 @@ func (model *Model) FoldImpl(train []issues.Issue, test []issues.Issue, tossingG
 		} else if assignees[2] == test[j].Assignee && tossingGraphLength == 3 {
 			correct += 1
 			predicted[j].Assignee = assignees[2]
-		} else {
+		} else if assignees[3] == test[j].Assignee && tossingGraphLength == 4 {
+			correct += 1
+			predicted[j].Assignee = assignees[3]
+		} else if assignees[4] == test[j].Assignee && tossingGraphLength == 5 {
+			correct += 1
+			predicted[j].Assignee = assignees[4]
+		}	else {
 			predicted[j].Assignee = assignees[0]
 			continue
 		}
@@ -139,7 +147,7 @@ func (model *Model) TenFold(issues []issues.Issue) (float64, error) {
 		fmt.Println("Test Count", float64(testCount))
 		score += float64(correct) / float64(testCount)
 	}
-	return score / 10.00, nil
+	return score / 9.00, nil
 }
 
 func Round(input float64) float64 {

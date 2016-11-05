@@ -15,6 +15,17 @@ type Assignee struct {
 
 type Assignees map[string]*Assignee
 
+type TossingGraph struct {
+	Assignees		[]string
+	GraphDepth	int
+	Logger			*CoralReefLogger
+}
+
+// NOTE: currently the setup of the logic is the NBClassifier is the "gatekeeper" for the
+// distinct list of assigness which is then passed into the TossingGraph; however, going
+// forward, this will ultimately be swapped so that TossingGraph is first passed the
+// complete list of assingees which it then performs distinct assignee logic on so that
+// it is the new "gatekeeper" for the program.
 func BuildProfiles(issues []issues.Issue) Assignees {
 	profiles := make(Assignees)
 
@@ -57,7 +68,7 @@ func profileFilter(input []string) []string {
 	return clean
 }
 
-func Tossing(scores []float64, top int) []int {
+func (c *TossingGraph) Tossing(scores []float64) []int {
 	scoreMap := make(map[int]float64)
 	for i := 0; i < len(scores); i++ {
 		scoreMap[i] = scores[i]
@@ -68,7 +79,7 @@ func Tossing(scores []float64, top int) []int {
 		scoreValues = append(scoreValues, value)
 	}
 
-	sort.Sort(sort.Reverse(sort.Float64Slice(scoreValues)))
+	sort.Sort(sort.Reverse(sort.Float64Slice(scoreValues)))  // TODO : refactor and check to see if this is appropriate (probably duplicated)
 
 	flipScoreMap := make(map[float64]int)
 	for integer, floater := range scoreMap {
@@ -76,8 +87,12 @@ func Tossing(scores []float64, top int) []int {
 	}
 
 	topIndex := []int{}
-	if len(scores) < top {
+
+ 	top := 0
+	if len(scores) < c.GraphDepth {
 		top = len(scores)
+	} else {
+		top = c.GraphDepth
 	}
 
 	for i := 0; i < top; i++ {
@@ -85,5 +100,21 @@ func Tossing(scores []float64, top int) []int {
 			topIndex = append(topIndex, flipScoreMap[scoreValues[i]])
 		}
 	}
+
+	// TODO : include a "logging flag" that would fire this particular section
+	// of the logging - do not focus on it currently and have the program log
+	logOutput := []string{}
+	for i := 0; i < len(scores); i++ {
+		if _, ok := flipScoreMap[scoreValues[i]]; ok {
+			logOutput = append(logOutput, c.Assignees[flipScoreMap[scoreValues[i]]])
+		}
+	}
+	c.Logger.Log(logOutput)
+
 	return topIndex
 }
+
+// logger generation:
+// list of all contributors ranked by their logScores
+// ^ this needs the location within the input slice of the contributors
+// ^ ths is used to match against the assignees string value slice

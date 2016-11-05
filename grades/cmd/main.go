@@ -6,8 +6,10 @@ import (
 )
 
 func main() {
-	nbModel := bhattacharya.Model{Classifier: &bhattacharya.NBClassifier{}}
-	testContext := grades.TestContext{File: "/home/michael/golang/src/coralreefci/data/training/static/trainingset_corefx", Model: nbModel}
+	logger :=  bhattacharya.CreateLog("bhattacharya-summary")
+	nbModel := bhattacharya.Model{Classifier: &bhattacharya.NBClassifier{Logger: &logger}}
+	testContext := grades.TestContext{File: "./trainingset_corefx", Model: nbModel}
 	testRunner := grades.BackTestRunner{Context: testContext}
 	testRunner.Run()
+	logger.Flush()
 }
