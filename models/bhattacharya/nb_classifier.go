@@ -2,7 +2,6 @@ package bhattacharya
 
 import (
 	"coralreefci/models/issues"
-	"fmt"  // temporary import
 	"github.com/jbrukh/bayesian"
 	"strings"
 )
@@ -31,7 +30,6 @@ func (c *NBClassifier) Predict(issue issues.Issue) []string {
 	  for i := 0; i < len(indices); i ++ {
         names = append(names, string(c.assignees[indices[i]]))
     }
-		fmt.Println(names)  // temporary print
 	return names
 }
 
