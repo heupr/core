@@ -11,7 +11,7 @@
 ## Name
 
 **CoralReefCI** (pronounced "SEE-eye") takes its name from the great coral
-reefs of our planet and was inspired by the natural beauty, organic growth and
+reefs of our planet and was inspired by the natural beauty, organic growth, and
 seamless integration of countless species into their ecosystem.  
 
 ## Description

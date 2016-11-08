@@ -1,6 +1,8 @@
 # Contributing to CoralReefCI&trade;
 
 - introduction
+- public repositories accepting contributions
+- privates authorized access only
 
 ## Reporting issues
 

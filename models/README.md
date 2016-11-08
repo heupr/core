@@ -3,22 +3,21 @@
 ## Description
 
 All back-end logic powering the CoralReefCI&trade; project is stored in
-this directory. Each model is separated into a unique directory which
-contains *action-items*, *code*, and *resources* folders.
+this directory. Each model is separated into a unique directory which is titled
+the name of the given model.  
 
-- **Action-items**:
-  - Curated list of actionable items generated from resources
-  - This is then put into a project organization tool (e.g. blossom.io)
-- **Code**:
-  - Working project code that is functional and deployable
-- **Resources**:
-  - Third-party research and resources
-  - Also could be self-generated unique research pieces
-
-## Listing
+## Catalog
 
 #### Bhattacharya
 
 This is the initial model built and focuses on utilizing Naive Bayes
 classifiers, bug tossing graphs, and other tools, as a means of identifying
-the appropriate developer to assign an issue to.  
+the appropriate developer to assign an issue to. Bhattacharya will primarily
+stand as a benchmark and possibly a testing ground for future models.  
+
+- **Status**: pre-alpha  
+  - the model is currently incomplete and missing various functionality
+  - several code assets here need to be refractored into global assets
+- **Goals**: benchmarking and testing
+  - Bhattacharya will primarily serve as a laboratory environment once
+  the model is replaced in production
