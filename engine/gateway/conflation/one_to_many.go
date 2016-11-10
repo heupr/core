@@ -27,7 +27,7 @@ func extractSubTasks(issue *github.Issue) []SubTask {
 }
 
 // Might be a better way to do this. Once our unit testing is robust I will play around (if needed for performance)
-func (c *OneToMany) extractIssueId(pull *github.PullRequest) int64 {
+func (c *OneToMany) extractIssueID(pull *github.PullRequest) int64 {
 	fixIdx := strings.LastIndex(*pull.Body, "Fixes")
 	body := string(*pull.Body)
 	body = body[fixIdx:]

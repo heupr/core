@@ -10,8 +10,10 @@ type OneToOne struct {
 	Context *Context
 }
 
-// Might be a better way to do this. Once our unit testing is robust I will play around (if needed for performance)
-func (c *OneToOne) extractIssueId(pull *github.PullRequest) int {
+// TODO: evaluate optimization
+// There could be a better way to handle this logic. Once our unit testing is
+// robust @taylor will play around (if needed for performance).
+func (c *OneToOne) extractIssueID(pull *github.PullRequest) int {
 	fixIdx := strings.LastIndex(*pull.Body, "Fixes")
 	if fixIdx == -1 {
 		return -1
@@ -23,13 +25,13 @@ func (c *OneToOne) extractIssueId(pull *github.PullRequest) int {
 	return int(s)
 }
 
-//TODO: consider a more robust solution
+// TODO: consider a more robust solution
 func (c *OneToOne) linkPullRequestsToIssues() {
 	pulls := c.Context.Pulls
 	for i := 0; i < len(pulls); i++ {
 		if pulls[i].Body != nil {
 			pull := &pulls[i]
-			issueId := c.extractIssueId(&pulls[i])
+			issueId := c.extractIssueID(&pulls[i])
 			if issueId != -1 {
 				issue := c.Context.Issues[issueId]
 				if issue.Number != nil {
