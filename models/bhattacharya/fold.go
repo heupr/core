@@ -24,6 +24,8 @@ func (model *Model) Fold(issues []issues.Issue, graphDepth int) (float64, error)
 		model.Learn(issues[0:trainCount])
 
 		for j := trainCount + 1; j < issueCount; j++ {
+			model.Logger.Log(issues[j].Url)
+			model.Logger.Log(issues[j].Assignee)
 			assignees := model.Predict(issues[j])
 			for k := 0; k < graphDepth; k++ {
 				if (assignees[k] == issues[j].Assignee) {

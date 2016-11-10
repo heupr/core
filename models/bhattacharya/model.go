@@ -7,6 +7,7 @@ import (
 
 type Model struct {
 	Classifier models.Classifier
+	Logger *CoralReefLogger
 }
 
 func (model *Model) Learn(issues []issues.Issue) {

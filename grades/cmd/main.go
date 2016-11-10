@@ -7,7 +7,7 @@ import (
 
 func main() {
 	logger := bhattacharya.CreateLog("bhattacharya-backtest")
-	nbModel := bhattacharya.Model{Classifier: &bhattacharya.NBClassifier{Logger: &logger}}
+	nbModel := bhattacharya.Model{Classifier: &bhattacharya.NBClassifier{Logger: &logger}, Logger: &logger}
 	testContext := grades.TestContext{File: "./trainingset_corefx", Model: nbModel}
 	testRunner := grades.BackTestRunner{Context: testContext}
 	testRunner.Run()

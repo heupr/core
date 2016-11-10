@@ -35,7 +35,7 @@ func readFile(filePath string, exclude []string) []issues.Issue {
 				}
 			}
 			if !skipRecord {
-				i := issues.Issue{Body: rec[3], Assignee: rec[4]}
+				i := issues.Issue{Url: rec[0], Body: rec[3], Assignee: rec[4]}
 				repoIssues = append(repoIssues, i)
 			}
 		} else {
@@ -81,7 +81,7 @@ func (t *BackTestRunner) Run() {
 		func(r interface{}) interface{} { return r.(issues.Issue) })
 
 	where := groupby.Where(func(groupby interface{}) bool {
-		return len(groupby.(Group).Group) >= 20
+		return len(groupby.(Group).Group) >= 30
 	})
 
 	orderby := where.OrderByDescending(func(where interface{}) interface{} {
@@ -104,6 +104,7 @@ func (t *BackTestRunner) Run() {
 	fmt.Println("#Assignees:", len(distinctAssignees(trainingSet)))
 	fmt.Println("#Issues:", len(trainingSet))
 
+ /*
 	fmt.Println("---------------Two Fold-----------------")
 	score, mat, _ := t.Context.Model.TwoFold(trainingSet, 1)
 	bhattacharya.FullSummary(mat[0])
@@ -122,10 +123,10 @@ func (t *BackTestRunner) Run() {
 	}
 	bhattacharya.FullSummary(mat[1])
 	fmt.Println("Graph Length:", 1)
-	fmt.Println("Weighted Accuracy:", score)
+	fmt.Println("Weighted Accuracy:", score) */
 
 	fmt.Println("---------------John's Fold-----------------")
-	score, _ = t.Context.Model.Fold(trainingSet, 5)
+	score, _ := t.Context.Model.Fold(trainingSet, 5)
 	fmt.Println("Weighted Accuracy:", score)
 
 	/*

@@ -19,6 +19,7 @@ func (d *HistoricalData) Download() bool{
   if _, err := os.Stat("./trainingset_corefx"); err == nil {
     return false
   } else {
+    d.getIssues()
     d.write()
     return true
   }
@@ -26,7 +27,7 @@ func (d *HistoricalData) Download() bool{
 
 func(d *HistoricalData) getIssues() {
 
-  ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "56e5fcc7bec01a3f3f797d528f08a83a5e3fec74"})
+  ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "23fc398670a80700b19b1ae1587825a16aa8ce57"})
   tc := oauth2.NewClient(oauth2.NoContext, ts)
   client := github.NewClient(tc)
   gateway := Gateway{Client: client}
@@ -91,8 +92,15 @@ func(d *HistoricalData) write() {
     } else {
       record = append(record, "No description")
     }
+
     //username column (prediction value)
-    record = append(record, *issue.User.Login)
+    // TEMP FIX: Write out Assignee when Assignee exists 
+    // TODO: remove check as this is a workaround
+    if issue.Assignee == nil {
+      record = append(record, *issue.User.Login)
+    } else {
+      record = append(record, *issue.Assignee.Login)
+    }
 
     w.Write(record)
   }
