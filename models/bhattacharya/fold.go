@@ -3,7 +3,7 @@ package bhattacharya
 import (
 	"coralreefci/models/issues"
 	"errors"
-	"fmt"  // currently necessary until logging is ready
+	"fmt" // currently necessary until logging is ready
 	"math"
 )
 
@@ -15,7 +15,7 @@ func (model *Model) Fold(issues []issues.Issue, graphDepth int) (float64, error)
 
 	score := 0.00
 
-	for i := 0.10; i < 0.90; i += 0.10 {  // TODO: double check the logic / math here
+	for i := 0.10; i < 0.90; i += 0.10 { // TODO: double check the logic / math here
 		correct := 0
 
 		trainCount := int(Round(i * float64(issueCount)))
@@ -24,9 +24,11 @@ func (model *Model) Fold(issues []issues.Issue, graphDepth int) (float64, error)
 		model.Learn(issues[0:trainCount])
 
 		for j := trainCount + 1; j < issueCount; j++ {
+			model.Logger.Log(issues[j].Url)
+			model.Logger.Log(issues[j].Assignee)
 			assignees := model.Predict(issues[j])
 			for k := 0; k < graphDepth; k++ {
-				if (assignees[k] == issues[j].Assignee) {
+				if assignees[k] == issues[j].Assignee {
 					correct += 1
 				} else {
 					continue
@@ -92,7 +94,7 @@ func (model *Model) FoldImpl(train []issues.Issue, test []issues.Issue, tossingG
 		} else if assignees[4] == test[j].Assignee && tossingGraphLength == 5 {
 			correct += 1
 			predicted[j].Assignee = assignees[4]
-		}	else {
+		} else {
 			predicted[j].Assignee = assignees[0]
 			continue
 		}

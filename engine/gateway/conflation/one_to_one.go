@@ -37,8 +37,12 @@ func (c *OneToOne) linkPullRequestsToIssues() {
 				if issue.Number != nil {
 					//TODO: (Check for err/nil lookup)
 					issue.Assignee = pull.Assignee
-					c.Context.Issues[issueId] = issue
 				}
+				if issue.Body != nil {
+					// First step towards using additional information
+					*issue.Body = *issue.Body + *pulls[i].Body
+				}
+				c.Context.Issues[issueId] = issue
 			}
 		}
 	}
