@@ -4,7 +4,6 @@ import (
 	"github.com/google/go-github/github"
 	"strconv"
 	"strings"
-	"fmt"
 )
 
 type OneToOne struct {
@@ -34,15 +33,14 @@ func (c *OneToOne) linkPullRequestsToIssues() {
 			if issueId != -1 {
 				issue := c.Context.Issues[issueId]
 				if issue.Number != nil {
-					  //TODO: (Check for err/nil lookup)
-						issue.Assignee = pull.Assignee
-					}
-					if issue.Body != nil {
-						// First step towards using additional information
-						*issue.Body = *issue.Body + *pulls[i].Body
-					}
-					c.Context.Issues[issueId] = issue
+					//TODO: (Check for err/nil lookup)
+					issue.Assignee = pull.Assignee
 				}
+				if issue.Body != nil {
+					// First step towards using additional information
+					*issue.Body = *issue.Body + *pulls[i].Body
+				}
+				c.Context.Issues[issueId] = issue
 			}
 		}
 	}
