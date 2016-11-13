@@ -22,7 +22,6 @@ type Context struct {
 	Issues   map[int]github.Issue
 	SubTasks map[int][]SubTask
 	Pulls    []github.PullRequest
-	Test     []string
 }
 
 /*

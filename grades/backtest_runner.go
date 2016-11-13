@@ -81,7 +81,7 @@ func (t *BackTestRunner) Run() {
 		func(r interface{}) interface{} { return r.(issues.Issue) })
 
 	where := groupby.Where(func(groupby interface{}) bool {
-		return len(groupby.(Group).Group) >= 30
+		return len(groupby.(Group).Group) >= 10
 	})
 
 	orderby := where.OrderByDescending(func(where interface{}) interface{} {

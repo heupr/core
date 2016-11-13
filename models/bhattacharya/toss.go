@@ -3,6 +3,7 @@ package bhattacharya
 import (
 	"coralreefci/models/issues"
 	"sort"
+	"strconv"
 	"time"
 )
 
@@ -106,8 +107,7 @@ func (c *TossingGraph) Tossing(scores []float64) []int {
 	logOutput := []string{}
 	for i := 0; i < len(scores); i++ {
 		if _, ok := flipScoreMap[scoreValues[i]]; ok {
-			// fmt.Println(flipScoreMap[scoreValues[i]])
-			logOutput = append(logOutput, c.Assignees[flipScoreMap[scoreValues[i]]]) // TEMPORARY
+			logOutput = append(logOutput, strconv.FormatFloat(scoreValues[i], 'f', -1, 32) + "," + c.Assignees[flipScoreMap[scoreValues[i]]] )
 		}
 	}
 	c.Logger.Log(logOutput)

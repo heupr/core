@@ -41,28 +41,21 @@ func (m *Model) FoldImplementation(trainIssues, testIssues []issues.Issue) (floa
 		}
 	}
 
-	/*
-		for i := 0; i < len(testIssues); i++ {
-			assignees := m.Predict(testIssues[i])
-			switch {
-			case assignees[0] == testIssues[i].Assignee:
-				correct++
-				predicted[i].Assignee = assignees[0]
-			case assignees[1] == testIssues[i].Assignee && graphDepth == 2:
-				correct++
-				predicted[i].Assignee = assignees[1]
-			case assignees[2] == testIssues[i].Assignee && graphDepth == 3:
-				correct++
-				predicted[i].Assignee = assignees[2]
-			case assignees[3] == testIssues[i].Assignee && graphDepth == 4:
-				correct++
-				predicted[i].Assignee = assignees[3]
-			case assignees[4] == testIssues[i].Assignee && graphDepth == 5:
-				correct++
-				predicted[i].Assignee = assignees[4]
-			default:
-				predicted[i].Assignee = assignees[0]
-				continue
+		trainCount := int(Round(i * float64(issueCount)))
+		testCount := issueCount - trainCount
+
+		model.Learn(issues[0:trainCount])
+
+		for j := trainCount + 1; j < issueCount; j++ {
+			model.Logger.Log(issues[j].Url)
+			model.Logger.Log(issues[j].Assignee)
+			assignees := model.Predict(issues[j])
+			for k := 0; k < len(assignees); k++ {
+				if assignees[k] == issues[j].Assignee {
+					correct += 1
+				} else {
+					continue
+				}
 			}
 		}
 	*/
