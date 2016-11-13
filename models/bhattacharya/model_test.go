@@ -2,8 +2,8 @@ package bhattacharya
 
 import (
 	"coralreefci/models/issues"
-	"testing"
 	"strings"
+	"testing"
 )
 
 func TestModel(t *testing.T) {
@@ -38,7 +38,8 @@ func CreateUnassignedIssues() []issues.Issue {
 }
 
 func TestLearn(t *testing.T) {
-	nbModel := Model{Classifier: &NBClassifier{}}
+	logger := CreateLog("unit-test-model")
+	nbModel := Model{Classifier: &NBClassifier{Logger: &logger}, Logger: &logger}
 	trainingSet := CreateTrainingIssues()
 	validationSet := CreateValidationIssues()
 
@@ -74,7 +75,7 @@ func Assert(t *testing.T, expected string, actual string, input string) {
 
 func AssertList(t *testing.T, expected string, actual []string, input string) {
 	for i := 0; i < len(actual); i++ {
-		if (actual[i] == expected) {
+		if actual[i] == expected {
 			return
 		}
 	}

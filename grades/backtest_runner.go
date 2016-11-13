@@ -98,11 +98,15 @@ func (t *BackTestRunner) Run() {
 
 	bhattacharya.Shuffle(trainingSet, int64(5))
 
-	logger := bhattacharya.CreateLog("backtest-summary")
-	logger.Log("NUMBER OF ASSIGNEES:" + string(len(distinctAssignees(trainingSet))))
+	// logger := bhattacharya.CreateLog("backtest-summary")
+	// logger.Log("NUMBER OF ASSIGNEES:" + string(len(distinctAssignees(trainingSet))))
+	// logger.Log("NUMBER OF ISSUES:" + string(len(trainingSet)))
 
-	fmt.Println("#Assignees:", len(distinctAssignees(trainingSet)))
-	fmt.Println("#Issues:", len(trainingSet))
+	/*
+	   fmt.Println("---------------John's Fold-----------------")
+	   score, _ := t.Context.Model.Fold(trainingSet, 5)
+	   fmt.Println("Weighted Accuracy:", score)
+	*/
 
 	/*
 		fmt.Println("---------------Two Fold-----------------")
@@ -110,7 +114,6 @@ func (t *BackTestRunner) Run() {
 		bhattacharya.FullSummary(mat[0])
 		bhattacharya.FullSummary(mat[1])
 		fmt.Println("Graph Length", 1)
-		fmt.Println("Weighted Accuracy:", score)
 		score, mat, _ = t.Context.Model.TwoFold(trainingSet, 2)
 		bhattacharya.FullSummary(mat[0])
 		bhattacharya.FullSummary(mat[1])
@@ -124,10 +127,6 @@ func (t *BackTestRunner) Run() {
 		bhattacharya.FullSummary(mat[1])
 		fmt.Println("Graph Length:", 1)
 		fmt.Println("Weighted Accuracy:", score) */
-
-	fmt.Println("---------------John's Fold-----------------")
-	score, _ := t.Context.Model.Fold(trainingSet, 5)
-	fmt.Println("Weighted Accuracy:", score)
 
 	/*
 	  fmt.Println("---------------Mike's Fold-----------------")

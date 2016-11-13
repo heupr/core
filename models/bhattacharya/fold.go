@@ -3,155 +3,136 @@ package bhattacharya
 import (
 	"coralreefci/models/issues"
 	"errors"
-	"fmt" // currently necessary until logging is ready
+	"fmt"
 	"math"
 )
 
-func (model *Model) Fold(issues []issues.Issue, graphDepth int) (float64, error) {
-	issueCount := len(issues)
-	if issueCount < 10 {
-		return 0.00, errors.New("LESS THAN 10 ISSUES SUBMITTED")
-	}
+func Round(input float64) float64 {
+	return math.Floor(input + 0.5)
+}
 
-	score := 0.00
+// NOTE: Arguments:
+// trainIssues - this is the fold-defined length to train on (e.g. 10%)
+// testIssues - this is the fold-defined length to test on (e.g. 90%)
+func (m *Model) FoldImplementation(trainIssues, testIssues []issues.Issue) (float64, matrix) {
+	testCount := len(testIssues) // TODO: put into one line (see #19)
+	correct := 0                 // TODO: put into one line (see #18)
+	expected := []issues.Issue{} // TODO: put into one line (see #22)
+	expected = append(expected, testIssues...)
+	predicted := []issues.Issue{} // TODO: put into one line (see #20)
+	predicted = append(predicted, testIssues...)
+	m.Learn(trainIssues)
+	// TODO: there will need to be a logger living within this loop so that
+	// issue assignees and URLs can be captured correctly
+	// EXAMPLE:
+	// 	m.Logger.Log(issues[j].Url)
+	// 	m.Logger.Log(issues[j].Assignee)
 
-	for i := 0.10; i < 0.90; i += 0.10 { // TODO: double check the logic / math here
-		correct := 0
-
-		trainCount := int(Round(i * float64(issueCount)))
-		testCount := issueCount - trainCount
-
-		model.Learn(issues[0:trainCount])
-
-		for j := trainCount + 1; j < issueCount; j++ {
-			model.Logger.Log(issues[j].Url)
-			model.Logger.Log(issues[j].Assignee)
-			assignees := model.Predict(issues[j])
-			for k := 0; k < graphDepth; k++ {
-				if assignees[k] == issues[j].Assignee {
-					correct += 1
-				} else {
-					continue
-				}
+	for i := 0; i < len(testIssues); i++ {
+		assignees := m.Predict(testIssues[i])
+		for j := 0; j < len(assignees); j++ {
+			if assignees[j] == testIssues[i].Assignee {
+				correct++
+				predicted[i].Assignee = assignees[j]
+				break
+			} else {
+				predicted[i].Assignee = assignees[0]
 			}
 		}
-		fmt.Println("Fold ", Round(i*10))
-		fmt.Println("Total ", testCount)
-		fmt.Println("Correct ", correct)
-		fmt.Println("Accuracy ", float64(correct)/float64(testCount))
-		score += float64(correct) / float64(testCount)
 	}
-	return score / 9.00, nil
-}
 
-func AppendCopy(slice []issues.Issue, elements ...issues.Issue) []issues.Issue {
-	n := len(slice)
-	total := len(slice) + len(elements)
-	newSlice := make([]issues.Issue, total)
-	if total > cap(slice) {
-		// Reallocate. Grow to 1.5 times the new size, so we can still grow.
-		newSize := total*3/2 + 1
-		newSlice = make([]issues.Issue, total, newSize)
-	}
-	copy(newSlice, slice)
-	copy(newSlice[n:], elements)
-	return newSlice
-}
-
-func Append(slice []issues.Issue, elements ...issues.Issue) []issues.Issue {
-	n := len(slice)
-	total := len(slice) + len(elements)
-	if total > cap(slice) {
-		// Reallocate. Grow to 1.5 times the new size, so we can still grow.
-		newSize := total*3/2 + 1
-		newSlice := make([]issues.Issue, total, newSize)
-		copy(newSlice, slice)
-		slice = newSlice
-	}
-	slice = slice[:total]
-	copy(slice[n:], elements)
-	return slice
-}
-
-func (model *Model) FoldImpl(train []issues.Issue, test []issues.Issue, tossingGraphLength int) (float64, matrix) {
-	testCount, correct := len(test), 0
-	predicted := AppendCopy(test[0:])
-	model.Learn(train)
-	for j := 0; j < len(test); j++ {
-		assignees := model.Predict(test[j])
-		if assignees[0] == test[j].Assignee {
-			correct += 1
-			predicted[j].Assignee = assignees[0]
-		} else if assignees[1] == test[j].Assignee && tossingGraphLength > 1 {
-			correct += 1
-			predicted[j].Assignee = assignees[1]
-		} else if assignees[2] == test[j].Assignee && tossingGraphLength == 3 {
-			correct += 1
-			predicted[j].Assignee = assignees[2]
-		} else if assignees[3] == test[j].Assignee && tossingGraphLength == 4 {
-			correct += 1
-			predicted[j].Assignee = assignees[3]
-		} else if assignees[4] == test[j].Assignee && tossingGraphLength == 5 {
-			correct += 1
-			predicted[j].Assignee = assignees[4]
-		} else {
-			predicted[j].Assignee = assignees[0]
-			continue
+	/*
+		for i := 0; i < len(testIssues); i++ {
+			assignees := m.Predict(testIssues[i])
+			switch {
+			case assignees[0] == testIssues[i].Assignee:
+				correct++
+				predicted[i].Assignee = assignees[0]
+			case assignees[1] == testIssues[i].Assignee && graphDepth == 2:
+				correct++
+				predicted[i].Assignee = assignees[1]
+			case assignees[2] == testIssues[i].Assignee && graphDepth == 3:
+				correct++
+				predicted[i].Assignee = assignees[2]
+			case assignees[3] == testIssues[i].Assignee && graphDepth == 4:
+				correct++
+				predicted[i].Assignee = assignees[3]
+			case assignees[4] == testIssues[i].Assignee && graphDepth == 5:
+				correct++
+				predicted[i].Assignee = assignees[4]
+			default:
+				predicted[i].Assignee = assignees[0]
+				continue
+			}
 		}
-	}
-	mat, err := BuildMatrix(AppendCopy(test[0:]), predicted)
+	*/
+
+	mat, err := BuildMatrix(expected, predicted)
 	if err != nil {
 		fmt.Println(err)
 	}
 	return float64(correct) / float64(testCount), mat
 }
 
-func (model *Model) TwoFold(issues []issues.Issue, tossingGraphLength int) (float64, []matrix, error) {
-	length := len(issues)
-	trainEndPos := int(0.50 * float64(length))
-	trainIssues := AppendCopy(issues[0:trainEndPos])
-	testIssues := AppendCopy(issues[trainEndPos+1 : length])
-
-	score1, matrix1 := model.FoldImpl(trainIssues, testIssues, tossingGraphLength)
-	score2, matrix2 := model.FoldImpl(testIssues, trainIssues, tossingGraphLength)
-	score := score1 + score2
-
-	return score / 2.00, []matrix{matrix1, matrix2}, nil
-}
-
-func (model *Model) TenFold(issues []issues.Issue) (float64, error) {
-	pStart, testStartPos, testEndPos, testCount := 0, 0, 0, 0
-	score := 0.00
-
-	length := len(issues)
-	for i := 0.10; i < 0.90; i += 0.10 {
-		correct := 0
-		testStartPos = int(i * float64(length))
-		testEndPos = int((i + 0.10) * float64(length))
-		trainIssues := AppendCopy(issues[pStart:testStartPos-1], issues[testEndPos+1:length]...)
-		trainIssuesLength := len(trainIssues)
-		testIssues := AppendCopy(issues[testStartPos:testEndPos])
-		testCount = len(testIssues)
-
-		model.Learn(trainIssues)
-		for j := 0; j < len(testIssues); j++ {
-			assignees := model.Predict(testIssues[j])
-			if assignees[0] == issues[j].Assignee || assignees[1] == issues[j].Assignee || assignees[2] == issues[j].Assignee {
-				correct += 1
-			} else {
-				continue
-			}
-		}
-		fmt.Println("Fold ", Round(i*10))
-		fmt.Println("Accuracy ", float64(correct)/float64(testCount))
-		fmt.Println("Correct", float64(correct))
-		fmt.Println("Train Count", float64(trainIssuesLength))
-		fmt.Println("Test Count", float64(testCount))
-		score += float64(correct) / float64(testCount)
+func (m *Model) JohnFold(issues []issues.Issue) (float64, error) {
+	m.Logger.Log("--- John's fold ---") // TODO: possibly remove
+	issueCount := len(issues)
+	if issueCount < 10 {
+		return 0.00, errors.New("LESS THAN 10 ISSUES SUBMITTED - JOHN FOLD")
 	}
-	return score / 9.00, nil
+
+	finalScore := 0.00
+	for i := 0.10; i < 0.90; i += 0.10 { // TODO: double check the logic / math here
+		trainCount := int(Round(i * float64(issueCount)))
+
+		// TODO: add in logging here for the output matrix on each loop run
+		score, _ := m.FoldImplementation(issues[:trainCount], issues[trainCount:]) // TODO: specific logs for matrices
+
+		finalScore += score
+	}
+	return Round(finalScore / 9.00), nil
 }
 
-func Round(input float64) float64 {
-	return math.Floor(input + 0.5)
+func (m *Model) TwoFold(issueList []issues.Issue) (float64, error) {
+	m.Logger.Log("--- Two fold ---")
+	issueCount := len(issueList)
+	if issueCount < 10 {
+		return 0.00, errors.New("LESS THAN 10 ISSUES SUBMITTED - TWO FOLD")
+	}
+	trainEndPos := int(0.50 * float64(issueCount))
+	trainIssues := []issues.Issue{} // TODO: put into one line (see #84)
+	testIssues := []issues.Issue{}  // TODO: put into one line (see #83)
+	trainIssues = append(trainIssues, issueList[0:trainEndPos]...)
+	testIssues = append(testIssues, issueList[trainEndPos+1:]...)
+
+	firstScore, _ := m.FoldImplementation(trainIssues, testIssues)
+	secondScore, _ := m.FoldImplementation(testIssues, trainIssues)
+
+	score := firstScore + secondScore
+
+	return Round(score / 2.00), nil
+}
+
+func (m *Model) TenFold(issueList []issues.Issue) (float64, error) {
+	m.Logger.Log("--- Ten fold ---")
+	issueCount := len(issueList)
+	if issueCount < 10 {
+		return 0.00, errors.New("LESS THAN 10 ISSUES SUBMITTED - TEN FOLD")
+	}
+
+	finalScore := 0.00
+	start := 0
+	for i := 0.10; i <= 1.00; i += 0.10 {
+		end := int(Round(i * float64(issueCount)))
+
+		segment := issueList[start:end]
+		remainder := []issues.Issue{}
+		remainder = append(issueList[:start], issueList[end:]...)
+
+		score, _ := m.FoldImplementation(segment, remainder) // TODO: specific logs for matrices
+
+		finalScore += score
+		start = end
+	}
+	return Round(finalScore / 10.00), nil
 }

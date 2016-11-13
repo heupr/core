@@ -10,6 +10,7 @@ var testIssues = []issues.Issue{
 	{Assignee: "John", Resolved: time.Date(2016, time.October, 9, 0, 0, 0, 0, time.UTC), Labels: []string{"Blue", "White"}},
 	{Assignee: "Mike", Resolved: time.Date(2016, time.October, 9, 0, 0, 0, 0, time.UTC), Labels: []string{"Blue", "Gold"}},
 	{Assignee: "John", Resolved: time.Date(2016, time.October, 8, 0, 0, 0, 0, time.UTC), Labels: []string{"Blue", "Lion"}},
+	{Assignee: "Woz", Resolved: time.Date(1990, time.October, 8, 0, 0, 0, 0, time.UTC), Labels: []string{"Blue", "Gold"}},
 }
 
 var logScores = []float64{1.00, 5.00, 2.00, 7.00, 6.00, 8.00, 3.00, 4.00, 9.00}
@@ -18,10 +19,10 @@ var topIndex = []int{8, 5, 3}
 
 func TestBuildProfiles(t *testing.T) {
 	output := BuildProfiles(testIssues)
-	if len(output) > 2 {
+	if len(output) > 3 {
 		t.Error(
 			"\nTOO MANY RESULTS",
-			"\nONLY 2 EXPECTED",
+			"\nONLY 3 EXPECTED",
 		)
 	}
 
@@ -44,7 +45,14 @@ func TestBuildProfiles(t *testing.T) {
 }
 
 func TestTossing(t *testing.T) {
-	output := Tossing(logScores, topSelection)
+	logger := CreateLog("unit-test-toss")
+	testTossingGraph := TossingGraph{
+		Assignees:  []string{"John", "Mike", "John", "Mike", "John", "Mike", "John", "Mike", "John", "Mike"},
+		GraphDepth: topSelection,
+		Logger:     &logger,
+	}
+
+	output := testTossingGraph.Tossing(logScores)
 	if len(output) != topSelection {
 		t.Error(
 			"\nINCORRECT NUMBER OF OUTPUTS",

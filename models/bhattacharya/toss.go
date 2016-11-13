@@ -16,9 +16,9 @@ type Assignee struct {
 type Assignees map[string]*Assignee
 
 type TossingGraph struct {
-	Assignees		[]string
-	GraphDepth	int
-	Logger			*CoralReefLogger
+	Assignees  []string
+	GraphDepth int
+	Logger     *CoralReefLogger
 }
 
 // NOTE: currently the setup of the logic is the NBClassifier is the "gatekeeper" for the
@@ -79,7 +79,7 @@ func (c *TossingGraph) Tossing(scores []float64) []int {
 		scoreValues = append(scoreValues, value)
 	}
 
-	sort.Sort(sort.Reverse(sort.Float64Slice(scoreValues)))  // TODO : refactor and check to see if this is appropriate (probably duplicated)
+	sort.Sort(sort.Reverse(sort.Float64Slice(scoreValues))) // TODO: refactor and check to see if this is appropriate (probably duplicated)
 
 	flipScoreMap := make(map[float64]int)
 	for integer, floater := range scoreMap {
@@ -88,7 +88,7 @@ func (c *TossingGraph) Tossing(scores []float64) []int {
 
 	topIndex := []int{}
 
- 	top := 0
+	top := 0
 	if len(scores) < c.GraphDepth {
 		top = len(scores)
 	} else {
@@ -101,12 +101,13 @@ func (c *TossingGraph) Tossing(scores []float64) []int {
 		}
 	}
 
-	// TODO : include a "logging flag" that would fire this particular section
+	// TODO: include a "logging flag" that would fire this particular section
 	// of the logging - do not focus on it currently and have the program log
 	logOutput := []string{}
 	for i := 0; i < len(scores); i++ {
 		if _, ok := flipScoreMap[scoreValues[i]]; ok {
-			logOutput = append(logOutput, c.Assignees[flipScoreMap[scoreValues[i]]])
+			// fmt.Println(flipScoreMap[scoreValues[i]])
+			logOutput = append(logOutput, c.Assignees[flipScoreMap[scoreValues[i]]]) // TEMPORARY
 		}
 	}
 	c.Logger.Log(logOutput)
@@ -114,7 +115,7 @@ func (c *TossingGraph) Tossing(scores []float64) []int {
 	return topIndex
 }
 
-// logger generation:
-// list of all contributors ranked by their logScores
+// TODO: logger generation:
+// List of all contributors ranked by their logScores
 // ^ this needs the location within the input slice of the contributors
 // ^ ths is used to match against the assignees string value slice
