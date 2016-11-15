@@ -14,7 +14,8 @@ type SubTask struct {
 }
 
 type Conflator struct {
-	Algorithm Conflation
+	Algorithms []Conflation
+	Scenarios  []Scenario
 	Context   *Context
 }
 
@@ -53,7 +54,11 @@ func (c *Conflator) SetIssueRequests(issues []github.Issue) {
 // reference numbers, etc.) that will require their own logic.
 
 func (c *Conflator) Conflate() {
-	c.Algorithm.Conflate()
+	for i := 0; i < len(c.Scenarios); i++ {
+			c.Scenarios[i].Filter(c.Context.Pulls[i])
+	}
+
+
 }
 
 // NOTE: handle or ignore

@@ -65,7 +65,7 @@ func (c *OneToOne) linkPullRequestsToIssues() {
 func (c *OneToOne) Conflate() {
 	c.tempIssues = make(map[int]github.Issue)
 	c.linkPullRequestsToIssues()
-	c.Context.Issues = c.tempIssues
+	//c.Context.Issues = c.tempIssues
 }
 
 // 1:1 Algorithm (Naive) (We may need to exclude 1:M issues)
