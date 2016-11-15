@@ -23,7 +23,7 @@ func readFile(filePath string, exclude []string) []issues.Issue {
 	defer csvData.Close()
 	reader := csv.NewReader(csvData)
 	var repoIssues []issues.Issue
-	fmt.Printf("\n\nLoading %s.......\n", filePath)
+	fmt.Printf("LOADING: %s.......\n", filePath)
 	for {
 		rec, _ := reader.Read()
 		if rec != nil {
@@ -42,7 +42,7 @@ func readFile(filePath string, exclude []string) []issues.Issue {
 			break
 		}
 	}
-	fmt.Println("Loading Complete")
+	fmt.Println("LOADING COMPLETE")
 	return repoIssues
 }
 
@@ -98,40 +98,16 @@ func (t *BackTestRunner) Run() {
 
 	bhattacharya.Shuffle(trainingSet, int64(5))
 
-	// logger := bhattacharya.CreateLog("backtest-summary")
-	// logger.Log("NUMBER OF ASSIGNEES:" + string(len(distinctAssignees(trainingSet))))
-	// logger.Log("NUMBER OF ISSUES:" + string(len(trainingSet)))
+	logger := bhattacharya.CreateLog("backtest-summary")
+	logger.Log("NUMBER OF ASSIGNEES:" + string(len(distinctAssignees(trainingSet))))
+	logger.Log("NUMBER OF ISSUES:" + string(len(trainingSet)))
 
-	/*
-	   fmt.Println("---------------John's Fold-----------------")
-	   score, _ := t.Context.Model.Fold(trainingSet, 5)
-	   fmt.Println("Weighted Accuracy:", score)
-	*/
+    scoreJohn, _ := t.Context.Model.JohnFold(trainingSet)
+    logger.Log("JOHN FOLD: " + scoreJohn)
+    scoreTwo, _ := t.Context.Model.TwoFold(trainingSet)
+    logger.Log("TWO FOLD: " + scoreTwo)
+    scoreTen, _ := t.Context.Model.TenFold(trainingSet)
+    logger.Log("TEN FOLD: " + scoreTen)
 
-	/*
-		fmt.Println("---------------Two Fold-----------------")
-		score, mat, _ := t.Context.Model.TwoFold(trainingSet, 1)
-		bhattacharya.FullSummary(mat[0])
-		bhattacharya.FullSummary(mat[1])
-		fmt.Println("Graph Length", 1)
-		score, mat, _ = t.Context.Model.TwoFold(trainingSet, 2)
-		bhattacharya.FullSummary(mat[0])
-		bhattacharya.FullSummary(mat[1])
-		fmt.Println("Graph Length:", 2)
-		fmt.Println("Weighted Accuracy:", score)
-		score, mat, _ = t.Context.Model.TwoFold(trainingSet, 1)
-		bhattacharya.FullSummary(mat[0])
-		for i := 0; i < len(assignees); i++ {
-			bhattacharya.ClassSummary(assignees[i], mat[0])
-		}
-		bhattacharya.FullSummary(mat[1])
-		fmt.Println("Graph Length:", 1)
-		fmt.Println("Weighted Accuracy:", score) */
-
-	/*
-	  fmt.Println("---------------Mike's Fold-----------------")
-	  score,_ = t.Context.Model.TenFold(trainingSet)
-	  fmt.Println("Weighted Accuracy:", score)
-	*/
 	logger.Flush()
 }

@@ -4,11 +4,17 @@ import (
 	"coralreefci/models/issues"
 	"errors"
 	"fmt"
-	"math"
+    "math"
+    "strconv"
 )
 
 func Round(input float64) float64 {
-	return math.Floor(input + 0.5)
+    rounded := math.Floor((input * 10000.0) + 0.5) / 10000.0
+    return rounded
+}
+
+func ToString(number float64) string {
+	return strconv.FormatFloat(number, 'f', 4, 64)
 }
 
 // NOTE: Arguments:
@@ -22,15 +28,13 @@ func (m *Model) FoldImplementation(trainIssues, testIssues []issues.Issue) (floa
 	predicted := []issues.Issue{} // TODO: put into one line (see #20)
 	predicted = append(predicted, testIssues...)
 	m.Learn(trainIssues)
-	// TODO: there will need to be a logger living within this loop so that
-	// issue assignees and URLs can be captured correctly
-	// EXAMPLE:
-	// 	m.Logger.Log(issues[j].Url)
-	// 	m.Logger.Log(issues[j].Assignee)
 
 	for i := 0; i < len(testIssues); i++ {
 		assignees := m.Predict(testIssues[i])
 		for j := 0; j < len(assignees); j++ {
+            // NOTE: This is not tested logging functionality
+            // model.Logger.Log(testIssues[j].Url)
+            // model.Logger.Log(testIssues[j].Assignee)
 			if assignees[j] == testIssues[i].Assignee {
 				correct++
 				predicted[i].Assignee = assignees[j]
@@ -40,26 +44,6 @@ func (m *Model) FoldImplementation(trainIssues, testIssues []issues.Issue) (floa
 			}
 		}
 	}
-
-		trainCount := int(Round(i * float64(issueCount)))
-		testCount := issueCount - trainCount
-
-		model.Learn(issues[0:trainCount])
-
-		for j := trainCount + 1; j < issueCount; j++ {
-			model.Logger.Log(issues[j].Url)
-			model.Logger.Log(issues[j].Assignee)
-			assignees := model.Predict(issues[j])
-			for k := 0; k < len(assignees); k++ {
-				if assignees[k] == issues[j].Assignee {
-					correct += 1
-				} else {
-					continue
-				}
-			}
-		}
-	*/
-
 	mat, err := BuildMatrix(expected, predicted)
 	if err != nil {
 		fmt.Println(err)
@@ -67,15 +51,14 @@ func (m *Model) FoldImplementation(trainIssues, testIssues []issues.Issue) (floa
 	return float64(correct) / float64(testCount), mat
 }
 
-func (m *Model) JohnFold(issues []issues.Issue) (float64, error) {
-	m.Logger.Log("--- John's fold ---") // TODO: possibly remove
+func (m *Model) JohnFold(issues []issues.Issue) (string, error) {
 	issueCount := len(issues)
 	if issueCount < 10 {
-		return 0.00, errors.New("LESS THAN 10 ISSUES SUBMITTED - JOHN FOLD")
+		return "", errors.New("LESS THAN 10 ISSUES SUBMITTED - JOHN FOLD")
 	}
 
 	finalScore := 0.00
-	for i := 0.10; i < 0.90; i += 0.10 { // TODO: double check the logic / math here
+	for i := 0.10; i < 0.90; i += 0.10 {  // TODO: double check the logic / math here
 		trainCount := int(Round(i * float64(issueCount)))
 
 		// TODO: add in logging here for the output matrix on each loop run
@@ -83,14 +66,13 @@ func (m *Model) JohnFold(issues []issues.Issue) (float64, error) {
 
 		finalScore += score
 	}
-	return Round(finalScore / 9.00), nil
+	return ToString(Round(finalScore / 9.00)), nil
 }
 
-func (m *Model) TwoFold(issueList []issues.Issue) (float64, error) {
-	m.Logger.Log("--- Two fold ---")
+func (m *Model) TwoFold(issueList []issues.Issue) (string, error) {
 	issueCount := len(issueList)
 	if issueCount < 10 {
-		return 0.00, errors.New("LESS THAN 10 ISSUES SUBMITTED - TWO FOLD")
+		return "", errors.New("LESS THAN 10 ISSUES SUBMITTED - TWO FOLD")
 	}
 	trainEndPos := int(0.50 * float64(issueCount))
 	trainIssues := []issues.Issue{} // TODO: put into one line (see #84)
@@ -103,14 +85,13 @@ func (m *Model) TwoFold(issueList []issues.Issue) (float64, error) {
 
 	score := firstScore + secondScore
 
-	return Round(score / 2.00), nil
+	return ToString(Round(score / 2.00)), nil
 }
 
-func (m *Model) TenFold(issueList []issues.Issue) (float64, error) {
-	m.Logger.Log("--- Ten fold ---")
+func (m *Model) TenFold(issueList []issues.Issue) (string, error) {
 	issueCount := len(issueList)
 	if issueCount < 10 {
-		return 0.00, errors.New("LESS THAN 10 ISSUES SUBMITTED - TEN FOLD")
+		return "", errors.New("LESS THAN 10 ISSUES SUBMITTED - TEN FOLD")
 	}
 
 	finalScore := 0.00
@@ -127,5 +108,5 @@ func (m *Model) TenFold(issueList []issues.Issue) (float64, error) {
 		finalScore += score
 		start = end
 	}
-	return Round(finalScore / 10.00), nil
+	return ToString(Round(finalScore / 10.00)), nil
 }

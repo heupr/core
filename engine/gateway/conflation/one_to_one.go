@@ -40,7 +40,7 @@ func (c *OneToOne) linkPullRequestsToIssues() {
 	for i := 0; i < len(pulls); i++ {
 		if pulls[i].Body != nil {
 			pull := &pulls[i]
-			issueId := c.extractIssueID(&pulls[i])
+			issueId := c.extractIssueId(&pulls[i])
 			if issueId != -1 {
 				issue := c.Context.Issues[issueId]
 				if issue.Number != nil {
