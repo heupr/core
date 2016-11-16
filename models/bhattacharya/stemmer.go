@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// DOC: StemIssues runs the snowball stemmer on object body text.
+//      This helper function relies on the robustness of the string parsing
+//      and of the third party library for performance.
 func StemIssues(issueList []issues.Issue) {
 	for i := 0; i < len(issueList); i++ {
 		wordList := []string{}

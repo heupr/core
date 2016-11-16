@@ -29,7 +29,8 @@ func TestStemIssues(t *testing.T) {
 	StemIssues(issueList)
 	for index, issue := range issueList {
 		if issue.Body != stemTexts[index] {
-			t.Error("\nINPUT STRING NOT PARSED",
+			t.Error(
+                "\nINPUT STRING NOT PARSED",
 				"\nEXPECTED:", stemTexts[index],
 				"\nRECEIVED:", issue.Body)
 		}
