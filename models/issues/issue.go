@@ -11,7 +11,7 @@ import (
 type Issue struct {
 	RepoID   int
 	IssueID  int
-	Url      string
+	Url      string  // TODO: change to fully capitalized acroynm
 	Assignee string
 	Body     string
 	Resolved time.Time
