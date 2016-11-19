@@ -19,19 +19,17 @@ var (
 
 func TestFilter(t *testing.T) {
 	withURL := TestScenario3a.Filter(pullRequest)
-	if withURL.Url != "" {
+	if withURL != false {
 		t.Error(
 			"PULL REQUEST WITH URL NOT FILTERED",
-			withURL,
 		)
 	}
-    noURL := ""
-	pullRequest.URL = &noURL
+	noURL := ""
+	pullRequest.IssueURL = &noURL
 	withoutURL := TestScenario3a.Filter(pullRequest)
-	if withoutURL.Url != "" {
+	if withoutURL != true {
 		t.Error(
 			"PULL REQUEST WITHOUT URL NOT INCLUDED",
-			withoutURL,
 		)
 	}
 }
