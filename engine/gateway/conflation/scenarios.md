@@ -15,9 +15,20 @@ in the description.
 | Number 3 | Scenario3A |            |
 
 - **Scenario1A** - not started
-  - (description here)
+  - "Basic" issues
+  - Issues without any additional criteria
 - **Scenario2B** - incomplete
   - (description here)
 - **Scenario3a** - pending review
   - "Naked" pull requests
   - Only pull requests without an associated issue
+
+[comment]: # Possible combinations:
+[comment]: # - Issues
+[comment]: # - - Only issue-type objects
+[comment]: # - - With closing pull request
+[comment]: # - - Comment(s) on issue
+[comment]: # - Pull requests
+[comment]: # - - Only pull request-type objects
+[comment]: # - - "Naked" pull requests
+[comment]: # - - With administrator approval
