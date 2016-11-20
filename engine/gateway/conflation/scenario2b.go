@@ -1,17 +1,22 @@
 package conflation
 
+import (
+	"strconv"
+	"strings"
+)
+
 type Scenario2b struct {
-  Algorithm Conflation
 }
 
 var keywords = []string{"Close #", "Closes #", "Closed #", "Fix #", "Fixes #", "Fixed #", "Resolve #", "Resolves #", "Resolved #"}
+
 // TODO: evaluate optimization
 // There could be a better way to handle this logic. Once our unit testing is
 // robust @taylor will play around (if needed for performance).
-func (c *Scenario2b) extractIssueId(pull *github.PullRequest) int {
+func extractIssueId(crPull CrPullRequest) int {
 	fixIdx := 0
 	for i := 0; i < len(keywords); i++ {
-		fixIdx = strings.LastIndex(*pull.Body, keywords[i])
+		fixIdx = strings.LastIndex(*crPull.Body, keywords[i])
 		if fixIdx != -1 {
 			break
 		}
@@ -19,20 +24,24 @@ func (c *Scenario2b) extractIssueId(pull *github.PullRequest) int {
 	if fixIdx == -1 {
 		return -1
 	}
-	body := string(*pull.Body)
+	body := string(*crPull.Body)
 	body = body[fixIdx:]
 	digit := digitRegexp.Find([]byte(body))
-	s, _ := strconv.ParseInt(string(digit), 10, 32)
-	return int(s)
+	issueId, _ := strconv.ParseInt(string(digit), 10, 32)
+	crPull.RefIssueIds = []int{int(issueId)}
+	return int(issueId)
 }
 
+//TODO: Finish
+func (s *Scenario2b) Filter(input ExpandedIssue) bool {
+	/*
+	  crPullRequest := input.(CRPullRequest)
+	  issueId := extractIssueId(crPullRequest)
+	  if issueId != -1 {
+	    return true
+	  } else {
+	    return false
+	  }*/
 
-func (s *Scenario2b) IsValid(pull github.PullRequest) bool {
-  return true
-}
-
-func (s *Scenario2b) Filter(pull github.PullRequest) {
-  if IsValid(pull) {
-    //append s.Algorithm.Context.Pulls
-  }
+	return false
 }

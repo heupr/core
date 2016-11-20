@@ -2,15 +2,14 @@ package conflation
 
 import (
 	"fmt"
-	"github.com/google/go-github/github"
-	"strconv"
-	"strings"
 )
 
 type OneToMany struct {
 	Context *Context
 }
 
+//TODO: refactor
+/*
 func extractSubTasks(issue *github.Issue) []SubTask {
 	rawSubTasks := strings.Split(*issue.Body, "[")
 	length := len(rawSubTasks)
@@ -37,10 +36,9 @@ func (c *OneToMany) extractIssueID(pull *github.PullRequest) int64 {
 	digit := digitRegexp.Find([]byte(body))
 	s, _ := strconv.ParseInt(string(digit), 10, 32) //TODO: add error handling and logging (decide what to do if we have an error)
 	return s
-}
+}*/
 
 func (c *OneToMany) Conflate() {
-	fmt.Println(&c.Context.Pulls)
 	fmt.Println("OneToMany")
 }
 
