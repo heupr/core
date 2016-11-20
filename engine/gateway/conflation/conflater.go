@@ -7,43 +7,25 @@ import (
 
 var digitRegexp = regexp.MustCompile("[0-9]+")
 
-// NOTE: possibly needed for 1:M conflation
-type SubTask struct {
-	Assignee string
-	Body     string
-}
-
 type Conflator struct {
-	Algorithms []Conflation
-	Scenarios  []Scenario
-	Context   *Context
+	Scenarios            []Scenario
+	ConflationAlgorithms []ConflationAlgorithm
+	Context              *Context
 }
 
 type Context struct {
-	Issues   map[int]github.Issue
-	SubTasks map[int][]SubTask
-	Pulls    []github.PullRequest
+	Issues []ExpandedIssue
 }
-
-/*
-func (c *Conflator) SetPullEvents(events []github.PullRequestEvent) {
-    // stuff goes here
-}
-
-//TODO: Determine if we can just use SetPullEvents? Remove if that is the case
-func (c *Conflator) SetIssueEvents(events []github.IssuesEvent) {
-    // stuff goes here
-}
-*/
 
 func (c *Conflator) SetPullRequests(pulls []github.PullRequest) {
-	c.Context.Pulls = pulls
+	for i := 0; i < len(pulls); i++ {
+		c.Context.Issues = append(c.Context.Issues, ExpandedIssue{PullRequest: CrPullRequest{pulls[i], []int{}, []CrIssue{}}})
+	}
 }
 
 func (c *Conflator) SetIssueRequests(issues []github.Issue) {
 	for i := 0; i < len(issues); i++ {
-		issueNumber := *issues[i].Number
-		c.Context.Issues[issueNumber] = issues[i]
+		c.Context.Issues = append(c.Context.Issues, ExpandedIssue{Issue: CrIssue{issues[i], []int{}, []CrPullRequest{}}})
 	}
 }
 
@@ -52,13 +34,26 @@ func (c *Conflator) SetIssueRequests(issues []github.Issue) {
 // issues, there will likely eventually be an expanded logic that accounts
 // for a variety of other aspects to GitHub issues (e.g. participants,
 // reference numbers, etc.) that will require their own logic.
-
 func (c *Conflator) Conflate() {
-	for i := 0; i < len(c.Scenarios); i++ {
-			c.Scenarios[i].Filter(c.Context.Pulls[i])
+	isValid := false
+	issue := ExpandedIssue{}
+
+	for i := 0; i < len(c.Context.Issues); i++ {
+		issue = c.Context.Issues[i]
+		for j := 0; j < len(c.Scenarios); j++ {
+			isValid = c.Scenarios[j].Filter(issue)
+			// DOC: combination conflation logic loop
+			if isValid == true {
+				for k := 0; k < len(c.ConflationAlgorithms); k++ {
+					isConflated := c.ConflationAlgorithms[k].Conflate(issue)
+					if isConflated == true {
+						c.Context.Issues[i] = issue
+						break
+					}
+				}
+			}
+		}
 	}
-
-
 }
 
 // NOTE: handle or ignore
