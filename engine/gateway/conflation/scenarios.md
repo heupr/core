@@ -10,13 +10,16 @@ in the description.
 
 | Scenario | Subtype A  | Subtype B  |
 |----------|------------|------------|
-| Number 1 | Scenario1A |            |
+| Number 1 | Scenario1A | Scenario1B |
 | Number 2 |            | Scenario2B |
 | Number 3 | Scenario3A |            |
 
 - **Scenario1A** - not started
   - "Basic" issues
   - Issues without any additional criteria
+- **Scenario1B** - incomplete
+  - Conversation issues
+  - Issues with comment activity
 - **Scenario2B** - incomplete
   - (description here)
 - **Scenario3a** - pending review

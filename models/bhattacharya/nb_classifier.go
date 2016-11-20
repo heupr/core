@@ -6,17 +6,19 @@ import (
 	"strings"
 )
 
+// DOC: NBClassifier is the specific type of classifier being utilized in this
+//      particular back-end model implmentation.
 type NBClassifier struct {
 	classifier *bayesian.Classifier
 	assignees  []bayesian.Class
 	graph      *TossingGraph
-	Logger		 *CoralReefLogger
+	Logger     *CoralReefLogger
 }
 
 func (c *NBClassifier) Learn(issues []issues.Issue) {
 	c.assignees = distinctAssignees(issues)
 	c.classifier = bayesian.NewClassifierTfIdf(c.assignees...)
-	c.graph = &TossingGraph {Assignees: convertClassToString(c.assignees), GraphDepth:5, Logger: c.Logger}
+	c.graph = &TossingGraph{Assignees: convertClassToString(c.assignees), GraphDepth: 5, Logger: c.Logger}
 	for i := 0; i < len(issues); i++ {
 		c.classifier.Learn(strings.Split(issues[i].Body, " "), bayesian.Class(issues[i].Assignee))
 	}
@@ -28,14 +30,16 @@ func (c *NBClassifier) Predict(issue issues.Issue) []string {
 	if err != nil {
 		scores, _, _ = c.classifier.LogScores(strings.Split(issue.Body, " "))
 	}
-    names := []string{}
-		indices := c.graph.Tossing(scores)
-	  for i := 0; i < len(indices); i ++ {
-        names = append(names, string(c.assignees[indices[i]]))
-    }
+	names := []string{}
+	indices := c.graph.Tossing(scores)
+	for i := 0; i < len(indices); i++ {
+		names = append(names, string(c.assignees[indices[i]]))
+	}
 	return names
 }
 
+// DOC: distinctAssignees is a helper function that may ultimately be
+//      refactored out of this particular package.
 func distinctAssignees(issues []issues.Issue) []bayesian.Class {
 	result := []bayesian.Class{}
 	j := 0
@@ -52,7 +56,10 @@ func distinctAssignees(issues []issues.Issue) []bayesian.Class {
 	return result
 }
 
-func convertClassToString(assignees []bayesian.Class) []string{
+// DOC: convertClassToString is a helper function designed to overcome the
+//      limitations presented in the bayesian package where classes are stored
+//      as an new type Class rather than a Go string type.
+func convertClassToString(assignees []bayesian.Class) []string {
 	result := []string{}
 	for i := 0; i < len(assignees); i++ {
 		result = append(result, string(assignees[i]))
@@ -60,10 +67,9 @@ func convertClassToString(assignees []bayesian.Class) []string{
 	return result
 }
 
-// findMax finds the maximum of a set of scores; if the
-// maximum is strict -- that is, it is the single unique
-// maximum from the set -- then strict has return value
-// true. Otherwise it is false.
+// DOC: findMax locates the maximum value in a score set.
+//      If strict is set to true (single unique maximum value); the default
+//      is true.
 func findMax(scores []float64) (inx int, strict bool) {
 	inx = 0
 	strict = true
@@ -84,13 +90,13 @@ func topThree(scores []float64) (first int, second int, third int, strict bool) 
 	third = 0
 	strict = true
 	for i := 1; i < len(scores); i++ {
-		if (scores[i] > scores[first]) {
+		if scores[i] > scores[first] {
 			third = second
 			second = first
 			first = i
-		} else if (scores[i] > scores[second] && scores[i] < scores[first]) {
+		} else if scores[i] > scores[second] && scores[i] < scores[first] {
 			second = i
-		} else if (scores[i] > scores[third] && scores[i] < scores[second]) {
+		} else if scores[i] > scores[third] && scores[i] < scores[second] {
 			third = i
 		}
 	}

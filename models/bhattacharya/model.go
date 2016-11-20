@@ -11,17 +11,20 @@ type Model struct {
 }
 
 func (model *Model) Learn(issues []issues.Issue) {
-	removeStopWords(issues)
-	//StemIssues(issues)
+	removeStopWords(issues) // TODO: refactor out of model.go.
+	// TODO: implement StemIssues(issues).
+	// TODO: refactor StemIssues out of model.go.
 	model.Classifier.Learn(issues)
 }
 
 func (model *Model) Predict(issue issues.Issue) []string {
-	issue.Body = RemoveStopWords(issue.Body)
-	//StemIssues([]issues.Issue{issue})
+	issue.Body = RemoveStopWords(issue.Body) // TODO: refactor out of model.go.
+	// TODO: implement StemIssues([]issues.Issue{issue}).
+	// TODO: refactor StemIssues out of model.go.
 	return model.Classifier.Predict(issue)
 }
 
+// TODO: refactor out of model.go.
 func removeStopWords(issues []issues.Issue) {
 	for i := 0; i < len(issues); i++ {
 		issues[i].Body = RemoveStopWords(issues[i].Body)
