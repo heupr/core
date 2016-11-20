@@ -7,26 +7,23 @@ import (
 
 var TestScenario3a = Scenario3a{}
 
-var (
-	number         = 1
-	body           = "At last we will reveal ourselves to the Jedi; at last we will have our revenge."
-	title          = "Sith Apprentice"
-	assignee       = "Darth Maul"
-	githubAssignee = github.User{Name: &assignee}
-	url            = "https://www.rule-of-two.com/"
-	pullRequest    = github.PullRequest{Number: &number, Title: &title, Body: &body, IssueURL: &url, Assignee: &githubAssignee}
-)
+var url = "https://www.rule-of-two.com/"
+var pullRequest = github.PullRequest{IssueURL: &url}
+
+var TestWithPullRequest = ExpandedIssue{
+	PullRequest: CrPullRequest{pullRequest, []int{}, []CrIssue{}},
+}
+
+var TestWithoutPullRequest = ExpandedIssue{}
 
 func TestFilter(t *testing.T) {
-	withURL := TestScenario3a.Filter(pullRequest)
+	withURL := TestScenario3a.Filter(TestWithPullRequest)
 	if withURL != false {
 		t.Error(
 			"PULL REQUEST WITH URL NOT FILTERED",
 		)
 	}
-	noURL := ""
-	pullRequest.IssueURL = &noURL
-	withoutURL := TestScenario3a.Filter(pullRequest)
+	withoutURL := TestScenario3a.Filter(TestWithoutPullRequest)
 	if withoutURL != true {
 		t.Error(
 			"PULL REQUEST WITHOUT URL NOT INCLUDED",

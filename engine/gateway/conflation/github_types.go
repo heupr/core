@@ -17,8 +17,8 @@ type CrIssue struct {
 }
 
 type ExpandedIssue struct {
-	Issue       CrIssue
 	PullRequest CrPullRequest
+	Issue       CrIssue
 }
 
 func (cr *CrPullRequest) ReferencesIssues() bool {
