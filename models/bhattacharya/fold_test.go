@@ -2,6 +2,7 @@ package bhattacharya
 
 import (
 	"coralreefci/models/issues"
+    "strconv"
 	"testing"
 )
 
@@ -36,10 +37,13 @@ func TestFold(t *testing.T) {
 	logger := CreateLog("unit-test-fold")
 	nbModel := Model{Classifier: &NBClassifier{Logger: &logger}, Logger: &logger}
 	result, _ := nbModel.JohnFold(testingIssues)
-	if result < 0.00 && result > 1.00 {
-		t.Error("\nRESULT IS OUTSIDE ACCEPTABLE RANGE - JOHN FOLD",
+    number, _ := strconv.ParseFloat(result, 64)
+	if number < 0.00 && number > 1.00 {
+		t.Error(
+            "\nRESULT IS OUTSIDE ACCEPTABLE RANGE - JOHN FOLD",
 			"\nEXPECTED BETWEEN 0.00 AND 1.00",
-			"\nACTUAL: %f", result)
+			"\nACTUAL: %f", number,
+        )
 	}
 	logger.Flush()
 }
