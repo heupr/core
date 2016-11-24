@@ -13,10 +13,10 @@ var keywords = []string{"Close #", "Closes #", "Closed #", "Fix #", "Fixes #", "
 // TODO: evaluate optimization
 // There could be a better way to handle this logic. Once our unit testing is
 // robust @taylor will play around (if needed for performance).
-func extractIssueId(crPull CrPullRequest) int {
+func extractIssueId(expandedIssue *ExpandedIssue) int {
 	fixIdx := 0
 	for i := 0; i < len(keywords); i++ {
-		fixIdx = strings.LastIndex(*crPull.Body, keywords[i])
+		fixIdx = strings.LastIndex(*expandedIssue.PullRequest.Body, keywords[i])
 		if fixIdx != -1 {
 			break
 		}
@@ -24,24 +24,27 @@ func extractIssueId(crPull CrPullRequest) int {
 	if fixIdx == -1 {
 		return -1
 	}
-	body := string(*crPull.Body)
+	body := string(*expandedIssue.PullRequest.Body)
 	body = body[fixIdx:]
 	digit := digitRegexp.Find([]byte(body))
 	issueId, _ := strconv.ParseInt(string(digit), 10, 32)
-	crPull.RefIssueIds = []int{int(issueId)}
 	return int(issueId)
 }
 
-//TODO: Finish
-func (s *Scenario2b) Filter(input ExpandedIssue) bool {
-	/*
-	  crPullRequest := input.(CRPullRequest)
-	  issueId := extractIssueId(crPullRequest)
-	  if issueId != -1 {
-	    return true
-	  } else {
-	    return false
-	  }*/
+func (s *Scenario2b) ResolveIssueId(expandedIssue *ExpandedIssue) bool {
+	issueId := extractIssueId(expandedIssue)
+	if issueId != -1 {
+		expandedIssue.PullRequest.RefIssueIds = []int{issueId}
+		return true
+	} else {
+		return false
+	}
+}
 
-	return false
+func (s *Scenario2b) Filter(expandedIssue *ExpandedIssue) bool {
+	if expandedIssue.PullRequest.Number != nil {
+		return s.ResolveIssueId(expandedIssue)
+	} else {
+		return false
+	}
 }
