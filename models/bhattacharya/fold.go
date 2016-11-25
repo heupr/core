@@ -34,7 +34,6 @@ func (m *Model) FoldImplementation(trainIssues, testIssues []issues.Issue) (floa
 
 	for i := 0; i < len(testIssues); i++ {
 		assignees := m.Predict(testIssues[i])
-        fmt.Println(assignees)  // TEMPORARY
 		for j := 0; j < len(assignees); j++ {
             // NOTE: This is not tested logging functionality
             // model.Logger.Log(testIssues[j].Url)

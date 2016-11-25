@@ -2,7 +2,6 @@ package bhattacharya
 
 import (
 	"coralreefci/models/issues"
-    "fmt"  // TEMPORARY
 	"github.com/jbrukh/bayesian"
 	"strings"
 )
@@ -16,7 +15,6 @@ type NBClassifier struct {
 
 func (c *NBClassifier) Learn(issues []issues.Issue) {
 	c.assignees = distinctAssignees(issues)
-    fmt.Println(c.assignees)  // TEMPORARY
 	c.classifier = bayesian.NewClassifierTfIdf(c.assignees...)
 	c.graph = &TossingGraph{Assignees: convertClassToString(c.assignees), GraphDepth: 5, Logger: c.Logger}
 	for i := 0; i < len(issues); i++ {
