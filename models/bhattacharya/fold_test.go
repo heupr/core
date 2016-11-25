@@ -34,9 +34,8 @@ var testingIssues = []issues.Issue{
 }
 
 func TestFold(t *testing.T) {
-	// logger := CreateLog("unit-test-fold")
-	// nbModel := Model{Classifier: &NBClassifier{Logger: &logger}, Logger: &logger}
-    nbModel := Model{Classifier: &NBClassifier{}}
+	logger := CreateLog("unit-test-fold")
+	nbModel := Model{Classifier: &NBClassifier{Logger: &logger}, Logger: &logger}
 	result, _ := nbModel.JohnFold(testingIssues)
 	number, _ := strconv.ParseFloat(result, 64)
 	if number < 0.00 && number > 1.00 {
@@ -46,5 +45,5 @@ func TestFold(t *testing.T) {
 			"\nACTUAL: %f", number,
 		)
 	}
-	// logger.Flush()
+	 logger.Flush()
 }
