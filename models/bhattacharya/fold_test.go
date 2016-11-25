@@ -2,13 +2,13 @@ package bhattacharya
 
 import (
 	"coralreefci/models/issues"
-    "strconv"
+	"strconv"
 	"testing"
 )
 
 var testingIssues = []issues.Issue{
 	{Assignee: "Mike", Body: "I hail from the state of Montana"},
-	{Assignee: "Woz", Body: "Boyd, I'm wild and wooly and rough"},
+	{Assignee: "Woz", Body: "Boys, I'm wild and wooly and rough"},
 	{Assignee: "John", Body: "I ride the broncos drink and smoke"},
 	{Assignee: "Mike", Body: "Do everything that's tough"},
 	{Assignee: "Woz", Body: "I'm always lighthearted and free from care"},
@@ -34,16 +34,17 @@ var testingIssues = []issues.Issue{
 }
 
 func TestFold(t *testing.T) {
-	logger := CreateLog("unit-test-fold")
-	nbModel := Model{Classifier: &NBClassifier{Logger: &logger}, Logger: &logger}
+	// logger := CreateLog("unit-test-fold")
+	// nbModel := Model{Classifier: &NBClassifier{Logger: &logger}, Logger: &logger}
+    nbModel := Model{Classifier: &NBClassifier{}}
 	result, _ := nbModel.JohnFold(testingIssues)
-    number, _ := strconv.ParseFloat(result, 64)
+	number, _ := strconv.ParseFloat(result, 64)
 	if number < 0.00 && number > 1.00 {
 		t.Error(
-            "\nRESULT IS OUTSIDE ACCEPTABLE RANGE - JOHN FOLD",
+			"\nRESULT IS OUTSIDE ACCEPTABLE RANGE - JOHN FOLD",
 			"\nEXPECTED BETWEEN 0.00 AND 1.00",
 			"\nACTUAL: %f", number,
-        )
+		)
 	}
-	logger.Flush()
+	// logger.Flush()
 }

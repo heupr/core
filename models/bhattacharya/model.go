@@ -3,27 +3,30 @@ package bhattacharya
 import (
 	"coralreefci/models/classifier"
 	"coralreefci/models/issues"
+	// "coralreefci/models/model"  // NOTE: eventual import after refactoring
+    // "fmt"
 )
 
+// TODO: refactor into separate directory
 type Model struct {
-	Classifier models.Classifier
+	Classifier classifier.Classifier
 	Logger     *CoralReefLogger
 }
 
 func (model *Model) Learn(issues []issues.Issue) {
-	removeStopWords(issues)
-	//StemIssues(issues)
-	model.Classifier.Learn(issues)
+    // fmt.Println(issues)
+	// stopwordsOutput := RemoveStopWords(issues...)    // NOTE: eventual implementation
+    // fmt.Println(stopwordsOutput)
+	// stemmerOutput := StemIssues(stopwordsOutput...)  // NOTE: eventual implementation
+	// model.Classifier.Learn(stemmerOutput)            // NOTE: eventual implementation
+    // model.Classifier.Learn(issues)
+    // model.Classifier.Learn(stopwordsOutput)         // NOTE: temporary skipping stemmer results
+	model.Classifier.Learn(issues)              // TODO: REMOVE
 }
 
 func (model *Model) Predict(issue issues.Issue) []string {
-	issue.Body = RemoveStopWords(issue.Body)
-	//StemIssues([]issues.Issue{issue})
-	return model.Classifier.Predict(issue)
-}
-
-func removeStopWords(issues []issues.Issue) {
-	for i := 0; i < len(issues); i++ {
-		issues[i].Body = RemoveStopWords(issues[i].Body)
-	}
+	// issue.Body = RemoveStopWords(issue)[0].Body     // NOTE: eventual implementation
+	// issue.Body = StemIssues(issue)[0].Body          // NOTE: eventual implementation
+    // return model.Classifier.Predict(issue)          // NOTE: eventual implementation
+	return model.Classifier.Predict(issue)      // TODO: REMOVE
 }

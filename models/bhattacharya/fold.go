@@ -8,29 +8,33 @@ import (
     "strconv"
 )
 
+// DOC: helper function for cleaning up calculated results.
 func Round(input float64) float64 {
     rounded := math.Floor((input * 10000.0) + 0.5) / 10000.0
     return rounded
 }
 
+// DOC: helper function to translate float64 into string.
 func ToString(number float64) string {
 	return strconv.FormatFloat(number, 'f', 4, 64)
 }
 
-// NOTE: Arguments:
-// trainIssues - this is the fold-defined length to train on (e.g. 10%)
-// testIssues - this is the fold-defined length to test on (e.g. 90%)
+// DOC: argument inputs into FoldImplementation:
+//      trainIssues - this is the fold-defined length to train on (e.g. 10%)
+//      testIssues - this is the fold-defined length to test on (e.g. 90%)
 func (m *Model) FoldImplementation(trainIssues, testIssues []issues.Issue) (float64, matrix) {
-	testCount := len(testIssues) // TODO: put into one line (see #19)
-	correct := 0                 // TODO: put into one line (see #18)
-	expected := []issues.Issue{} // TODO: put into one line (see #22)
+    // TODO: refactor these declarations into single lines.
+	testCount := len(testIssues)
+	correct := 0
+	expected := []issues.Issue{}
 	expected = append(expected, testIssues...)
-	predicted := []issues.Issue{} // TODO: put into one line (see #20)
+	predicted := []issues.Issue{}
 	predicted = append(predicted, testIssues...)
 	m.Learn(trainIssues)
 
 	for i := 0; i < len(testIssues); i++ {
 		assignees := m.Predict(testIssues[i])
+        fmt.Println(assignees)  // TEMPORARY
 		for j := 0; j < len(assignees); j++ {
             // NOTE: This is not tested logging functionality
             // model.Logger.Log(testIssues[j].Url)
@@ -62,7 +66,7 @@ func (m *Model) JohnFold(issues []issues.Issue) (string, error) {
 		trainCount := int(Round(i * float64(issueCount)))
 
 		// TODO: add in logging here for the output matrix on each loop run
-		score, _ := m.FoldImplementation(issues[:trainCount], issues[trainCount:]) // TODO: specific logs for matrices
+		score, _ := m.FoldImplementation(issues[:trainCount], issues[trainCount:])
 
 		finalScore += score
 	}

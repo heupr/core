@@ -1,4 +1,4 @@
-package models
+package classifier
 
 import "coralreefci/models/issues"
 

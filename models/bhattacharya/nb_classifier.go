@@ -2,6 +2,7 @@ package bhattacharya
 
 import (
 	"coralreefci/models/issues"
+    "fmt"  // TEMPORARY
 	"github.com/jbrukh/bayesian"
 	"strings"
 )
@@ -10,13 +11,14 @@ type NBClassifier struct {
 	classifier *bayesian.Classifier
 	assignees  []bayesian.Class
 	graph      *TossingGraph
-	Logger		 *CoralReefLogger
+	Logger     *CoralReefLogger
 }
 
 func (c *NBClassifier) Learn(issues []issues.Issue) {
 	c.assignees = distinctAssignees(issues)
+    fmt.Println(c.assignees)  // TEMPORARY
 	c.classifier = bayesian.NewClassifierTfIdf(c.assignees...)
-	c.graph = &TossingGraph {Assignees: convertClassToString(c.assignees), GraphDepth:5, Logger: c.Logger}
+	c.graph = &TossingGraph{Assignees: convertClassToString(c.assignees), GraphDepth: 5, Logger: c.Logger}
 	for i := 0; i < len(issues); i++ {
 		c.classifier.Learn(strings.Split(issues[i].Body, " "), bayesian.Class(issues[i].Assignee))
 	}
@@ -28,11 +30,11 @@ func (c *NBClassifier) Predict(issue issues.Issue) []string {
 	if err != nil {
 		scores, _, _ = c.classifier.LogScores(strings.Split(issue.Body, " "))
 	}
-    names := []string{}
-		indices := c.graph.Tossing(scores)
-	  for i := 0; i < len(indices); i ++ {
-        names = append(names, string(c.assignees[indices[i]]))
-    }
+	names := []string{}
+	indices := c.graph.Tossing(scores)
+	for i := 0; i < len(indices); i++ {
+		names = append(names, string(c.assignees[indices[i]]))
+	}
 	return names
 }
 
@@ -52,7 +54,7 @@ func distinctAssignees(issues []issues.Issue) []bayesian.Class {
 	return result
 }
 
-func convertClassToString(assignees []bayesian.Class) []string{
+func convertClassToString(assignees []bayesian.Class) []string {
 	result := []string{}
 	for i := 0; i < len(assignees); i++ {
 		result = append(result, string(assignees[i]))
@@ -84,13 +86,13 @@ func topThree(scores []float64) (first int, second int, third int, strict bool) 
 	third = 0
 	strict = true
 	for i := 1; i < len(scores); i++ {
-		if (scores[i] > scores[first]) {
+		if scores[i] > scores[first] {
 			third = second
 			second = first
 			first = i
-		} else if (scores[i] > scores[second] && scores[i] < scores[first]) {
+		} else if scores[i] > scores[second] && scores[i] < scores[first] {
 			second = i
-		} else if (scores[i] > scores[third] && scores[i] < scores[second]) {
+		} else if scores[i] > scores[third] && scores[i] < scores[second] {
 			third = i
 		}
 	}
