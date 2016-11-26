@@ -62,6 +62,7 @@ func (m *Model) JohnFold(issues []issues.Issue) (string, error) {
 		trainCount := int(Round(i * float64(issueCount)))
 
 		// TODO: add in logging here for the output matrix on each loop run
+		fmt.Println("\n\nFOLD TRAIN SIZE ", i)
 		score, _ := m.FoldImplementation(issues[:trainCount], issues[trainCount:])
 
 		finalScore += score
