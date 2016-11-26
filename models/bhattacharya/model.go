@@ -4,7 +4,7 @@ import (
 	"coralreefci/models/classifier"
 	"coralreefci/models/issues"
 	// "coralreefci/models/model"  // NOTE: eventual import after refactoring
-    // "fmt"
+  "fmt"
 )
 
 // TODO: refactor into separate directory
@@ -14,13 +14,15 @@ type Model struct {
 }
 
 func (model *Model) Learn(issues []issues.Issue) {
-    // fmt.Println(issues)
+	fmt.Println("----------LEARN STARTED----------------")
+	// fmt.Println(issues)
 	// stopwordsOutput := RemoveStopWords(issues...)    // NOTE: eventual implementation
     // fmt.Println(stopwordsOutput)
 	// stemmerOutput := StemIssues(stopwordsOutput...)  // NOTE: eventual implementation
 	// model.Classifier.Learn(stemmerOutput)            // NOTE: eventual implementation
     // model.Classifier.Learn(issues)
     // model.Classifier.Learn(stopwordsOutput)         // NOTE: temporary skipping stemmer results
+	RemoveStopWords(issues...)
 	model.Classifier.Learn(issues)              // TODO: REMOVE
 }
 
