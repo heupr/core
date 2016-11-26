@@ -22,11 +22,11 @@ func CreateTrainingIssues() []issues.Issue {
 		issues.Issue{Body: "parallel test body", Assignee: "Mike"},
 		issues.Issue{Body: "fxcore test body and", Assignee: "John"},
 		issues.Issue{Body: "fxcore test body or", Assignee: "John"},
-        issues.Issue{Body: "something or other whatever", Assignee: "Mike"},
-        issues.Issue{Body: "Woz and Jobs are cool", Assignee: "Mike"},
-        issues.Issue{Body: "Hendricks and Bachman are better", Assignee: "John"},
-        issues.Issue{Body: "name a shrub after me", Assignee: "Mike"},
-    }
+		issues.Issue{Body: "something or other whatever", Assignee: "Mike"},
+		issues.Issue{Body: "Woz and Jobs are cool", Assignee: "Mike"},
+		issues.Issue{Body: "Hendricks and Bachman are better", Assignee: "John"},
+		issues.Issue{Body: "name a shrub after me", Assignee: "Mike"},
+	}
 }
 
 func CreateValidationIssues() []issues.Issue {
@@ -34,11 +34,11 @@ func CreateValidationIssues() []issues.Issue {
 		issues.Issue{Body: "parallel test code", Assignee: "Mike"},
 		issues.Issue{Body: "fxcore test code and", Assignee: "Mike"},
 		issues.Issue{Body: "fxcore test code or", Assignee: "Mike"},
-        issues.Issue{Body: "something or other whatever", Assignee: "Mike"},
-        issues.Issue{Body: "Woz and Jobs are cool", Assignee: "Mike"},
-        issues.Issue{Body: "Hendricks and Bachman are better", Assignee: "John"},
-        issues.Issue{Body: "name a shrub after me", Assignee: "Mike"},
-    }
+		issues.Issue{Body: "something or other whatever", Assignee: "Mike"},
+		issues.Issue{Body: "Woz and Jobs are cool", Assignee: "Mike"},
+		issues.Issue{Body: "Hendricks and Bachman are better", Assignee: "John"},
+		issues.Issue{Body: "name a shrub after me", Assignee: "Mike"},
+	}
 }
 
 func CreateUnassignedIssues() []issues.Issue {
@@ -46,16 +46,17 @@ func CreateUnassignedIssues() []issues.Issue {
 		issues.Issue{Body: "parallel test code"},
 		issues.Issue{Body: "fxcore test code and"},
 		issues.Issue{Body: "fxcore test code or"},
-        issues.Issue{Body: "something or other whatever"},
-        issues.Issue{Body: "Woz and Jobs are cool"},
-        issues.Issue{Body: "Hendricks and Bachman are better"},
-        issues.Issue{Body: "name a shrub after me"},
-    }
+		issues.Issue{Body: "something or other whatever"},
+		issues.Issue{Body: "Woz and Jobs are cool"},
+		issues.Issue{Body: "Hendricks and Bachman are better"},
+		issues.Issue{Body: "name a shrub after me"},
+	}
 }
 
 func TestLearn(t *testing.T) {
-	logger := CreateLog("unit-test-model")
-	nbModel := Model{Classifier: &NBClassifier{Logger: &logger}, Logger: &logger}
+	nbModel := Model{Classifier: &NBClassifier{}}
+	// logger := CreateLog("unit-test-model")
+	// nbModel := Model{Classifier: &NBClassifier{Logger: &logger}, Logger: &logger}
 	trainingSet := CreateTrainingIssues()
 	validationSet := CreateValidationIssues()
 
@@ -67,16 +68,6 @@ func TestLearn(t *testing.T) {
 		actual := nbModel.Predict(validationSet[i])
 		AssertList(t, expected, actual, input)
 	}
-}
-
-func TestStopWords(t *testing.T) {
-	output := CreateTrainingIssues()
-	originalInput := CreateTrainingIssues()
-	stopwordsOutput := RemoveStopWords(output...)
-
-	Assert(t, "parallel test body", stopwordsOutput[0].Body, originalInput[0].Body)
-	Assert(t, "fxcore test body", stopwordsOutput[1].Body, originalInput[1].Body)
-	Assert(t, "fxcore test body", stopwordsOutput[2].Body, originalInput[2].Body)
 }
 
 func Assert(t *testing.T, expected string, actual string, input string) {
