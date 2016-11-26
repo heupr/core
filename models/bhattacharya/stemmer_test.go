@@ -22,13 +22,13 @@ var stemmedIssues = []issues.Issue{
 }
 
 func TestStemIssues(t *testing.T) {
-	stemmedOutput := StemIssues(nonstemmedIssues...)
-	for i := 0; i < len(stemmedOutput); i++ {
-		if stemmedOutput[i].Body != stemmedIssues[i].Body {
+	StemIssues(nonstemmedIssues...)
+	for i := 0; i < len(nonstemmedIssues); i++ {
+		if nonstemmedIssues[i].Body != stemmedIssues[i].Body {
 			t.Error(
 				"\nINPUT STRING NOT PARSED",
 				"\nEXPECTED:", stemmedIssues[i].Body,
-				"\nRECEIVED:", stemmedOutput[i].Body,
+				"\nRECEIVED:", nonstemmedIssues[i].Body,
 			)
 		}
 	}

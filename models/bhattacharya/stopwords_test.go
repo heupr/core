@@ -12,8 +12,8 @@ var withoutStopwords = "sentence stopwords"
 var testIssue = []issues.Issue{issues.Issue{Body: withStopwords}}
 
 func TestRemoveStopWords(t *testing.T) {
-	issueOutput := RemoveStopWords(testIssue...)
-	issueBody := issueOutput[0].Body
+	RemoveStopWords(testIssue...)
+	issueBody := testIssue[0].Body
 	if strings.Contains(issueBody, "this") || strings.Contains(issueBody, "with") || strings.Contains(issueBody, "the") {
 		t.Error(
 			"\nSTOPWORDS NOT REMOVED",
