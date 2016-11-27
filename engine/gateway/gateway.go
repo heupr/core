@@ -4,29 +4,27 @@ import (
 	"github.com/google/go-github/github"
 )
 
-var variables = []string{"dotnet", "corefx"}
-
 type Gateway struct {
-	Client *github.Client
+	Client      *github.Client
+	UnitTesting bool
 }
 
-func (c *Gateway) GetPullRequests() ([]*github.PullRequest, error) {
+func (c *Gateway) GetPullRequests(org string, project string) ([]*github.PullRequest, error) {
 	pullsOpt := &github.PullRequestListOptions{
 		State: "closed",
 		ListOptions: github.ListOptions{
 			PerPage: 100,
 		},
 	}
-
 	pulls := []*github.PullRequest{}
 	for {
-		pullRequests, resp, err := c.Client.PullRequests.List("dotnet", "corefx", pullsOpt)
+		pullRequests, resp, err := c.Client.PullRequests.List(org, project, pullsOpt)
 		if err != nil {
 			return nil, err
 		}
 		pulls = append(pulls, pullRequests...)
 
-		if resp.NextPage == 0 {
+		if resp.NextPage == 0 || c.UnitTesting {
 			break
 		} else {
 			pullsOpt.ListOptions.Page = resp.NextPage
@@ -35,7 +33,7 @@ func (c *Gateway) GetPullRequests() ([]*github.PullRequest, error) {
 	return pulls, nil
 }
 
-func (c *Gateway) GetIssues() ([]*github.Issue, error) {
+func (c *Gateway) GetIssues(org string, project string) ([]*github.Issue, error) {
 	// TODO: Handle opened/closed
 	issuesOpt := &github.IssueListByRepoOptions{
 		State: "closed",
@@ -45,7 +43,7 @@ func (c *Gateway) GetIssues() ([]*github.Issue, error) {
 	}
 	filteredIssues := []*github.Issue{}
 	for {
-		issues, resp, err := c.Client.Issues.ListByRepo("dotnet", "corefx", issuesOpt)
+		issues, resp, err := c.Client.Issues.ListByRepo(org, project, issuesOpt)
 		for i := 0; i < len(issues); i++ {
 			if err != nil {
 				return nil, err
@@ -54,7 +52,7 @@ func (c *Gateway) GetIssues() ([]*github.Issue, error) {
 				filteredIssues = append(filteredIssues, issues[i])
 			}
 		}
-		if resp.NextPage == 0 {
+		if resp.NextPage == 0 || c.UnitTesting {
 			break
 		} else {
 			issuesOpt.ListOptions.Page = resp.NextPage

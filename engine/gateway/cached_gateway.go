@@ -1,41 +1,30 @@
 package gateway
 
+import (
+	"github.com/google/go-github/github"
+)
+
 type CachedGateway struct {
-	Gateway *Gatway
+	Gateway   *Gateway
+	DiskCache *DiskCache
 }
 
-func(c *CachedGateway) GetPullRequests() ([]*github.PullRequest, error) {
-  pullRequests := Gateway.GetPullRequests()
+func (c *CachedGateway) GetPullRequests(org string, project string) (pulls []*github.PullRequest, err error) {
+	key := "./" + org + project + "_pulls"
+	err = c.DiskCache.TryGet(key, &pulls)
+	if err != nil {
+		pulls, err = c.Gateway.GetPullRequests(org, project)
+		c.DiskCache.Set(key, pulls)
+	}
+	return pulls, err
 }
 
-func(c *CachedGateway) GetIssues() ([]*github.Issue, error) {
-  issues := Gateway.GetIssues()
-}
-
-func(c *CachedGateway) cachePullRequests([]*github.PullRequest pulls, string fileName) {
-  file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0644)
-  if err != nil {
-    return err
-  }
-  enc := gob.NewEncoder(file)
-  err = enc.Encode(pulls)
-  return
-}
-
-func(c *CachedGateway) cacheIssues([]*github.Issue issues, string fileName) (err error) {
-  file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0644)
-  if err != nil {
-    return err
-  }
-  enc := gob.NewEncoder(file)
-  err = enc.Encode(issues)
-  return
-}
-
-func(c *CachedGateway) getCachedPullRequests() ([]*github.PullRequest, error) {
-
-}
-
-func(c *CachedGateway) getCachedIssues() ([]*github.Issue, error) {
-
+func (c *CachedGateway) GetIssues(org string, project string) (issues []*github.Issue, err error) {
+	key := "./" + org + project + "_issues"
+	err = c.DiskCache.TryGet(key, &issues)
+	if err != nil {
+		issues, err = c.Gateway.GetIssues(org, project)
+		c.DiskCache.Set(key, issues)
+	}
+	return issues, err
 }
