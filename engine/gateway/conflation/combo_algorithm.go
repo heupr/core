@@ -5,16 +5,22 @@ type ComboAlgorithm struct {
 }
 
 func linkPullRequestsToIssue(issue *ExpandedIssue) {
-	if issue.Issue.RefPulls != nil {
-		*issue.Issue.Assignee = *issue.PullRequest.Assignee
-		*issue.Issue.Body = *issue.Issue.Body + *issue.PullRequest.Body
-	}
+	// *issue.Issue.Assignee = *issue.Issue.RefPulls[0].User
+	// if issue.Issue.Body == nil && issue.Issue.RefPulls[0].Body != nil {
+	// 	*issue.Issue.Body = *issue.PullRequest.Body
+	// } else if issue.Issue.RefPulls[0].Body == nil && issue.Issue.Body != nil {
+	// 	*issue.Issue.Body = *issue.Issue.Body
+	// } else if issue.Issue.RefPulls[0].Body == nil && issue.Issue.Body == nil {
+	// 	*issue.Issue.Body = ""
+	// } else {
+	// 	*issue.Issue.Body = *issue.Issue.Body + " " + *issue.Issue.RefPulls[0].Body
+	// }
 }
 
 // Accept a expanded "Issue" or "PR"
 // PR's need to have reference information
 func (c *ComboAlgorithm) Conflate(issue *ExpandedIssue) bool {
-	if issue.PullRequest.Number != nil {
+	if issue.Issue.RefPulls != nil {
 		linkPullRequestsToIssue(issue)
 		return true
 	} else {

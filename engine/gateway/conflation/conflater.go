@@ -50,6 +50,9 @@ func (c *Conflator) filter() {
 			isValid = c.Scenarios[j].Filter(&issue)
 			issue.Conflate = isValid
 			c.Context.Issues[i] = issue
+			if isValid == true {
+				break
+			}
 		}
 	}
 }
