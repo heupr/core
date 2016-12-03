@@ -10,6 +10,7 @@ var digitRegexp = regexp.MustCompile("[0-9]+")
 type Conflator struct {
 	Scenarios            []Scenario
 	ConflationAlgorithms []ConflationAlgorithm
+	Normalizer           Normalizer
 	Context              *Context
 }
 
@@ -35,22 +36,35 @@ func (c *Conflator) SetIssueRequests(issues []github.Issue) {
 // for a variety of other aspects to GitHub issues (e.g. participants,
 // reference numbers, etc.) that will require their own logic.
 func (c *Conflator) Conflate() {
+	c.filter()
+	c.normalize()
+	c.executeConflation()
+}
+
+func (c *Conflator) filter() {
 	isValid := false
 	issue := ExpandedIssue{}
-
 	for i := 0; i < len(c.Context.Issues); i++ {
 		issue = c.Context.Issues[i]
 		for j := 0; j < len(c.Scenarios); j++ {
-			isValid = c.Scenarios[j].Filter(issue)
-			// DOC: combination conflation logic loop
-			if isValid == true {
-				for k := 0; k < len(c.ConflationAlgorithms); k++ {
-					isConflated := c.ConflationAlgorithms[k].Conflate(issue)
-					if isConflated == true {
-						c.Context.Issues[i] = issue
-						break
-					}
-				}
+			isValid = c.Scenarios[j].Filter(&issue)
+			issue.Conflate = isValid
+			c.Context.Issues[i] = issue
+		}
+	}
+}
+
+func (c *Conflator) normalize() {
+	c.Normalizer.Normalize()
+}
+
+func (c *Conflator) executeConflation() {
+	issue := ExpandedIssue{}
+	for i := 0; i < len(c.Context.Issues); i++ {
+		issue = c.Context.Issues[i]
+		if issue.Conflate {
+			for j := 0; j < len(c.ConflationAlgorithms); j++ {
+				c.ConflationAlgorithms[j].Conflate(&issue)
 			}
 		}
 	}

@@ -1,5 +1,5 @@
 package conflation
 
 type Scenario interface {
-	Filter(input ExpandedIssue) bool
+	Filter(input *ExpandedIssue) bool
 }
