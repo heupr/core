@@ -1,12 +1,12 @@
 package syntaxnet
 
 import (
-  "bytes"
-  "io"
-  "os/exec"
-  "strings"
-  "strconv"
-  "fmt"
+	"bytes"
+	"fmt"
+	"io"
+	"os/exec"
+	"strconv"
+	"strings"
 )
 
 /*
@@ -65,31 +65,30 @@ func Parse(conllBytes []byte) []ConllWord {
 	return conll
 }
 
-
 // TODO: logging?
 // TODO: add custom demo.sh to our build
-func SyntaxTree(body string) []ConllWord{
-    echoCmd := exec.Command("echo", body)
-    wcCmd := exec.Command("/bin/sh", "/home/michael/models/syntaxnet/syntaxnet/demo3.sh")
+func SyntaxTree(body string) []ConllWord {
+	echoCmd := exec.Command("echo", body)
+	wcCmd := exec.Command("/bin/sh", "/home/michael/models/syntaxnet/syntaxnet/demo3.sh")
 
-    reader, writer := io.Pipe()
-    echoCmd.Stdout = writer
-    wcCmd.Stdin = reader
+	reader, writer := io.Pipe()
+	echoCmd.Stdout = writer
+	wcCmd.Stdin = reader
 
-    var buffer bytes.Buffer
-    //var err bytes.Buffer
-    wcCmd.Stdout = &buffer
-    //wcCmd.Stderr = &err
+	var buffer bytes.Buffer
+	//var err bytes.Buffer
+	wcCmd.Stdout = &buffer
+	//wcCmd.Stderr = &err
 
-    echoCmd.Start()
-    wcCmd.Start()
-    echoCmd.Wait()
-    writer.Close()
-    wcCmd.Wait()
-    //TODO: write to error log
-    //io.Copy(os.Stdout, &err)
+	echoCmd.Start()
+	wcCmd.Start()
+	echoCmd.Wait()
+	writer.Close()
+	wcCmd.Wait()
+	//TODO: write to error log
+	//io.Copy(os.Stdout, &err)
 
-    output := strings.TrimSpace(buffer.String())
-    fmt.Println(output)
-    return Parse([]byte(output))
+	output := strings.TrimSpace(buffer.String())
+	fmt.Println(output)
+	return Parse([]byte(output))
 }

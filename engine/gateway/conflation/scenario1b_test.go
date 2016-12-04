@@ -43,11 +43,11 @@ func TestFilter(t *testing.T) {
 		)
 	}
 	secondOutput := TestScenario1b.Filter(TestWithoutIssue)
-    if secondOutput != false {
-        t.Error(
-            "\nNONEXISTENT ISSUE NOT FILTERED",
-            "\nISSUE NUMBER:          ", *TestWithoutIssue.Issue.Number,
-            "\nBOOLEAN FILTER RETURN: ", secondOutput,
-        )
-    }
+	if secondOutput != false {
+		t.Error(
+			"\nNONEXISTENT ISSUE NOT FILTERED",
+			"\nISSUE NUMBER:          ", *TestWithoutIssue.Issue.Number,
+			"\nBOOLEAN FILTER RETURN: ", secondOutput,
+		)
+	}
 }

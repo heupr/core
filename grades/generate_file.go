@@ -73,19 +73,19 @@ func Generate() {
 			record = append(record, *issue.User.Login)
 
 			/*
-			                        //labels column
-						if len(issue.Labels) <= 0 {
-							record = append(record, "NOLABEL")
-						} else {
-			                        	sep := []byte(",")
-							buffer.WriteString(*issue.Labels[0].Name)
-							for _, label := range issue.Labels[1:] {
-								buffer.Write(sep)
-								buffer.WriteString(*label.Name)
-							}
-							record = append(record, buffer.String())
-							buffer.Reset()
-						} */
+				                        //labels column
+							if len(issue.Labels) <= 0 {
+								record = append(record, "NOLABEL")
+							} else {
+				                        	sep := []byte(",")
+								buffer.WriteString(*issue.Labels[0].Name)
+								for _, label := range issue.Labels[1:] {
+									buffer.Write(sep)
+									buffer.WriteString(*label.Name)
+								}
+								record = append(record, buffer.String())
+								buffer.Reset()
+							} */
 			w.Write(record)
 		}
 		if resp.NextPage == 0 {

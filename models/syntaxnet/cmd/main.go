@@ -1,9 +1,9 @@
 package main
 
 import (
-    "fmt"
+	"fmt"
 )
 
 func main() {
-    fmt.Println("LABOR IPSE VOLUPTAS")
+	fmt.Println("LABOR IPSE VOLUPTAS")
 }

@@ -18,7 +18,7 @@ func (n *Normalizer) Normalize() {
 					if expandedIssues[k].Issue.Number != nil && *expandedIssues[k].Issue.Number == refIssueIds[j] {
 						expandedIssues[i].PullRequest.RefIssues = append(expandedIssues[i].PullRequest.RefIssues, expandedIssues[k].Issue)
 						expandedIssues[k].Issue.RefPulls = append(expandedIssues[k].Issue.RefPulls, expandedIssues[i].PullRequest)
-						if (expandedIssues[i].Conflate) {
+						if expandedIssues[i].Conflate {
 							expandedIssues[k].Conflate = true
 							expandedIssues[i].Conflate = false
 						}

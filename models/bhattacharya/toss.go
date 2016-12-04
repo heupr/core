@@ -113,11 +113,11 @@ func (c *TossingGraph) Tossing(scores []float64) []int {
 			}
 		}
 		c.Logger.Log(logOutput)
-	*/    
-    // TODO: logger generation:
-    // List of all contributors ranked by their logScores
-    // ^ this needs the location within the input slice of the contributors
-    // ^ ths is used to match against the assignees string value slice
+	*/
+	// TODO: logger generation:
+	// List of all contributors ranked by their logScores
+	// ^ this needs the location within the input slice of the contributors
+	// ^ ths is used to match against the assignees string value slice
 
 	return topIndex
 }

@@ -25,10 +25,10 @@ func TestShuffle(t *testing.T) {
 	for index, _ := range originalList {
 		if originalList[index].Body == shuffledList[index].Body {
 			t.Error(
-                "LISTS HAVE NOT BEEN SHUFFLED",
-                "\n", "ORIGINAL:", originalList,
-                "\n", "SHUFFLED:", shuffledList,
-            )
+				"LISTS HAVE NOT BEEN SHUFFLED",
+				"\n", "ORIGINAL:", originalList,
+				"\n", "SHUFFLED:", shuffledList,
+			)
 			break
 		}
 	}
