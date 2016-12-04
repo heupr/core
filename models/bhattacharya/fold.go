@@ -4,37 +4,37 @@ import (
 	"coralreefci/models/issues"
 	"errors"
 	"fmt"
-    "math"
-    "strconv"
+	"math"
+	"strconv"
 )
 
+// DOC: helper function for cleaning up calculated results.
 func Round(input float64) float64 {
-    rounded := math.Floor((input * 10000.0) + 0.5) / 10000.0
-    return rounded
+	rounded := math.Floor((input*10000.0)+0.5) / 10000.0
+	return rounded
 }
 
+// DOC: helper function to translate float64 into string.
 func ToString(number float64) string {
 	return strconv.FormatFloat(number, 'f', 4, 64)
 }
 
-// NOTE: Arguments:
-// trainIssues - this is the fold-defined length to train on (e.g. 10%)
-// testIssues - this is the fold-defined length to test on (e.g. 90%)
+// DOC: argument inputs into FoldImplementation:
+//      trainIssues - this is the fold-defined length to train on (e.g. 10%)
+//      testIssues - this is the fold-defined length to test on (e.g. 90%)
 func (m *Model) FoldImplementation(trainIssues, testIssues []issues.Issue) (float64, matrix) {
-	testCount := len(testIssues) // TODO: put into one line (see #19)
-	correct := 0                 // TODO: put into one line (see #18)
-	expected := []issues.Issue{} // TODO: put into one line (see #22)
+	testCount, correct := len(testIssues), 0
+	expected, predicted := []issues.Issue{}, []issues.Issue{}
 	expected = append(expected, testIssues...)
-	predicted := []issues.Issue{} // TODO: put into one line (see #20)
 	predicted = append(predicted, testIssues...)
 	m.Learn(trainIssues)
 
 	for i := 0; i < len(testIssues); i++ {
-		assignees := m.Predict(testIssues[i])
+		assignees := m.Predict(testIssues[i]) // NOTE: assignees is working appropriately
 		for j := 0; j < len(assignees); j++ {
-            // NOTE: This is not tested logging functionality
-            // model.Logger.Log(testIssues[j].Url)
-            // model.Logger.Log(testIssues[j].Assignee)
+			// NOTE: This is not tested logging functionality
+			// model.Logger.Log(testIssues[j].Url)
+			// model.Logger.Log(testIssues[j].Assignee)
 			if assignees[j] == testIssues[i].Assignee {
 				correct++
 				predicted[i].Assignee = assignees[j]
@@ -58,11 +58,11 @@ func (m *Model) JohnFold(issues []issues.Issue) (string, error) {
 	}
 
 	finalScore := 0.00
-	for i := 0.10; i < 0.90; i += 0.10 {  // TODO: double check the logic / math here
+	for i := 0.10; i < 0.90; i += 0.10 { // TODO: double check the logic / math here
 		trainCount := int(Round(i * float64(issueCount)))
 
 		// TODO: add in logging here for the output matrix on each loop run
-		score, _ := m.FoldImplementation(issues[:trainCount], issues[trainCount:]) // TODO: specific logs for matrices
+		score, _ := m.FoldImplementation(issues[:trainCount], issues[trainCount:])
 
 		finalScore += score
 	}

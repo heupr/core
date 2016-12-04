@@ -4,20 +4,22 @@ type ComboAlgorithm struct {
 	Context *Context
 }
 
-//TODO: link up using Context reference data
 func linkPullRequestsToIssue(issue *ExpandedIssue) {
-	issue.Issue.Assignee = issue.PullRequest.Assignee
-	if issue.Issue.Body != nil {
-		// First step towards using additional information
-		*issue.Issue.Body = "Test"
+	if issue.Issue.RefPulls != nil {
+		*issue.Issue.Assignee = *issue.PullRequest.Assignee
+		*issue.Issue.Body = *issue.Issue.Body + *issue.PullRequest.Body
 	}
 }
 
 // Accept a expanded "Issue" or "PR"
 // PR's need to have reference information
-func (c *ComboAlgorithm) Conflate(issue ExpandedIssue) bool {
-	linkPullRequestsToIssue(&issue)
-	return true
+func (c *ComboAlgorithm) Conflate(issue *ExpandedIssue) bool {
+	if issue.PullRequest.Number != nil {
+		linkPullRequestsToIssue(issue)
+		return true
+	} else {
+		return false
+	}
 }
 
 // 1:1 Algorithm (Naive) (We may need to exclude 1:M issues)

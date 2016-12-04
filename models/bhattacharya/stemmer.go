@@ -6,10 +6,8 @@ import (
 	"strings"
 )
 
-// DOC: StemIssues runs the snowball stemmer on object body text.
-//      This helper function relies on the robustness of the string parsing
-//      and of the third party library for performance.
-func StemIssues(issueList []issues.Issue) {
+// DOC: StemIssues finds the stem of each word in the input issues body text.
+func StemIssues(issueList ...issues.Issue) {
 	for i := 0; i < len(issueList); i++ {
 		wordList := []string{}
 		words := strings.Split(issueList[i].Body, " ")

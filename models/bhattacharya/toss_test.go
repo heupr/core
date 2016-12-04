@@ -45,11 +45,9 @@ func TestBuildProfiles(t *testing.T) {
 }
 
 func TestTossing(t *testing.T) {
-	logger := CreateLog("unit-test-toss")
 	testTossingGraph := TossingGraph{
 		Assignees:  []string{"John", "Mike", "John", "Mike", "John", "Mike", "John", "Mike", "John", "Mike"},
 		GraphDepth: topSelection,
-		Logger:     &logger,
 	}
 
 	output := testTossingGraph.Tossing(logScores)

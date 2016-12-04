@@ -9,9 +9,12 @@ import (
 
 type matrix map[string]map[string]int
 
+// TODO: refactor into an object-oriented functionality
+/*
 type Matrix struct {
 	Elements map[string]map[string]int
 }
+*/
 
 // BuildMatrix takes two arguments:
 // expected - slice of issues used in testing; static data
