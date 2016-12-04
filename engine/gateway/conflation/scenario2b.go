@@ -42,7 +42,7 @@ func (s *Scenario2b) ResolveIssueId(expandedIssue *ExpandedIssue) bool {
 }
 
 func (s *Scenario2b) Filter(expandedIssue *ExpandedIssue) bool {
-	if expandedIssue.PullRequest.Number != nil {
+	if expandedIssue.PullRequest.Body != nil {
 		return s.ResolveIssueId(expandedIssue)
 	} else {
 		return false

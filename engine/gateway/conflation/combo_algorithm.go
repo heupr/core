@@ -4,17 +4,20 @@ type ComboAlgorithm struct {
 	Context *Context
 }
 
+// DOC: linkPullRequestsToIssue allows for conflating individual pull requests
+//			to the respective issue objects.
 func linkPullRequestsToIssue(issue *ExpandedIssue) {
-	// *issue.Issue.Assignee = *issue.Issue.RefPulls[0].User
-	// if issue.Issue.Body == nil && issue.Issue.RefPulls[0].Body != nil {
-	// 	*issue.Issue.Body = *issue.PullRequest.Body
-	// } else if issue.Issue.RefPulls[0].Body == nil && issue.Issue.Body != nil {
-	// 	*issue.Issue.Body = *issue.Issue.Body
-	// } else if issue.Issue.RefPulls[0].Body == nil && issue.Issue.Body == nil {
-	// 	*issue.Issue.Body = ""
-	// } else {
-	// 	*issue.Issue.Body = *issue.Issue.Body + " " + *issue.Issue.RefPulls[0].Body
-	// }
+	// DOC: this operation takes the values from the related go-github
+	//			PullRequest struct ("User") and places it into the go-github Issue
+	//			struct field "Assignee" (which is a slice of "User" structs).
+	issue.Issue.Assignee = issue.Issue.RefPulls[0].User //issue.Issue.RefPulls[0].User
+	if issue.Issue.Body != nil && issue.Issue.RefPulls[0].Body != nil {
+		*issue.Issue.Body = *issue.Issue.Body + " " + *issue.Issue.RefPulls[0].Body
+	} else if issue.Issue.Body == nil && issue.Issue.RefPulls[0].Body != nil {
+		issue.Issue.Body = issue.Issue.RefPulls[0].Body
+	} else {
+		*issue.Issue.Body = ""
+	}
 }
 
 // Accept a expanded "Issue" or "PR"

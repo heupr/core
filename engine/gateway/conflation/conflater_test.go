@@ -27,7 +27,7 @@ func TestConflater(t *testing.T) {
 	pAssignee := "John"
 	pullAssignee := github.User{Name: &pAssignee}
 	issueURL := "https://github.com/dotnet/corefx/issues/12886"
-	gitPull := github.PullRequest{Number: &pullNumber, Title: &pullTitle, Body: &pull, IssueURL: &issueURL, Assignee: &pullAssignee}
+	gitPull := github.PullRequest{Number: &pullNumber, Title: &pullTitle, Body: &pull, IssueURL: &issueURL, User: &pullAssignee}
 	pulls := []github.PullRequest{gitPull}
 
 	conflator.Context.Issues = []ExpandedIssue{}

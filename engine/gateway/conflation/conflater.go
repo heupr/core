@@ -68,6 +68,7 @@ func (c *Conflator) executeConflation() {
 		if issue.Conflate {
 			for j := 0; j < len(c.ConflationAlgorithms); j++ {
 				c.ConflationAlgorithms[j].Conflate(&issue)
+				c.Context.Issues[i] = issue
 			}
 		}
 	}
