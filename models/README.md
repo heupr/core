@@ -6,6 +6,9 @@ All back-end logic powering the CoralReefCI&trade; project is stored in
 this directory. Each model is separated into a unique directory which is titled
 the name of the given model.  
 
+Global assets that are common across all / most models are stored in separate
+files / directories  within the `models/` directory.  
+
 ## Catalog
 
 #### Bhattacharya
@@ -21,3 +24,6 @@ stand as a benchmark and possibly a testing ground for future models.
 - **Goals**: benchmarking and testing
   - Bhattacharya will primarily serve as a laboratory environment once
   the model is replaced in production
+- **Assumptions**:
+  - issue and pull request body text can be used to predict future issue
+  assignment
