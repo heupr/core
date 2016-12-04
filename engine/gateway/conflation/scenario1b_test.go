@@ -33,7 +33,7 @@ var TestWithoutIssue = ExpandedIssue{
 	PullRequest: CrPullRequest{testPullRequest, []int{}, []CrIssue{}},
 }
 
-func TestFilter(t *testing.T) {
+func TestFilter1b(t *testing.T) {
 	firstOutput := TestScenario1b.Filter(TestWithIssue)
 	if firstOutput != true {
 		t.Error(

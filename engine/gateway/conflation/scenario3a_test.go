@@ -16,7 +16,7 @@ var TestWithPullRequest = ExpandedIssue{
 
 var TestWithoutPullRequest = ExpandedIssue{}
 
-func TestFilter(t *testing.T) {
+func TestFilter3a(t *testing.T) {
 	withURL := TestScenario3a.Filter(TestWithPullRequest)
 	if withURL != false {
 		t.Error(
