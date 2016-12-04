@@ -32,7 +32,7 @@ func (t *BackTestRunner) Run() {
 
 	context := &conflation.Context{}
 
-	scenarios := []conflation.Scenario{&conflation.Scenario2b{}}
+	scenarios := []conflation.Scenario{&conflation.Scenario2b{}, &conflation.Scenario3a{}}
 	conflationAlgorithms := []conflation.ConflationAlgorithm{&conflation.ComboAlgorithm{Context: context}}
 	normalizer := conflation.Normalizer{Context: context}
 	conflator := conflation.Conflator{Scenarios: scenarios, ConflationAlgorithms: conflationAlgorithms, Normalizer: normalizer, Context: context}
@@ -40,7 +40,10 @@ func (t *BackTestRunner) Run() {
 	issuesCopy := make([]github.Issue, len(githubIssues))
 	pullsCopy := make([]github.PullRequest, len(githubPulls))
 
-	// Workaround
+	// TODO: Evaluate this particular snippet of code as it has potential
+	//			 performance optimization capabilities related to the hardware level.
+	//			 This may ultimately live in the actual gateway.go file to
+	//			 improve the actual download operations.
 	for i := 0; i < len(issuesCopy); i++ {
 		issuesCopy[i] = *githubIssues[i]
 	}
@@ -58,7 +61,7 @@ func (t *BackTestRunner) Run() {
 
 	for i := 0; i < len(conflator.Context.Issues); i++ {
 		expandedIssue := conflator.Context.Issues[i]
-		if expandedIssue.PullRequest.Number != nil && expandedIssue.Conflate {
+		if expandedIssue.PullRequest.Number != nil {//&& expandedIssue.Conflate {
 			truncatedIssue := issues.Issue{
 				RepoID:   *expandedIssue.PullRequest.ID,
 				IssueID:  *expandedIssue.PullRequest.Number,
@@ -69,7 +72,7 @@ func (t *BackTestRunner) Run() {
 				truncatedIssue.Body = *expandedIssue.PullRequest.Body
 			}
 			trainingSet = append(trainingSet, truncatedIssue)
-		} else if expandedIssue.Issue.Number != nil && expandedIssue.Conflate {
+		} else if expandedIssue.Issue.Number != nil {//&& expandedIssue.Conflate {
 			truncatedIssue := issues.Issue{
 				RepoID:   *expandedIssue.Issue.ID,
 				IssueID:  *expandedIssue.Issue.Number,
@@ -122,7 +125,8 @@ func (t *BackTestRunner) Run() {
 	scoreJohn, _ := t.Context.Model.JohnFold(trainingSet)
 	fmt.Println(scoreJohn)
 	// logger.Log("JOHN FOLD: " + scoreJohn)
-	/*
+
+/*
 		scoreTwo, _ := t.Context.Model.TwoFold(trainingSet)
 		// logger.Log("TWO FOLD: " + scoreTwo)
 		scoreTen, _ := t.Context.Model.TenFold(trainingSet)

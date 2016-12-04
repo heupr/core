@@ -23,7 +23,7 @@ func linkPullRequestsToIssue(issue *ExpandedIssue) {
 // Accept a expanded "Issue" or "PR"
 // PR's need to have reference information
 func (c *ComboAlgorithm) Conflate(issue *ExpandedIssue) bool {
-	if issue.Issue.RefPulls != nil {
+	if len(issue.Issue.RefPulls) > 0 {
 		linkPullRequestsToIssue(issue)
 		return true
 	} else {
