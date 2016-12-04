@@ -24,7 +24,7 @@ for the model to train off of from the target repository.
 
 ## Notes
 
-Currently only **.NET** issues are featured as the static training set.
+Currently only **.NET** issues are featured as the *static training* set.
 
 ## Model Output
 

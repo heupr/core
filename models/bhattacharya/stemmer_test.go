@@ -5,33 +5,31 @@ import (
 	"testing"
 )
 
-var issueTexts = []string{"Use the Force, Luke",
-	"At last we will have our revenge",
-	"No, I am your father",
-	"Who's scruffy looking?",
-	"I pledge myself to your teachings"}
-var stemTexts = []string{"use the force, luke",
-	"at last we will have our reveng",
-	"no, i am your father",
-	"who scruffi looking?",
-	"i pledg myself to your teach"}
+var nonstemmedIssues = []issues.Issue{
+	issues.Issue{Body: "Use the Force, Luke"},
+	issues.Issue{Body: "At last we will have our revenge"},
+	issues.Issue{Body: "No, I am your father"},
+	issues.Issue{Body: "Who's scruffy looking?"},
+	issues.Issue{Body: "I pledge myself to your teachings"},
+}
 
-func generateStemIssues() []issues.Issue {
-	list := []issues.Issue{}
-	for _, value := range issueTexts {
-		list = append(list, issues.Issue{Body: value})
-	}
-	return list
+var stemmedIssues = []issues.Issue{
+	issues.Issue{Body: "use the force, luke"},
+	issues.Issue{Body: "at last we will have our reveng"},
+	issues.Issue{Body: "no, i am your father"},
+	issues.Issue{Body: "who scruffi looking?"},
+	issues.Issue{Body: "i pledg myself to your teach"},
 }
 
 func TestStemIssues(t *testing.T) {
-	issueList := generateStemIssues()
-	StemIssues(issueList)
-	for index, issue := range issueList {
-		if issue.Body != stemTexts[index] {
-			t.Error("\nINPUT STRING NOT PARSED",
-				"\nEXPECTED:", stemTexts[index],
-				"\nRECEIVED:", issue.Body)
+	StemIssues(nonstemmedIssues...)
+	for i := 0; i < len(nonstemmedIssues); i++ {
+		if nonstemmedIssues[i].Body != stemmedIssues[i].Body {
+			t.Error(
+				"\nINPUT STRING NOT PARSED",
+				"\nEXPECTED:", stemmedIssues[i].Body,
+				"\nRECEIVED:", nonstemmedIssues[i].Body,
+			)
 		}
 	}
 }

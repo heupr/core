@@ -1,20 +1,24 @@
 package bhattacharya
 
 import (
-    "strings"
-    "testing"
+	"coralreefci/models/issues"
+	"strings"
+	"testing"
 )
 
 var withStopwords = "This is a sentence with stopwords in it, the best ever."
 var withoutStopwords = "sentence stopwords"
 
+var testIssue = []issues.Issue{issues.Issue{Body: withStopwords}}
+
 func TestRemoveStopWords(t *testing.T) {
-    output := RemoveStopWords(withStopwords)
-    if strings.Contains(output, "this") || strings.Contains(output, "with") || strings.Contains(output, "the") {
-        t.Error(
-            "\nSTOPWORDS NOT REMOVED",
-            "\nEXPECTED: ", withoutStopwords,
-            "\nACTUAL:   ", output,
-        )
-    }
+	RemoveStopWords(testIssue...)
+	issueBody := testIssue[0].Body
+	if strings.Contains(issueBody, "this") || strings.Contains(issueBody, "with") || strings.Contains(issueBody, "the") {
+		t.Error(
+			"\nSTOPWORDS NOT REMOVED",
+			"\nEXPECTED: ", withoutStopwords,
+			"\nACTUAL:   ", issueBody,
+		)
+	}
 }

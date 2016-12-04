@@ -17,7 +17,6 @@ type CrIssue struct {
 }
 
 type ExpandedIssue struct {
-	Issue       CrIssue
 	PullRequest CrPullRequest
 	Conflate    bool
 }

@@ -5,25 +5,20 @@ import (
 	"coralreefci/models/issues"
 )
 
+// TODO: refactor into separate directory
 type Model struct {
-	Classifier models.Classifier
+	Classifier classifier.Classifier
 	Logger     *CoralReefLogger
 }
 
 func (model *Model) Learn(issues []issues.Issue) {
-	removeStopWords(issues)
-	//StemIssues(issues)
+	RemoveStopWords(issues...)
+    StemIssues(issues...)
 	model.Classifier.Learn(issues)
 }
 
 func (model *Model) Predict(issue issues.Issue) []string {
-	issue.Body = RemoveStopWords(issue.Body)
-	//StemIssues([]issues.Issue{issue})
+	RemoveStopWords(issue)
+    StemIssues(issue)
 	return model.Classifier.Predict(issue)
-}
-
-func removeStopWords(issues []issues.Issue) {
-	for i := 0; i < len(issues); i++ {
-		issues[i].Body = RemoveStopWords(issues[i].Body)
-	}
 }

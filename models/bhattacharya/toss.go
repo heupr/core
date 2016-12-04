@@ -3,7 +3,7 @@ package bhattacharya
 import (
 	"coralreefci/models/issues"
 	"sort"
-	"strconv"
+	// "strconv" // NOTE: temporarily excluded
 	"time"
 )
 
@@ -102,20 +102,22 @@ func (c *TossingGraph) Tossing(scores []float64) []int {
 		}
 	}
 
+	// NOTE: temporarily excluding various logging applications.
 	// TODO: include a "logging flag" that would fire this particular section
 	// of the logging - do not focus on it currently and have the program log
-	logOutput := []string{}
-	for i := 0; i < len(scores); i++ {
-		if _, ok := flipScoreMap[scoreValues[i]]; ok {
-			logOutput = append(logOutput, strconv.FormatFloat(scoreValues[i], 'f', -1, 32) + "," + c.Assignees[flipScoreMap[scoreValues[i]]] )
+	/*
+		logOutput := []string{}
+		for i := 0; i < len(scores); i++ {
+			if _, ok := flipScoreMap[scoreValues[i]]; ok {
+				logOutput = append(logOutput, strconv.FormatFloat(scoreValues[i], 'f', -1, 32) + "," + c.Assignees[flipScoreMap[scoreValues[i]]] )
+			}
 		}
-	}
-	c.Logger.Log(logOutput)
+		c.Logger.Log(logOutput)
+	*/    
+    // TODO: logger generation:
+    // List of all contributors ranked by their logScores
+    // ^ this needs the location within the input slice of the contributors
+    // ^ ths is used to match against the assignees string value slice
 
 	return topIndex
 }
-
-// TODO: logger generation:
-// List of all contributors ranked by their logScores
-// ^ this needs the location within the input slice of the contributors
-// ^ ths is used to match against the assignees string value slice

@@ -1,10 +1,16 @@
 package bhattacharya
 
 import (
+	"coralreefci/models/issues"
 	"github.com/bbalet/stopwords"
 	"strings"
 )
 
-func RemoveStopWords(body string) string {
-	return strings.TrimSpace(stopwords.CleanString(body, "en", false))
+// DOC: RemoveStopWords is a helper function that clears stopwords from the
+//      target issue body text.
+func RemoveStopWords(issueList ...issues.Issue) {
+	for i := 0; i < len(issueList); i++ {
+		cleaned := strings.TrimSpace(stopwords.CleanString(issueList[i].Body, "en", false))
+		issueList[0].Body = cleaned
+	}
 }

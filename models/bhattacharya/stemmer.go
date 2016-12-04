@@ -6,7 +6,8 @@ import (
 	"strings"
 )
 
-func StemIssues(issueList []issues.Issue) {
+// DOC: StemIssues finds the stem of each word in the input issues body text.
+func StemIssues(issueList ...issues.Issue) {
 	for i := 0; i < len(issueList); i++ {
 		wordList := []string{}
 		words := strings.Split(issueList[i].Body, " ")
