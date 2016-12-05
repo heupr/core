@@ -26,10 +26,7 @@ func (c *NBClassifier) Learn(issues []issues.Issue) {
 }
 
 func (c *NBClassifier) Predict(issue issues.Issue) []string {
-	scores, _, _, err := c.classifier.SafeProbScores(strings.Split(issue.Body, " "))
-	if err != nil {
-		scores, _, _ = c.classifier.LogScores(strings.Split(issue.Body, " "))
-	}
+	scores, _, _ := c.classifier.LogScores(strings.Split(issue.Body, " "))
 	names := []string{}
 	indices := c.graph.Tossing(scores)
 	for i := 0; i < len(indices); i++ {
