@@ -4,7 +4,6 @@ import (
 	"coralreefci/models/issues"
 	"github.com/jbrukh/bayesian"
 	"strings"
-	"fmt"
 )
 
 // DOC: NBClassifier is the specific type of classifier being utilized in this
@@ -27,7 +26,6 @@ func (c *NBClassifier) Learn(issues []issues.Issue) {
 }
 
 func (c *NBClassifier) Predict(issue issues.Issue) []string {
-	fmt.Println("Predict Method: ", strings.Split(issue.Body, " "))
 	scores, _, _ := c.classifier.LogScores(strings.Split(issue.Body, " "))
 	names := []string{}
 	indices := c.graph.Tossing(scores)

@@ -19,3 +19,14 @@ func StemIssues(issueList ...issues.Issue) {
 		issueList[i].Body = wordString
 	}
 }
+
+func StemIssuesSingle(issue *issues.Issue) {
+	wordList := []string{}
+	words := strings.Split(issue.Body, " ")
+	for _, word := range words {
+		stem, _ := snowball.Stem(word, "english", true)
+		wordList = append(wordList, stem)
+	}
+	wordString := strings.Join(wordList, " ")
+	issue.Body = wordString
+}

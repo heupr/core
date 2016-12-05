@@ -32,7 +32,7 @@ func (t *BackTestRunner) Run() {
 
 	context := &conflation.Context{}
 
-	scenarios := []conflation.Scenario{&conflation.Scenario2b{}, &conflation.Scenario3a{}}
+	scenarios := []conflation.Scenario{&conflation.Scenario1b{}, &conflation.Scenario2b{}, &conflation.Scenario3a{}}
 	conflationAlgorithms := []conflation.ConflationAlgorithm{&conflation.ComboAlgorithm{Context: context}}
 	normalizer := conflation.Normalizer{Context: context}
 	conflator := conflation.Conflator{Scenarios: scenarios, ConflationAlgorithms: conflationAlgorithms, Normalizer: normalizer, Context: context}
@@ -61,7 +61,7 @@ func (t *BackTestRunner) Run() {
 
 	for i := 0; i < len(conflator.Context.Issues); i++ {
 		expandedIssue := conflator.Context.Issues[i]
-		if expandedIssue.PullRequest.Number != nil {//&& expandedIssue.Conflate {
+		if expandedIssue.PullRequest.Number != nil && expandedIssue.Conflate {
 			truncatedIssue := issues.Issue{
 				RepoID:   *expandedIssue.PullRequest.ID,
 				IssueID:  *expandedIssue.PullRequest.Number,
@@ -72,7 +72,7 @@ func (t *BackTestRunner) Run() {
 				truncatedIssue.Body = *expandedIssue.PullRequest.Body
 			}
 			trainingSet = append(trainingSet, truncatedIssue)
-		} else if expandedIssue.Issue.Number != nil {//&& expandedIssue.Conflate {
+		} else if expandedIssue.Issue.Number != nil && expandedIssue.Conflate {
 			truncatedIssue := issues.Issue{
 				RepoID:   *expandedIssue.Issue.ID,
 				IssueID:  *expandedIssue.Issue.Number,
@@ -122,19 +122,15 @@ func (t *BackTestRunner) Run() {
 
 	fmt.Println("Train")
 	fmt.Println(len(processedTrainingSet))
+
 	scoreJohn, _ := t.Context.Model.JohnFold(trainingSet)
-	fmt.Println(scoreJohn)
-	// logger.Log("JOHN FOLD: " + scoreJohn)
+	fmt.Println("JOHN FOLD:", scoreJohn)
 
-/*
-		scoreTwo, _ := t.Context.Model.TwoFold(trainingSet)
-		// logger.Log("TWO FOLD: " + scoreTwo)
-		scoreTen, _ := t.Context.Model.TenFold(trainingSet)
-		// logger.Log("TEN FOLD: " + scoreTen)
+	scoreTen, _ := t.Context.Model.TenFold(trainingSet)
+	fmt.Println(scoreTen)
+	fmt.Println("TEN FOLD:", scoreTen)
 
-
-		fmt.Println(scoreTwo)
-		fmt.Println(scoreTen)*/
-
-	// logger.Flush()
+	scoreTwo, _ := t.Context.Model.TwoFold(trainingSet)
+	fmt.Println(scoreTwo)
+	fmt.Println("TWO FOLD:", scoreTwo)
 }
