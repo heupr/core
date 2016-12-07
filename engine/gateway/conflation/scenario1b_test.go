@@ -23,12 +23,12 @@ var (
 	testPullRequest = github.PullRequest{Title: &prTitle}
 )
 
-var TestWithIssue = ExpandedIssue{
+var TestWithIssue = &ExpandedIssue{
 	Issue:       CrIssue{testIssue, []int{}, []CrPullRequest{}},
 	PullRequest: CrPullRequest{testPullRequest, []int{}, []CrIssue{}},
 }
 
-var TestWithoutIssue = ExpandedIssue{
+var TestWithoutIssue = &ExpandedIssue{
 	Issue:       CrIssue{nonIssue, []int{}, []CrPullRequest{}},
 	PullRequest: CrPullRequest{testPullRequest, []int{}, []CrIssue{}},
 }
