@@ -61,6 +61,7 @@ func (c *Gateway) GetIssues(org string, project string) ([]*github.Issue, error)
 	return filteredIssues, nil
 }
 
+/*
 // TODO: this may not be needed if a better mapping alternative is found
 func (c *Gateway) GetPullEvents() ([]*github.PullRequestEvent, error) {
 	pullEvents := []*github.PullRequestEvent{}
@@ -72,3 +73,4 @@ func (c *Gateway) GetIssueEvents() ([]*github.Event, error) {
 	issuesEvents, _, _ := c.Client.Activity.ListIssueEventsForRepository("dotnet", "corefx", nil)
 	return issuesEvents, nil
 }
+*/
