@@ -10,7 +10,7 @@ type CachedGateway struct {
 }
 
 func (c *CachedGateway) GetPullRequests(org string, project string) (pulls []*github.PullRequest, err error) {
-	key := "./" + org + project + "_pulls"
+	key := "./" + org + project + "-pulls"
 	err = c.DiskCache.TryGet(key, &pulls)
 	if err != nil {
 		pulls, err = c.Gateway.GetPullRequests(org, project)
@@ -20,7 +20,7 @@ func (c *CachedGateway) GetPullRequests(org string, project string) (pulls []*gi
 }
 
 func (c *CachedGateway) GetIssues(org string, project string) (issues []*github.Issue, err error) {
-	key := "./" + org + project + "_issues"
+	key := "./" + org + project + "-issues"
 	err = c.DiskCache.TryGet(key, &issues)
 	if err != nil {
 		issues, err = c.Gateway.GetIssues(org, project)

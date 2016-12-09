@@ -8,7 +8,7 @@ import (
 
 func main() {
 	defer profile.Start().Stop()
-	logger := bhattacharya.CreateLog("bhattacharya-backtest")
+	logger := bhattacharya.CreateLog("bhattacharya-backtest", true)
 	nbModel := bhattacharya.Model{Classifier: &bhattacharya.NBClassifier{Logger: &logger}, Logger: &logger}
 	testContext := grades.TestContext{Model: nbModel}
 	testRunner := grades.BackTestRunner{Context: testContext}

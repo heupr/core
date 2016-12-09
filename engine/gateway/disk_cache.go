@@ -9,7 +9,7 @@ type DiskCache struct {
 }
 
 func (d *DiskCache) Set(key string, values interface{}) (err error) {
-	file, err := os.OpenFile(key, os.O_WRONLY|os.O_CREATE, 0644)
+	file, err := os.OpenFile("../../data/caches/"+key, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
