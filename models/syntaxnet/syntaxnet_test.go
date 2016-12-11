@@ -1,11 +1,11 @@
 package syntaxnet
 
+/*
 import (
 	"fmt"
 	"testing"
 )
 
-/*
 type ConllWord struct {
 	Id      int
 	Form    string
@@ -17,7 +17,7 @@ type ConllWord struct {
 	Deprel  string
 	Deps    string
 	Misc    string
-}*/
+}
 
 func TestSyntaxNet(t *testing.T) {
 
@@ -39,3 +39,4 @@ func TestSyntaxNet(t *testing.T) {
 	}
 	t.Error("Test Error")
 }
+*/

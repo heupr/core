@@ -36,13 +36,13 @@ func (crl *CoralReefLogger) Flush() {
 	y, m, d := n.Date()
 	filename := crl.Name + "-" + strconv.Itoa(y) + "-" + m.String() + "-" + strconv.Itoa(d)
 
-    // DOC: This logic evalutes whether the log should be generated in the
-    //      backtests/ or logs/ directories.
-    if crl.Backtest {
-        crl.pathfinder("../../data/backtests/" + filename, n)
-    } else {
-        crl.pathfinder("../../data/logs/" + filename, n)
-    }
+	// DOC: This logic evalutes whether the log should be generated in the
+	//      backtests/ or logs/ directories.
+	if crl.Backtest {
+		crl.pathfinder("../../data/backtests/"+filename, n)
+	} else {
+		crl.pathfinder("../../data/logs/"+filename, n)
+	}
 
 }
 
@@ -50,19 +50,19 @@ func (crl *CoralReefLogger) Flush() {
 //      creation / writing processes. Note that the logic here simply
 //      evaluates whether the file exists in the target path.
 func (crl *CoralReefLogger) pathfinder(filepath string, t time.Time) {
-    h, m, _ := t.Clock()
-    header := "LOG OUTPUT TIME\nHOUR: " + strconv.Itoa(h) + " " + "MINUTE: " + strconv.Itoa(m)
-    if _, err := os.Stat(filepath); err == nil {
-        f, e := os.OpenFile(filepath, os.O_APPEND|os.O_WRONLY, 0600)
-        if e != nil {
-            panic(e)
-        }
-        io.WriteString(f, header + "\n\n" + crl.CRBuff.String() + "\n\n")
-    } else {
-        f, e := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
-        if e != nil {
-            panic(e)
-        }
-        io.WriteString(f, header + "\n\n" + crl.CRBuff.String() + "\n\n")
-    }
+	h, m, _ := t.Clock()
+	header := "LOG OUTPUT TIME\nHOUR: " + strconv.Itoa(h) + " " + "MINUTE: " + strconv.Itoa(m)
+	if _, err := os.Stat(filepath); err == nil {
+		f, e := os.OpenFile(filepath, os.O_APPEND|os.O_WRONLY, 0600)
+		if e != nil {
+			panic(e)
+		}
+		io.WriteString(f, header+"\n\n"+crl.CRBuff.String()+"\n\n")
+	} else {
+		f, e := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
+		if e != nil {
+			panic(e)
+		}
+		io.WriteString(f, header+"\n\n"+crl.CRBuff.String()+"\n\n")
+	}
 }
