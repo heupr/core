@@ -127,10 +127,8 @@ func (t *BackTestRunner) Run() {
 	fmt.Println("JOHN FOLD:", scoreJohn)
 
 	scoreTen, _ := t.Context.Model.TenFold(trainingSet)
-	fmt.Println(scoreTen)
 	fmt.Println("TEN FOLD:", scoreTen)
 
 	scoreTwo, _ := t.Context.Model.TwoFold(trainingSet)
-	fmt.Println(scoreTwo)
 	fmt.Println("TWO FOLD:", scoreTwo)
 }

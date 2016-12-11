@@ -1,32 +1,25 @@
-# CoralReefCI&trade; Training and Benchmark Data
+# CoralReefCI&trade; Data Storage
 
 ## Description
 
-Data for use in training and validating the machine learning model will be
-stored in this directory.  
+This repository holds the various files generated throughout the course of
+running the program. See below for details on the three categories out output.
 
-## Benchmark
+### Backtests
 
-This data will be primarily used by the model as a means for generating
-**"industry standard"**-measurable output. Most work in machine
-learning-powered utilizes Eclipse bug data as a primary data source when
-evaluating their model outputs.  
+**Backtests** include the actual output results of running the various model
+backtests. This will include information such as the model name, included
+scenarios, training / testing data counts, and others.  
 
-## Training
+### Caches
 
-Data for use in training the machine learning model will likely come from
-either a a **dynamically** generated process or from a variety of **static**
-issue collections.  
+**Caches** holds the output from data pulldowns from **GitHub** so as to avoid
+overloading calls to the API. Information here will be structured according to
+how it is organized by the **go-github** third-party API interface.  
 
-- **Dynamic**: a process at program runtime will pull in the necessary data
-for the model to train off of from the target repository.  
-- **Static**: various selected public project issue lists (e.g. **.NET**).  
+### Logs
 
-## Notes
-
-Currently only **.NET** issues are featured as the *static training* set.
-
-## Model Output
-
-*# Output with accuracy and success rates will be put here*  
-*# Copy and paste from the command line output*  
+**Logs** contains the raw output from the various functions of the model. This
+is used to fine tune / identify areas for improving the model. As an example,
+data collected here will include the name of the logger (which should provide
+information on what is being evaluated), run time, output, and others.  
