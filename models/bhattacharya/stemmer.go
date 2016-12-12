@@ -7,6 +7,7 @@ import (
 )
 
 // DOC: StemIssues finds the stem of each word in the input issues body text.
+//      This applies the snowball stemmer formula to the target words.
 func StemIssues(issueList ...issues.Issue) {
 	for i := 0; i < len(issueList); i++ {
 		wordList := []string{}

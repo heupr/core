@@ -1,4 +1,4 @@
-package bhattacharya
+package confuse
 
 import (
 	"coralreefci/models/issues"
@@ -9,17 +9,12 @@ import (
 
 type matrix map[string]map[string]int
 
-// TODO: refactor into an object-oriented functionality
-/*
-type Matrix struct {
-	Elements map[string]map[string]int
-}
-*/
-
-// BuildMatrix takes two arguments:
-// expected - slice of issues used in testing; static data
-// predicted - slice of issues the model predicted; output data
-// these are the same length as the latter is just predictions of the former
+// DOC: BuildMatrix generates a new confusion matrix for evaluation.
+//      BuildMatrix takes two arguments:
+//      - expected - slice of issues used in testing; static data
+//      - predicted - slice of issues the model predicted; output data
+//      These are the same length as the latter is just predictions of the
+//      former
 func BuildMatrix(expected, predicted []issues.Issue) (matrix, error) {
 	if len(expected) != len(predicted) {
 		return nil, errors.New("INPUT SLICES ARE NOT EQUAL LENGTH")

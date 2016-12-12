@@ -1,12 +1,15 @@
-package bhattacharya
+package fold
 
 import (
+    "coralreefci/models/confuse"
 	"coralreefci/models/issues"
 	"errors"
 	"fmt"
 	"math"
 	"strconv"
 )
+
+type Fold struct {}
 
 // DOC: helper function for cleaning up calculated results.
 func Round(input float64) float64 {
@@ -22,19 +25,19 @@ func ToString(number float64) string {
 // DOC: argument inputs into FoldImplementation:
 //      trainIssues - this is the fold-defined length to train on (e.g. 10%)
 //      testIssues - this is the fold-defined length to test on (e.g. 90%)
-func (m *Model) FoldImplementation(trainIssues, testIssues []issues.Issue) (float64, matrix) {
+func (f *Fold) FoldImplementation(trainIssues, testIssues []issues.Issue) (float64, confuse.Matrix) {
 	testCount, correct := len(testIssues), 0
 	expected, predicted := []issues.Issue{}, []issues.Issue{}
 	expected = append(expected, testIssues...)
 	predicted = append(predicted, testIssues...)
-	m.Learn(trainIssues)
+	f.Learn(trainIssues)
 
 	for i := 0; i < len(testIssues); i++ {
-		assignees := m.Predict(testIssues[i]) // NOTE: assignees is working appropriately
+		assignees := f.Predict(testIssues[i]) // NOTE: assignees is working appropriately
 		for j := 0; j < len(assignees); j++ {
-			// NOTE: This is not tested logging functionality
-			// model.Logger.Log(testIssues[j].Url)
-			// model.Logger.Log(testIssues[j].Assignee)
+			// NOTE: Implement a log that records:
+            // - issue URL
+            // - issue assignee(s)
 			if assignees[j] == testIssues[i].Assignee {
 				correct++
 				predicted[i].Assignee = assignees[j]
@@ -44,14 +47,14 @@ func (m *Model) FoldImplementation(trainIssues, testIssues []issues.Issue) (floa
 			}
 		}
 	}
-	mat, err := BuildMatrix(expected, predicted)
+	mat, err := confuse.BuildMatrix(expected, predicted)
 	if err != nil {
 		fmt.Println(err)
 	}
 	return float64(correct) / float64(testCount), mat
 }
 
-func (m *Model) JohnFold(issues []issues.Issue) (string, error) {
+func (f *Fold) JohnFold(issues []issues.Issue) (string, error) {
 	issueCount := len(issues)
 	if issueCount < 10 {
 		return "", errors.New("LESS THAN 10 ISSUES SUBMITTED - JOHN FOLD")
@@ -62,14 +65,14 @@ func (m *Model) JohnFold(issues []issues.Issue) (string, error) {
 		trainCount := int(Round(i * float64(issueCount)))
 
 		// TODO: add in logging here for the output matrix on each loop run
-		score, _ := m.FoldImplementation(issues[:trainCount], issues[trainCount:])
+		score, _ := f.FoldImplementation(issues[:trainCount], issues[trainCount:])
 
 		finalScore += score
 	}
 	return ToString(Round(finalScore / 9.00)), nil
 }
 
-func (m *Model) TwoFold(issueList []issues.Issue) (string, error) {
+func (f *Fold) TwoFold(issueList []issues.Issue) (string, error) {
 	issueCount := len(issueList)
 	if issueCount < 10 {
 		return "", errors.New("LESS THAN 10 ISSUES SUBMITTED - TWO FOLD")
@@ -80,15 +83,15 @@ func (m *Model) TwoFold(issueList []issues.Issue) (string, error) {
 	trainIssues = append(trainIssues, issueList[0:trainEndPos]...)
 	testIssues = append(testIssues, issueList[trainEndPos+1:]...)
 
-	firstScore, _ := m.FoldImplementation(trainIssues, testIssues)
-	secondScore, _ := m.FoldImplementation(testIssues, trainIssues)
+	firstScore, _ := f.FoldImplementation(trainIssues, testIssues)
+	secondScore, _ := f.FoldImplementation(testIssues, trainIssues)
 
 	score := firstScore + secondScore
 
 	return ToString(Round(score / 2.00)), nil
 }
 
-func (m *Model) TenFold(issueList []issues.Issue) (string, error) {
+func (f *Fold) TenFold(issueList []issues.Issue) (string, error) {
 	issueCount := len(issueList)
 	if issueCount < 10 {
 		return "", errors.New("LESS THAN 10 ISSUES SUBMITTED - TEN FOLD")
@@ -103,7 +106,7 @@ func (m *Model) TenFold(issueList []issues.Issue) (string, error) {
 		remainder := []issues.Issue{}
 		remainder = append(issueList[:start], issueList[end:]...)
 
-		score, _ := m.FoldImplementation(segment, remainder) // TODO: specific logs for matrices
+		score, _ := f.FoldImplementation(segment, remainder) // TODO: specific logs for matrices
 
 		finalScore += score
 		start = end

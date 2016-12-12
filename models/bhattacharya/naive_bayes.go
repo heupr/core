@@ -63,39 +63,3 @@ func convertClassToString(assignees []bayesian.Class) []string {
 	}
 	return result
 }
-
-// DOC: findMax locates the maximum value in a score set.
-//      If strict is set to true (single unique maximum value); the default
-//      is true.
-func findMax(scores []float64) (inx int, strict bool) {
-	inx = 0
-	strict = true
-	for i := 1; i < len(scores); i++ {
-		if scores[inx] < scores[i] {
-			inx = i
-			strict = true
-		} else if scores[inx] == scores[i] {
-			strict = false
-		}
-	}
-	return
-}
-
-func topThree(scores []float64) (first int, second int, third int, strict bool) {
-	first = 0
-	second = 0
-	third = 0
-	strict = true
-	for i := 1; i < len(scores); i++ {
-		if scores[i] > scores[first] {
-			third = second
-			second = first
-			first = i
-		} else if scores[i] > scores[second] && scores[i] < scores[first] {
-			second = i
-		} else if scores[i] > scores[third] && scores[i] < scores[second] {
-			third = i
-		}
-	}
-	return
-}

@@ -15,8 +15,7 @@ func RemoveStopWords(issueList ...issues.Issue) {
 	}
 }
 
-// Workaround
-// TODO: come up with a fix
+// TODO: This is a workaround that needs to be fixed
 func RemoveStopWordsSingle(issue *issues.Issue) {
 	issue.Body = strings.TrimSpace(stopwords.CleanString(issue.Body, "en", false))
 }

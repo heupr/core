@@ -1,4 +1,4 @@
-package bhattacharya
+package fold
 
 import (
 	"coralreefci/models/issues"

@@ -1,5 +1,5 @@
 /*
-The issues package provides an interal structure containing relavent GitHub object information.
+The issues package creates an interal structure containing relavent GitHub object information.
 This provides a universal object that CoralReefCI can operate on and pass around.
 */
 package issues
@@ -11,7 +11,7 @@ import (
 type Issue struct {
 	RepoID   int
 	IssueID  int
-	Url      string // TODO: change to fully capitalized acroynm
+	URL      string
 	Assignee string
 	Body     string
 	Resolved time.Time

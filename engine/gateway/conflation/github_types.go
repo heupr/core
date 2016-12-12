@@ -4,25 +4,25 @@ import (
 	"github.com/google/go-github/github"
 )
 
-type CrPullRequest struct {
+type CRPullRequest struct {
 	github.PullRequest
 	RefIssueIds []int
-	RefIssues   []CrIssue
+	RefIssues   []CRIssue
 }
 
-type CrIssue struct {
+type CRIssue struct {
 	github.Issue
 	RefPullIds []int
-	RefPulls   []CrPullRequest
+	RefPulls   []CRPullRequest
 }
 
 type ExpandedIssue struct {
-	PullRequest CrPullRequest
-	Issue       CrIssue
+	PullRequest CRPullRequest
+	Issue       CRIssue
 	Conflate    bool
 }
 
-func (cr *CrPullRequest) ReferencesIssues() bool {
+func (cr *CRPullRequest) ReferencesIssues() bool {
 	if len(cr.RefIssueIds) > 0 {
 		return true
 	} else {

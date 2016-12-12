@@ -1,4 +1,4 @@
-package grades
+package backtests
 
 import (
 	"coralreefci/engine/gateway"
@@ -41,9 +41,9 @@ func (t *BackTestRunner) Run() {
 	pullsCopy := make([]github.PullRequest, len(githubPulls))
 
 	// TODO: Evaluate this particular snippet of code as it has potential
-	//			 performance optimization capabilities related to the hardware level.
-	//			 This may ultimately live in the actual gateway.go file to
-	//			 improve the actual download operations.
+	//       performance optimization capabilities related to the hardware
+    //       level. This may ultimately live in the actual gateway.go file to
+	//	     improve the actual download operations.
 	for i := 0; i < len(issuesCopy); i++ {
 		issuesCopy[i] = *githubIssues[i]
 	}
@@ -65,7 +65,7 @@ func (t *BackTestRunner) Run() {
 			truncatedIssue := issues.Issue{
 				RepoID:   *expandedIssue.PullRequest.ID,
 				IssueID:  *expandedIssue.PullRequest.Number,
-				Url:      *expandedIssue.PullRequest.URL,
+				URL:      *expandedIssue.PullRequest.URL,
 				Assignee: *expandedIssue.PullRequest.User.Login,
 			}
 			if expandedIssue.PullRequest.Body != nil {
@@ -76,7 +76,7 @@ func (t *BackTestRunner) Run() {
 			truncatedIssue := issues.Issue{
 				RepoID:   *expandedIssue.Issue.ID,
 				IssueID:  *expandedIssue.Issue.Number,
-				Url:      *expandedIssue.Issue.URL,
+				URL:      *expandedIssue.Issue.URL,
 				Assignee: *expandedIssue.Issue.User.Login,
 				Resolved: *expandedIssue.Issue.ClosedAt,
 			}

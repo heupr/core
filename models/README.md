@@ -2,28 +2,20 @@
 
 ## Description
 
-All back-end logic powering the CoralReefCI&trade; project is stored in
+All **back-end logic** powering the CoralReefCI&trade; project is stored in
 this directory. Each model is separated into a unique directory which is titled
-the name of the given model.  
+the name of the given model. In addition to necessary code assets, these
+directories will contain the necessary READMEs, documentation, and resource
+references regarding the project.  
 
-Global assets that are common across all / most models are stored in separate
-files / directories  within the `models/` directory.  
-
-## Catalog
-
-#### Bhattacharya
-
-This is the initial model built and focuses on utilizing Naive Bayes
-classifiers, bug tossing graphs, and other tools, as a means of identifying
-the appropriate developer to assign an issue to. Bhattacharya will primarily
-stand as a benchmark and possibly a testing ground for future models.  
-
-- **Status**: pre-alpha  
-  - the model is currently incomplete and missing various functionality
-  - several code assets here need to be refractored into global assets
-- **Goals**: benchmarking and testing
-  - Bhattacharya will primarily serve as a laboratory environment once
-  the model is replaced in production
-- **Assumptions**:
-  - issue and pull request body text can be used to predict future issue
-  assignment
+**Global assets** that are common across all / most models are stored in
+separate files / directories  within the `models/` directory. Several of the
+current global assets include:
+- tossing graph logic
+- cross-fold validation methods
+- confusion matrix generators
+- internal "simple" issue structs
+- "classifier" interface
+- broad "parent" model struct
+How these are handled on a package management level will be gradually
+determined (e.g. directly within `models/` or in specific subdirectories).  
