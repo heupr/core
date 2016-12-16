@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// TODO: refactor out.
 type Issue struct {
 	RepoID   int
 	IssueID  int
@@ -17,3 +18,8 @@ type Issue struct {
 	Resolved time.Time
 	Labels   []string
 }
+
+// NOTE: due to the arguments for maintaining that only parental packages can
+//       import from child inner packages, this would necessitate the Issue
+//       struct being moved into models/ directly (rather than encapsulated
+//       within issues/)

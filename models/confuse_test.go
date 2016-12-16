@@ -1,4 +1,4 @@
-package confuse
+package models
 
 import (
 	"coralreefci/models/issues"

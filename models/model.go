@@ -1,37 +1,28 @@
 package models
 
-import (
-    "coralreefci/models/confuse"
-    "coralreefci/models/fold"
-)
-
 type Model struct {
     Algorithm   Algorithm
-    Utilities Utilities
 }
 
 type Algorithm interface {
-    Learn(input interface{})
-    Predict(input interface{}) []string
+    Learn(input ...interface{})
+    Predict(input ...interface{}) []string
 }
 
-type Utilities struct {
-    Fold    fold.Fold
-    Confuse confuse.Confuse
+// NOTE: Legacy code no longer in use (reference)
+// Learn(issues []issues.Issue)
+// Predict(issue issues.Issue) []string
+
+func (m *Model) Learn(input ...interface{}) {
+    m.Algorithm.Learn(input)
 }
 
-
-
-
-
-/*
-Model{
-    Algorithm: bhattacharya.NBClassifier
-    - Learn
-    - Predict
-    Utilities: Utilities
+func (m *Model) Predict(input ...interface{}) {
+    m.Algorithm.Predict(input)
 }
-*/
+
+// nbModel := bhattacharya.Model{Classifier: &bhattacharya.NBClassifier{Logger: &logger}, Logger: &logger}
+// nbModel := models.Model{Algorithm: &bhattacharya.NBClassifier{Logger: &logger}}
 
 /*
 So fold and confuse can be new methods on the new Model struct

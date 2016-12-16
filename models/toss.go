@@ -1,4 +1,4 @@
-package bhattacharya
+package models
 
 import (
 	"coralreefci/models/issues"

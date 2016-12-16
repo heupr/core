@@ -1,6 +1,7 @@
-package fold
+package models
 
 import (
+    "coralreefci/models/bhattacharya"
 	"coralreefci/models/issues"
 	"strconv"
 	"testing"
@@ -34,7 +35,7 @@ var testingIssues = []issues.Issue{
 }
 
 func TestFold(t *testing.T) {
-	nbModel := Model{Classifier: &NBClassifier{}}
+	nbModel := Model{Algorithm: &bhattacharya.NBClassifier{}}
 	result, _ := nbModel.JohnFold(testingIssues)
 	number, _ := strconv.ParseFloat(result, 64)
 	if number < 0.00 && number > 1.00 {

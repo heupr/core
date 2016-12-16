@@ -1,4 +1,4 @@
-package confuse
+package models
 
 import (
 	"coralreefci/models/issues"
@@ -77,24 +77,16 @@ func getClassFN(class string, m matrix) float64 {
 	return count
 }
 
-func round(number float64) float64 {
-	return float64(int(number*100.00)) / 100.00
-}
-
-func toString(number float64) string {
-	return strconv.FormatFloat(number, 'f', 2, 64)
-}
-
 func getPrecision(class string, m matrix) float64 {
 	classTP := getClassTP(class, m)
 	classFP := getClassFP(class, m)
-	return round(classTP / (classTP + classFP))
+	return Round(classTP / (classTP + classFP))
 }
 
 func getRecall(class string, m matrix) float64 {
 	classTP := getClassTP(class, m)
 	classFN := getClassFN(class, m)
-	return round(classTP / (classTP + classFN))
+	return Round(classTP / (classTP + classFN))
 }
 
 func getAccuracy(m matrix) float64 {
@@ -108,7 +100,7 @@ func getAccuracy(m matrix) float64 {
 			total += float64(m[columnHead][rowHead])
 		}
 	}
-	return round(float64(correct) / float64(total))
+	return Round(float64(correct) / float64(total))
 }
 
 func getTestCount(m matrix) float64 {
@@ -136,20 +128,20 @@ func fillMatrix(m matrix) matrix {
 
 func ClassSummary(class string, m matrix) string {
 	input := []string{"SUMMARY RESULTS FOR CLASS: ", class, "\n",
-		"TRUE POSITIVES:  ", toString(getClassTP(class, m)), "\n",
-		"TRUE NEGATIVES:  ", toString(getClassTN(class, m)), "\n",
-		"FALSE POSITIVES: ", toString(getClassFP(class, m)), "\n",
-		"FALSE NEGATIVES: ", toString(getClassFN(class, m)), "\n",
-		"PRECISION:       ", toString(getPrecision(class, m)), "\n",
-		"RECALL:          ", toString(getRecall(class, m)), "\n"}
+		"TRUE POSITIVES:  ", ToString(getClassTP(class, m)), "\n",
+		"TRUE NEGATIVES:  ", ToString(getClassTN(class, m)), "\n",
+		"FALSE POSITIVES: ", ToString(getClassFP(class, m)), "\n",
+		"FALSE NEGATIVES: ", ToString(getClassFN(class, m)), "\n",
+		"PRECISION:       ", ToString(getPrecision(class, m)), "\n",
+		"RECALL:          ", ToString(getRecall(class, m)), "\n"}
 	output := strings.Join(input, "")
 	return output
 }
 
 func FullSummary(m matrix) string {
 	input := []string{"SUMMARY RESULTS FOR FULL MATRIX\n",
-		"TOTAL TESTS:    ", toString(getTestCount(m)), "\n",
-		"TOTAL ACCURACY: ", toString(getAccuracy(m)), "\n"}
+		"TOTAL TESTS:    ", ToString(getTestCount(m)), "\n",
+		"TOTAL ACCURACY: ", ToString(getAccuracy(m)), "\n"}
 	output := strings.Join(input, " ")
 	return output
 }

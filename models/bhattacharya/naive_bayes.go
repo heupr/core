@@ -11,11 +11,13 @@ import (
 type NBClassifier struct {
 	classifier *bayesian.Classifier
 	assignees  []bayesian.Class
-	graph      *TossingGraph
-	Logger     *CoralReefLogger
+	graph      *TossingGraph       // NOTE: Restructure to be called on Model
+	Logger     *CoralReefLogger    // NOTE: Directly imported from new external logger package
 }
 
 func (c *NBClassifier) Learn(issues []issues.Issue) {
+	RemoveStopWords(issues...)
+	StemIssues(issues...)
 	c.assignees = distinctAssignees(issues)
 	c.classifier = bayesian.NewClassifierTfIdf(c.assignees...)
 	c.graph = &TossingGraph{Assignees: convertClassToString(c.assignees), GraphDepth: 5, Logger: c.Logger}
@@ -26,6 +28,8 @@ func (c *NBClassifier) Learn(issues []issues.Issue) {
 }
 
 func (c *NBClassifier) Predict(issue issues.Issue) []string {
+	RemoveStopWordsSingle(&issue)
+	StemIssuesSingle(&issue)
 	scores, _, _ := c.classifier.LogScores(strings.Split(issue.Body, " "))
 	names := []string{}
 	indices := c.graph.Tossing(scores)
