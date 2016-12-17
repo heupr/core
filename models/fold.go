@@ -22,16 +22,16 @@ func (m *Model) FoldImplementation(trainIssues, testIssues []conflation.Expanded
 			// NOTE: Implement a log that records:
             // - issue URL
             // - issue assignee(s)
-			if assignees[j] == testIssues[i].Assignee {
+			if assignees[j] == *testIssues[i].Issue.Assignee.Name {
 				correct++
-				predicted[i].Assignee = assignees[j]
+				*predicted[i].Issue.Assignee.Name = assignees[j]
 				break
 			} else {
-				predicted[i].Assignee = assignees[0]
+				*predicted[i].Issue.Assignee.Name = assignees[0]
 			}
 		}
 	}
-	mat, err := confuse.BuildMatrix(expected, predicted)
+	mat, err := m.BuildMatrix(expected, predicted)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -59,7 +59,7 @@ func (m *Model) TwoFold(issueList []conflation.ExpandedIssue) (string, error) {
 		return "", errors.New("LESS THAN 10 ISSUES SUBMITTED - TWO FOLD")
 	}
 	trainEndPos := int(0.50 * float64(issueCount))
-	trainIssues, testIssues := []issues.Issue{}, []issues.Issue{}
+	trainIssues, testIssues := []conflation.ExpandedIssue{}, []conflation.ExpandedIssue{}
 	trainIssues = append(trainIssues, issueList[0:trainEndPos]...)
 	testIssues = append(testIssues, issueList[trainEndPos+1:]...)
 
@@ -83,7 +83,7 @@ func (m *Model) TenFold(issueList []conflation.ExpandedIssue) (string, error) {
 		end := int(Round(i * float64(issueCount)))
 
 		segment := issueList[start:end]
-		remainder := []issues.Issue{}
+		remainder := []conflation.ExpandedIssue{}
 		remainder = append(issueList[:start], issueList[end:]...)
 
 		score, _ := m.FoldImplementation(segment, remainder) // TODO: specific logs for matrices

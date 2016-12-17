@@ -1,14 +1,13 @@
 package bhattacharya
 
 import (
-	"coralreefci/models/issues"
 	"github.com/kljensen/snowball"
 	"strings"
 )
 
 // DOC: StemIssues finds the stem of each word in the input issues body text.
 //      This applies the snowball stemmer formula to the target words.
-func StemIssues(issueList ...bhattacharyaIssue) {
+func StemIssues(issueList ...Issue) {
     // TODO: change the parameter types to "...*bhattacharyaIssue"; this could
     //       possibly resolve the copy value errors and allow for the removal
     //       of the StemIssuesSingle workaround (also see StopWords for the
@@ -25,7 +24,7 @@ func StemIssues(issueList ...bhattacharyaIssue) {
 	}
 }
 
-func StemIssuesSingle(issue *bhattacharyaIssue) {
+func StemIssuesSingle(issue *Issue) {
 	wordList := []string{}
 	words := strings.Split(issue.Body, " ")
 	for _, word := range words {

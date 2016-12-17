@@ -1,9 +1,8 @@
 package models
 
 import (
-	"coralreefci/models/issues"
+	"coralreefci/engine/gateway/conflation"
 	"errors"
-	"strconv"
 	"strings"
 )
 
@@ -14,8 +13,8 @@ type matrix map[string]map[string]int
 //      - expected - slice of issues used in testing; static data
 //      - predicted - slice of issues the model predicted; output data
 //      These are the same length as the latter is just predictions of the
-//      former
-func BuildMatrix(expected, predicted []issues.Issue) (matrix, error) {
+//      former.
+func (m *Model) BuildMatrix(expected, predicted []conflation.ExpandedIssue) (matrix, error) {
 	if len(expected) != len(predicted) {
 		return nil, errors.New("INPUT SLICES ARE NOT EQUAL LENGTH")
 	}
@@ -23,8 +22,8 @@ func BuildMatrix(expected, predicted []issues.Issue) (matrix, error) {
 	outputMatrix := make(map[string]map[string]int)
 
 	for i := 0; i < len(expected); i++ {
-		exp := expected[i].Assignee
-		pre := predicted[i].Assignee
+		exp := *expected[i].Issue.Assignee.Name  // NOTE: this is a big assumption
+		pre := *predicted[i].Issue.Assignee.Name // NOTE: this is a big assumption
 		if _, ok := outputMatrix[exp]; ok {
 			outputMatrix[exp][pre] += 1
 		} else {
@@ -35,11 +34,11 @@ func BuildMatrix(expected, predicted []issues.Issue) (matrix, error) {
 	return outputMatrix, nil
 }
 
-func getClassTP(class string, m matrix) float64 {
+func (m matrix) getClassTP(class string) float64 {
 	return float64(m[class][class])
 }
 
-func getClassTN(class string, m matrix) float64 {
+func (m matrix) getClassTN(class string) float64 {
 	count := 0.0
 	for columnHead := range m {
 		if columnHead == class {
@@ -55,7 +54,7 @@ func getClassTN(class string, m matrix) float64 {
 	return count
 }
 
-func getClassFP(class string, m matrix) float64 {
+func (m matrix) getClassFP(class string) float64 {
 	count := 0.0
 	for columnHead := range m {
 		if columnHead == class {
@@ -66,7 +65,7 @@ func getClassFP(class string, m matrix) float64 {
 	return count
 }
 
-func getClassFN(class string, m matrix) float64 {
+func (m matrix) getClassFN(class string) float64 {
 	count := 0.0
 	for rowHead := range m[class] {
 		if rowHead == class {
@@ -77,19 +76,19 @@ func getClassFN(class string, m matrix) float64 {
 	return count
 }
 
-func getPrecision(class string, m matrix) float64 {
-	classTP := getClassTP(class, m)
-	classFP := getClassFP(class, m)
+func (m matrix) getPrecision(class string) float64 {
+	classTP := m.getClassTP(class)
+	classFP := m.getClassFP(class)
 	return Round(classTP / (classTP + classFP))
 }
 
-func getRecall(class string, m matrix) float64 {
-	classTP := getClassTP(class, m)
-	classFN := getClassFN(class, m)
+func (m matrix) getRecall(class string) float64 {
+	classTP := m.getClassTP(class)
+	classFN := m.getClassFN(class)
 	return Round(classTP / (classTP + classFN))
 }
 
-func getAccuracy(m matrix) float64 {
+func (m matrix) getAccuracy() float64 {
 	correct := 0.0
 	total := 0.0
 	for columnHead := range m {
@@ -103,7 +102,7 @@ func getAccuracy(m matrix) float64 {
 	return Round(float64(correct) / float64(total))
 }
 
-func getTestCount(m matrix) float64 {
+func (m matrix) getTestCount() float64 {
 	count := 0.0
 	for columnHead := range m {
 		for rowHead := range m[columnHead] {
@@ -113,7 +112,7 @@ func getTestCount(m matrix) float64 {
 	return count
 }
 
-func fillMatrix(m matrix) matrix {
+func (m matrix) fillMatrix() matrix {
 	for columnHead := range m {
 		for key := range m {
 			if _, ok := m[columnHead][key]; ok {
@@ -126,22 +125,22 @@ func fillMatrix(m matrix) matrix {
 	return m
 }
 
-func ClassSummary(class string, m matrix) string {
+func (m matrix) ClassSummary(class string) string {
 	input := []string{"SUMMARY RESULTS FOR CLASS: ", class, "\n",
-		"TRUE POSITIVES:  ", ToString(getClassTP(class, m)), "\n",
-		"TRUE NEGATIVES:  ", ToString(getClassTN(class, m)), "\n",
-		"FALSE POSITIVES: ", ToString(getClassFP(class, m)), "\n",
-		"FALSE NEGATIVES: ", ToString(getClassFN(class, m)), "\n",
-		"PRECISION:       ", ToString(getPrecision(class, m)), "\n",
-		"RECALL:          ", ToString(getRecall(class, m)), "\n"}
+		"TRUE POSITIVES:  ", ToString(m.getClassTP(class)), "\n",
+		"TRUE NEGATIVES:  ", ToString(m.getClassTN(class)), "\n",
+		"FALSE POSITIVES: ", ToString(m.getClassFP(class)), "\n",
+		"FALSE NEGATIVES: ", ToString(m.getClassFN(class)), "\n",
+		"PRECISION:       ", ToString(m.getPrecision(class)), "\n",
+		"RECALL:          ", ToString(m.getRecall(class)), "\n"}
 	output := strings.Join(input, "")
 	return output
 }
 
-func FullSummary(m matrix) string {
+func (m matrix) FullSummary() string {
 	input := []string{"SUMMARY RESULTS FOR FULL MATRIX\n",
-		"TOTAL TESTS:    ", ToString(getTestCount(m)), "\n",
-		"TOTAL ACCURACY: ", ToString(getAccuracy(m)), "\n"}
+		"TOTAL TESTS:    ", ToString(m.getTestCount()), "\n",
+		"TOTAL ACCURACY: ", ToString(m.getAccuracy()), "\n"}
 	output := strings.Join(input, " ")
 	return output
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"coralreefci/results/backtests"
+	"coralreefci/analysis/backtests"
 	"coralreefci/models/bhattacharya"
 	"github.com/pkg/profile"
 )

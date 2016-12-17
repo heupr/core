@@ -3,16 +3,18 @@ package backtests
 import (
 	"coralreefci/engine/gateway"
 	"coralreefci/engine/gateway/conflation"
-	"coralreefci/models/bhattacharya"
-	"coralreefci/models/issues"
+    "coralreefci/models" // TODO: START HERE TOMORROW MORNING
+    "coralreefci/models/bhattacharya"
 	"fmt"
 	. "github.com/ahmetalpbalkan/go-linq"
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 )
 
+// TODO: THIS NEEDS TO BE CHANGED TO THE MODEL STRUCT IN MODELS/ DIRECTORY
 type TestContext struct {
-	Model bhattacharya.NBClassifier
+    Model models.Model
+//	Model models.Model{Algorithm: bhattacharya.NBClassifier}
 }
 
 type BackTestRunner struct {
@@ -55,43 +57,9 @@ func (t *BackTestRunner) Run() {
 	conflator.SetPullRequests(pullsCopy)
 	conflator.Conflate()
 
-	trainingSet := []bhattacharya.Issue{}
-	processedTrainingSet := []bhattacharya.Issue{}
-
-	for i := 0; i < len(conflator.Context.Issues); i++ {
-		expandedIssue := conflator.Context.Issues[i]
-		if expandedIssue.PullRequest.Number != nil && expandedIssue.Conflate {
-			truncatedIssue := bhattacharya.Issue{
-				RepoID:   *expandedIssue.PullRequest.ID,
-				IssueID:  *expandedIssue.PullRequest.Number,
-				URL:      *expandedIssue.PullRequest.URL,
-				Assignee: *expandedIssue.PullRequest.User.Login,
-			}
-			if expandedIssue.PullRequest.Body != nil {
-				truncatedIssue.Body = *expandedIssue.PullRequest.Body
-			}
-			trainingSet = append(trainingSet, truncatedIssue)
-		} else if expandedIssue.Issue.Number != nil && expandedIssue.Conflate {
-			truncatedIssue := bhattacharya.Issue{
-				RepoID:   *expandedIssue.Issue.ID,
-				IssueID:  *expandedIssue.Issue.Number,
-				URL:      *expandedIssue.Issue.URL,
-				Assignee: *expandedIssue.Issue.User.Login,
-				Resolved: *expandedIssue.Issue.ClosedAt,
-			}
-			if expandedIssue.Issue.Body != nil {
-				truncatedIssue.Body = *expandedIssue.Issue.Body
-			}
-			trainingSet = append(trainingSet, truncatedIssue)
-		}
-	}
-	// TODO: remove this workaround eventually
-	// BOTS: dotnet-bot, dotnet-mc-bot, 00101010b
-	// PROJECT MANAGERS: stephentoub
-	// excludeAssignees := []string{"dotnet-bot", "dotnet-mc-bot", "00101010b", "stephentoub"}
-	// fileData := readFile(filePath, excludeAssignees)
-	// TODO: implement a linq statement to remove the excludeAssignees
-	// referecne: excludeAssignees := []string{"dotnet-bot", "dotnet-mc-bot", "00101010b", "stephentoub"}
+	trainingSet := []conflation.ExpandedIssue{}
+    trainingSet = append(trainingSet, conflator.Context.Issues...)
+	processedTrainingSet := []conflation.ExpandedIssue{}
 
 	groupby := From(trainingSet).GroupBy(
 		func(r interface{}) interface{} { return r.(bhattacharya.Issue).Assignee },
@@ -114,10 +82,6 @@ func (t *BackTestRunner) Run() {
 	// }).ToSlice(&assignees)
 
 	bhattacharya.Shuffle(processedTrainingSet, int64(5))
-
-	// logger := bhattacharya.CreateLog("backtest-summary")
-	// logger.Log("NUMBER OF ASSIGNEES:" + string(len(distinctAssignees(trainingSet))))
-	// logger.Log("NUMBER OF ISSUES:" + string(len(trainingSet)))
 
 	fmt.Println("Train")
 	fmt.Println(len(processedTrainingSet))

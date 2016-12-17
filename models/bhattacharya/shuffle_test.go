@@ -1,16 +1,13 @@
 package bhattacharya
 
-import (
-	"coralreefci/models/issues"
-	"testing"
-)
+import "testing"
 
 var letterRandomizers = []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"}
 
-func generateRandomIssues() []bhattacharyaIssue {
-	list := []bhattacharyaIssue{}
+func generateRandomIssues() []Issue {
+	list := []Issue{}
 	for _, value := range letterRandomizers {
-		list = append(list, bhattacharyaIssue{Body: value + "random text"})
+		list = append(list, Issue{Body: value + "random text"})
 	}
 	return list
 }

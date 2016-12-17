@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-// DOC: bhattacharyaIssue (within Bhattacharya) is a slimmed down version of
+// DOC: Issue (within Bhattacharya) is a slimmed down version of
 //      the more comprehensive ExpandedIssue type that is available to
 //      the project.
-type bhattacharyaIssue struct {
+type Issue struct {
 	RepoID   int
 	IssueID  int
 	URL      string
@@ -19,17 +19,17 @@ type bhattacharyaIssue struct {
 	Labels   []string
 }
 
-func (n *NBClassifier) issueConverter(ei []conflation.ExpandedIssue) []bhattacharyaIssue {
-	output := []bhattacharyaIssue{}
+func (n *NBClassifier) bhattacharyaConverter(ei []conflation.ExpandedIssue) []Issue {
+	output := []Issue{}
 	for i := 0; i < len(ei); i++ {
-		issue := bhattacharyaIssue{
-			RepoID:   ei.Issue.ID,
-			IssueID:  ei.Issue.Number,
-			URL:      ei.Issue.URL,
-			Assignee: ei.Issue.User.Login,
-			Body:     ei.Issue.Body,
-			Resolved: ei.Issue.ClosedAt,
-			Labels:   labelStrings([]ei.Issue.Label),
+		issue := Issue{
+			RepoID:   *ei[i].Issue.ID,
+			IssueID:  *ei[i].Issue.Number,
+			URL:      *ei[i].Issue.URL,
+			Assignee: *ei[i].Issue.User.Login,
+			Body:     *ei[i].Issue.Body,
+			Resolved: *ei[i].Issue.ClosedAt,
+			Labels:   labelStrings(ei[i].Issue.Labels),
 		}
 		output = append(output, issue)
 	}
@@ -41,7 +41,7 @@ func (n *NBClassifier) issueConverter(ei []conflation.ExpandedIssue) []bhattacha
 func labelStrings(labels []github.Label) []string {
 	output := []string{}
 	for i := 0; i < len(labels); i++ {
-		output = append(output, labels.Name)
+		output = append(output, *labels[i].Name)
 	}
 	return output
 }

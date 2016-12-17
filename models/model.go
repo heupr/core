@@ -6,7 +6,6 @@ type Model struct {
 
 // NOTE: Algorithm interface may ultimately take ExpandedIssue as its methods
 //       parameter type; this will necessitate an import from engine/
-
 type Algorithm interface {
     Learn(input ...interface{})
     Predict(input ...interface{}) []string
@@ -20,14 +19,22 @@ func (m *Model) Predict(input ...interface{}) []string {
     return m.Algorithm.Predict(input)
 }
 
-// nbModel := bhattacharya.Model{Classifier: &bhattacharya.NBClassifier{Logger: &logger}, Logger: &logger}
-// nbModel := models.Model{Algorithm: &bhattacharya.NBClassifier{Logger: &logger}}
+// func main() {
+//     newModel := Model{Algorithm: bhattacharya.NBClassifier}
+//     newModel.Learn(trainExpandedIssues)
+//     outputNames := []string
+//     for i := 0; i < len(testExpandedIssues); i ++ {
+//         names := newModel.Predict(testExpandedIssues[i])
+//         outputNames = append(outputNames, names)
+//     }
+// }
 
 /*
 So fold and confuse can be new methods on the new Model struct
 Those methods on the new model struct would call the confuse or fold class
 Toss... is currently tightly coupled with battacharya and that cannot be moved out as easily
-So on the new Model struct you will also need FoldImpl and ConfuseImpl fields..... Basically confuse and fold will need to be plugged in.
+So on the new Model struct you will also need FoldImpl and ConfuseImpl fields..... Basically
+confuse and fold will need to be plugged in.
 They could both be fields inside a new Grades Field/Type
 
 func (m *Model) Fold () {

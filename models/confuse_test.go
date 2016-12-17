@@ -1,7 +1,8 @@
 package models
 
 import (
-	"coralreefci/models/issues"
+	"coralreefci/engine/gateway/conflation"
+    "github.com/google/go-github/github"
 	"testing"
 )
 
@@ -19,10 +20,14 @@ var metrics = map[string]float64{
 	"Accuracy":  0.22,
 }
 
-func generateIssues(assignees []string) []issues.Issue {
-	issueList := []issues.Issue{}
+func generateIssues(assignees []string) []conflation.ExpandedIssue {
+	issueList := []conflation.ExpandedIssue{}
 	for i := 0; i < len(assignees); i++ {
-		issueList = append(issueList, issues.Issue{Assignee: assignees[i]})
+        name := assignees[i]
+        assignee := github.User{Name: &name}
+        githubIssue := github.Issue{Assignee: &assignee}
+        crIssue := conflation.CRIssue{githubIssue, []int{}, []conflation.CRPullRequest{}}
+		issueList = append(issueList, conflation.ExpandedIssue{Issue: crIssue})
 	}
 	return issueList
 }
@@ -31,7 +36,8 @@ func TestBuildMatrix(t *testing.T) {
 	exp := generateIssues(expectedList)
 	pre := generateIssues(predictedList)
 
-	matrix, _ := BuildMatrix(exp, pre)
+    nbModel := Model{}
+	matrix, _ := nbModel.BuildMatrix(exp, pre)
 
 	if len(matrix) == 0 {
 		t.Error(
@@ -39,7 +45,7 @@ func TestBuildMatrix(t *testing.T) {
 			"\nCONTENTS", matrix)
 	}
 
-	countTP := getClassTP("Mike", matrix)
+	countTP := matrix.getClassTP("Mike")
 	if metrics["MikeTP"] != countTP {
 		t.Error(
 			"\nCLASS TRUE POSITIVE MISCOUNT",
@@ -47,7 +53,7 @@ func TestBuildMatrix(t *testing.T) {
 			"\nACTUAL:    ", countTP)
 	}
 
-	countNP := getClassTN("Mike", matrix)
+	countNP := matrix.getClassTN("Mike")
 	if metrics["MikeTN"] != countNP {
 		t.Error(
 			"\nCLASS TRUE NEGATIVE MISCOUNT",
@@ -55,7 +61,7 @@ func TestBuildMatrix(t *testing.T) {
 			"\nACTUAL:    ", countNP)
 	}
 
-	countFP := getClassFP("Mike", matrix)
+	countFP := matrix.getClassFP("Mike")
 	if metrics["MikeFP"] != countFP {
 		t.Error(
 			"\nCLASS FALSE POSITIVE MISCOUNT",
@@ -63,7 +69,7 @@ func TestBuildMatrix(t *testing.T) {
 			"\nACTUAL:    ", countFP)
 	}
 
-	countFN := getClassFN("Mike", matrix)
+	countFN := matrix.getClassFN("Mike")
 	if metrics["MikeFN"] != countFN {
 		t.Error(
 			"\nCLASS FALSE NEGATIVE MISCOUNT",
@@ -71,7 +77,7 @@ func TestBuildMatrix(t *testing.T) {
 			"\nACTUAL:    ", countFN)
 	}
 
-	classPrecision := getPrecision("Mike", matrix)
+	classPrecision := matrix.getPrecision("Mike")
 	if metrics["Precision"] != classPrecision {
 		t.Error(
 			"\nCLASS PRECISION MISCALCULATED",
@@ -79,7 +85,7 @@ func TestBuildMatrix(t *testing.T) {
 			"\nACTUAL:    ", classPrecision)
 	}
 
-	classRecall := getRecall("Mike", matrix)
+	classRecall := matrix.getRecall("Mike")
 	if metrics["Recall"] != classRecall {
 		t.Error(
 			"\nCLASS RECALL MISCALCULATED",
@@ -87,7 +93,7 @@ func TestBuildMatrix(t *testing.T) {
 			"\nACTUAL:    ", classRecall)
 	}
 
-	fullAccuracy := getAccuracy(matrix)
+	fullAccuracy := matrix.getAccuracy()
 	if metrics["Accuracy"] != fullAccuracy {
 		t.Error(
 			"\nALL TESTS INACCURATE",
@@ -95,7 +101,7 @@ func TestBuildMatrix(t *testing.T) {
 			"\nACTUAL:    ", fullAccuracy)
 	}
 
-	fullCount := getTestCount(matrix)
+	fullCount := matrix.getTestCount()
 	if metrics["FullCount"] != fullCount {
 		t.Error(
 			"\nALL TESTS MISCOUNT",
@@ -103,7 +109,7 @@ func TestBuildMatrix(t *testing.T) {
 			"\nACTUAL:    ", fullCount)
 	}
 
-	fullMatrix := fillMatrix(matrix)
+	fullMatrix := matrix.fillMatrix()
 	for key := range fullMatrix {
 		if len(fullMatrix) != len(fullMatrix[key]) {
 			t.Error(
@@ -113,14 +119,14 @@ func TestBuildMatrix(t *testing.T) {
 		}
 	}
 
-	classOutput := ClassSummary("John", fullMatrix)
+	classOutput := fullMatrix.ClassSummary("John")
 	if classOutput == "" {
 		t.Error(
 			"\nNO OUTPUT STRING",
 		)
 	}
 
-	fullOutput := FullSummary(fullMatrix)
+	fullOutput := fullMatrix.FullSummary()
 	if fullOutput == "" {
 		t.Error(
 			"\nNO OUTPUT STRING",

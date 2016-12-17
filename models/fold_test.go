@@ -1,33 +1,33 @@
 package models
 
 import (
-    "coralreefci/models/bhattacharya"
 	"coralreefci/engine/gateway/conflation"
-    "github.com/google/go-github/github"
+	"github.com/google/go-github/github"
 	"strconv"
 	"testing"
 )
 
 func buildTestIssues() []conflation.ExpandedIssue {
-    issues := []conflation.ExpandedIssue{}
-    for i := 1; i < 31; i ++ {
-        if i % 2 == 0 {
-            name := "JOHN"
-            assignee := github.User{Name: &name}
-        } else {
-            name := "MIKE"
-            assignee := github.User{Name: &name}
-        }
-        githubIssue := github.Issue{Assignee: assignee}
-        crIssue := conflation.CRIssue{githubIssue}
-        issues = append(issues, conflation.ExpandedIssue{crIssue})
-    }
-    return issues
+	issues := []conflation.ExpandedIssue{}
+	for i := 1; i < 31; i++ {
+        assignee := github.User{}
+		if i%2 == 0 {
+			name := "JOHN"
+			assignee = github.User{Name: &name}
+		} else {
+			name := "MIKE"
+			assignee = github.User{Name: &name}
+		}
+		githubIssue := github.Issue{Assignee: &assignee}
+		crIssue := conflation.CRIssue{githubIssue, []int{}, []conflation.CRPullRequest{}}
+		issues = append(issues, conflation.ExpandedIssue{Issue: crIssue})
+	}
+	return issues
 }
 
 func TestFold(t *testing.T) {
-	nbModel := Model{Algorithm: &bhattacharya.NBClassifier{}}
-    testingIssues := buildTestIssues()
+	nbModel := Model{}
+	testingIssues := buildTestIssues()
 	result, _ := nbModel.JohnFold(testingIssues)
 	number, _ := strconv.ParseFloat(result, 64)
 	if number < 0.00 && number > 1.00 {
