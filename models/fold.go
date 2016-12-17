@@ -1,23 +1,23 @@
 package models
 
 import (
-	"coralreefci/models/issues"
-	"errors"
+    "coralreefci/engine/gateway/conflation"
+    "errors"
 	"fmt"
 )
 
 // DOC: argument inputs into FoldImplementation:
 //      trainIssues - this is the fold-defined length to train on (e.g. 10%)
 //      testIssues - this is the fold-defined length to test on (e.g. 90%)
-func (m *Model) FoldImplementation(trainIssues, testIssues []issues.Issue) (float64, matrix) {
+func (m *Model) FoldImplementation(trainIssues, testIssues []conflation.ExpandedIssue) (float64, matrix) {
 	testCount, correct := len(testIssues), 0
-	expected, predicted := []issues.Issue{}, []issues.Issue{}
+	expected, predicted := []conflation.ExpandedIssue{}, []conflation.ExpandedIssue{}
 	expected = append(expected, testIssues...)
 	predicted = append(predicted, testIssues...)
 	m.Learn(trainIssues)
 
 	for i := 0; i < len(testIssues); i++ {
-		assignees := m.Predict(testIssues[i]) // NOTE: assignees is working appropriately
+		assignees := m.Predict(testIssues[i])
 		for j := 0; j < len(assignees); j++ {
 			// NOTE: Implement a log that records:
             // - issue URL
@@ -38,7 +38,7 @@ func (m *Model) FoldImplementation(trainIssues, testIssues []issues.Issue) (floa
 	return float64(correct) / float64(testCount), mat
 }
 
-func (m *Model) JohnFold(issues []issues.Issue) (string, error) {
+func (m *Model) JohnFold(issues []conflation.ExpandedIssue) (string, error) {
 	issueCount := len(issues)
 	if issueCount < 10 {
 		return "", errors.New("LESS THAN 10 ISSUES SUBMITTED - JOHN FOLD")
@@ -53,14 +53,13 @@ func (m *Model) JohnFold(issues []issues.Issue) (string, error) {
 	return ToString(Round(finalScore / 9.00)), nil
 }
 
-func (m *Model) TwoFold(issueList []issues.Issue) (string, error) {
+func (m *Model) TwoFold(issueList []conflation.ExpandedIssue) (string, error) {
 	issueCount := len(issueList)
 	if issueCount < 10 {
 		return "", errors.New("LESS THAN 10 ISSUES SUBMITTED - TWO FOLD")
 	}
 	trainEndPos := int(0.50 * float64(issueCount))
-	trainIssues := []issues.Issue{} // TODO: put into one line (see #84)
-	testIssues := []issues.Issue{}  // TODO: put into one line (see #83)
+	trainIssues, testIssues := []issues.Issue{}, []issues.Issue{}
 	trainIssues = append(trainIssues, issueList[0:trainEndPos]...)
 	testIssues = append(testIssues, issueList[trainEndPos+1:]...)
 
@@ -72,7 +71,7 @@ func (m *Model) TwoFold(issueList []issues.Issue) (string, error) {
 	return ToString(Round(score / 2.00)), nil
 }
 
-func (m *Model) TenFold(issueList []issues.Issue) (string, error) {
+func (m *Model) TenFold(issueList []conflation.ExpandedIssue) (string, error) {
 	issueCount := len(issueList)
 	if issueCount < 10 {
 		return "", errors.New("LESS THAN 10 ISSUES SUBMITTED - TEN FOLD")
