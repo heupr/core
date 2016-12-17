@@ -7,10 +7,10 @@ import (
 
 var letterRandomizers = []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"}
 
-func generateRandomIssues() []issues.Issue {
-	list := []issues.Issue{}
+func generateRandomIssues() []bhattacharyaIssue {
+	list := []bhattacharyaIssue{}
 	for _, value := range letterRandomizers {
-		list = append(list, issues.Issue{Body: value + "random text"})
+		list = append(list, bhattacharyaIssue{Body: value + "random text"})
 	}
 	return list
 }

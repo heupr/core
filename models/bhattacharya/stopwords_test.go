@@ -9,7 +9,7 @@ import (
 var withStopwords = "This is a sentence with stopwords in it, the best ever."
 var withoutStopwords = "sentence stopwords"
 
-var testIssue = []issues.Issue{issues.Issue{Body: withStopwords}}
+var testIssue = []bhattacharyaIssue{bhattacharyaIssue{Body: withStopwords}}
 
 func TestRemoveStopWords(t *testing.T) {
 	RemoveStopWords(testIssue...)
