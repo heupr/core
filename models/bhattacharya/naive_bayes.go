@@ -1,7 +1,7 @@
 package bhattacharya
 
 import (
-	"coralreefci/models/issues"
+	// "coralreefci/models/issues"
 	"github.com/jbrukh/bayesian"
 	"strings"
 )

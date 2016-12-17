@@ -12,7 +12,7 @@ import (
 )
 
 type TestContext struct {
-	Model bhattacharya.Model
+	Model bhattacharya.NBClassifier
 }
 
 type BackTestRunner struct {
@@ -20,7 +20,6 @@ type BackTestRunner struct {
 }
 
 func (t *BackTestRunner) Run() {
-
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "23fc398670a80700b19b1ae1587825a16aa8ce57"})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 	client := github.NewClient(tc)
@@ -56,13 +55,13 @@ func (t *BackTestRunner) Run() {
 	conflator.SetPullRequests(pullsCopy)
 	conflator.Conflate()
 
-	trainingSet := []issues.Issue{}
-	processedTrainingSet := []issues.Issue{}
+	trainingSet := []bhattacharya.Issue{}
+	processedTrainingSet := []bhattacharya.Issue{}
 
 	for i := 0; i < len(conflator.Context.Issues); i++ {
 		expandedIssue := conflator.Context.Issues[i]
 		if expandedIssue.PullRequest.Number != nil && expandedIssue.Conflate {
-			truncatedIssue := issues.Issue{
+			truncatedIssue := bhattacharya.Issue{
 				RepoID:   *expandedIssue.PullRequest.ID,
 				IssueID:  *expandedIssue.PullRequest.Number,
 				URL:      *expandedIssue.PullRequest.URL,
@@ -73,7 +72,7 @@ func (t *BackTestRunner) Run() {
 			}
 			trainingSet = append(trainingSet, truncatedIssue)
 		} else if expandedIssue.Issue.Number != nil && expandedIssue.Conflate {
-			truncatedIssue := issues.Issue{
+			truncatedIssue := bhattacharya.Issue{
 				RepoID:   *expandedIssue.Issue.ID,
 				IssueID:  *expandedIssue.Issue.Number,
 				URL:      *expandedIssue.Issue.URL,
@@ -95,8 +94,8 @@ func (t *BackTestRunner) Run() {
 	// referecne: excludeAssignees := []string{"dotnet-bot", "dotnet-mc-bot", "00101010b", "stephentoub"}
 
 	groupby := From(trainingSet).GroupBy(
-		func(r interface{}) interface{} { return r.(issues.Issue).Assignee },
-		func(r interface{}) interface{} { return r.(issues.Issue) })
+		func(r interface{}) interface{} { return r.(bhattacharya.Issue).Assignee },
+		func(r interface{}) interface{} { return r.(bhattacharya.Issue) })
 
 	where := groupby.Where(func(groupby interface{}) bool {
 		return len(groupby.(Group).Group) >= 10

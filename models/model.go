@@ -4,21 +4,20 @@ type Model struct {
     Algorithm   Algorithm
 }
 
+// NOTE: Algorithm interface may ultimately take ExpandedIssue as its methods
+//       parameter type; this will necessitate an import from engine/
+
 type Algorithm interface {
     Learn(input ...interface{})
     Predict(input ...interface{}) []string
 }
 
-// NOTE: Legacy code no longer in use (reference)
-// Learn(issues []issues.Issue)
-// Predict(issue issues.Issue) []string
-
 func (m *Model) Learn(input ...interface{}) {
     m.Algorithm.Learn(input)
 }
 
-func (m *Model) Predict(input ...interface{}) {
-    m.Algorithm.Predict(input)
+func (m *Model) Predict(input ...interface{}) []string {
+    return m.Algorithm.Predict(input)
 }
 
 // nbModel := bhattacharya.Model{Classifier: &bhattacharya.NBClassifier{Logger: &logger}, Logger: &logger}
