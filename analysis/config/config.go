@@ -7,7 +7,7 @@ import (
 )
 
 type Config struct {
-	LogPath string
+	LogPath          string
 	ModelSummaryPath string
 }
 

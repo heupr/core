@@ -1,13 +1,11 @@
 package models
 
 import (
-	"coralreefci/engine/gateway/conflation"
-	"github.com/google/go-github/github"
 	"testing"
 )
 
-var expectedList = []string{"John", "Mike", "Woz", "John", "Mike", "Woz", "John", "Mike", "Woz"}
-var predictedList = []string{"John", "John", "Mike", "Woz", "Woz", "Mike", "Mike", "Mike", "John"}
+var exp = []string{"John", "Mike", "Woz", "John", "Mike", "Woz", "John", "Mike", "Woz"}
+var pre = []string{"John", "John", "Mike", "Woz", "Woz", "Mike", "Mike", "Mike", "John"}
 
 var metrics = map[string]float64{
 	"MikeTP":    1.0,
@@ -20,22 +18,7 @@ var metrics = map[string]float64{
 	"Accuracy":  0.2222,
 }
 
-func generateIssues(assignees []string) []conflation.ExpandedIssue {
-	issueList := []conflation.ExpandedIssue{}
-	for i := 0; i < len(assignees); i++ {
-		login := assignees[i]
-		assignee := github.User{Login: &login}
-		githubIssue := github.Issue{Assignee: &assignee}
-		crIssue := conflation.CRIssue{githubIssue, []int{}, []conflation.CRPullRequest{}}
-		issueList = append(issueList, conflation.ExpandedIssue{Issue: crIssue})
-	}
-	return issueList
-}
-
 func TestBuildMatrix(t *testing.T) {
-	exp := generateIssues(expectedList)
-	pre := generateIssues(predictedList)
-
 	nbModel := Model{}
 	matrix, _ := nbModel.BuildMatrix(exp, pre)
 
@@ -122,14 +105,14 @@ func TestBuildMatrix(t *testing.T) {
 	classOutput := fullMatrix.ClassSummary("John")
 	if classOutput == "" {
 		t.Error(
-			"\nNO OUTPUT STRING",
+			"\nNO OUTPUT STRING FROM CLASS SUMMARY",
 		)
 	}
 
 	fullOutput := fullMatrix.FullSummary()
 	if fullOutput == "" {
 		t.Error(
-			"\nNO OUTPUT STRING",
+			"\nNO OUTPUT STRING FROM FULL SUMMARY",
 		)
 	}
 }

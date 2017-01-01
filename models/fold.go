@@ -2,40 +2,14 @@ package models
 
 import (
 	"coralreefci/engine/gateway/conflation"
-    "fmt"
+	"fmt"
 )
 
-func (m *Model) FoldImplementation(trainIssues, testIssues []conflation.ExpandedIssue) (float64, matrix) {
-	expected, predicted := []conflation.ExpandedIssue{}, []conflation.ExpandedIssue{}
-	expected = append(expected, testIssues...)
-	predicted = append(predicted, testIssues...)
-
-	m.Learn(trainIssues)
-
-	correct := 0
-	for i := 0; i < len(testIssues); i++ {
-		assignees := m.Predict(testIssues[i])
-		for j := 0; j < len(assignees); j++ {
-			if assignees[j] == *predicted[i].Issue.Assignee.Login {
-				correct++
-				*predicted[i].Issue.Assignee.Login = assignees[j]
-				break
-			} else {
-				*predicted[i].Issue.Assignee.Login = assignees[0]
-			}
-		}
-	}
-	mat, err := m.BuildMatrix(expected, predicted)
-	// TODO: repair this error generation; design idiomatically
-	if err != nil {
-		fmt.Println(err)
-	}
-	return float64(correct) / float64(len(testIssues)), mat
-}
-
+// DOC: JohnFold gradually increases the training data by increments of 1/10th.
 func (m *Model) JohnFold(issues []conflation.ExpandedIssue) string {
 	finalScore := 0.00
-	for i := 0.10; i < 0.90; i += 0.10 { // TODO: double check the logic / math here
+	// TODO: Double check the logic / math here in the loop.
+	for i := 0.10; i < 0.90; i += 0.10 {
 		split := int(Round(i * float64(len(issues))))
 		score, _ := m.FoldImplementation(issues[:split], issues[split:])
 		finalScore += score
@@ -43,22 +17,16 @@ func (m *Model) JohnFold(issues []conflation.ExpandedIssue) string {
 	return ToString(Round(finalScore / 9.00))
 }
 
+// DOC: TwoFold splits data in half - alternating training on each half.
 func (m *Model) TwoFold(issues []conflation.ExpandedIssue) string {
-	length := len(issues)
-	split := int(0.50 * float64(length))
-
-	firstHalf, secondHalf := []conflation.ExpandedIssue{}, []conflation.ExpandedIssue{}
-	firstHalf = append(firstHalf, issues[:split]...)
-	secondHalf = append(secondHalf, issues[split:]...)
-
-	firstScore, _ := m.FoldImplementation(firstHalf, secondHalf)
-	secondScore, _ := m.FoldImplementation(secondHalf, firstHalf)
-
+	split := int(0.50 * float64(len(issues)))
+	firstScore, _ := m.FoldImplementation(issues[:split], issues[split:])
+	secondScore, _ := m.FoldImplementation(issues[split:], issues[:split])
 	score := firstScore + secondScore
-
 	return ToString(Round(score / 2.00))
 }
 
+// DOC: TenFold trains on a rolling 1/10th chunk of the input data.
 func (m *Model) TenFold(issues []conflation.ExpandedIssue) string {
 	length := len(issues)
 
@@ -77,4 +45,36 @@ func (m *Model) TenFold(issues []conflation.ExpandedIssue) string {
 		start = end
 	}
 	return ToString(Round(finalScore / 10.00))
+}
+
+// DOC: FoldImplementation performs the learning / prediction operations on the
+//      input data slices as determined by the "parent" fold method.
+func (m *Model) FoldImplementation(train, test []conflation.ExpandedIssue) (float64, matrix) {
+	expected := []string{}
+	predicted := make([]string, len(test))
+
+	// TODO: Possibly change to an indexing operation within the loop.
+	for i := 0; i < len(test); i++ {
+		expected = append(expected, *test[i].Issue.Assignee.Login)
+	}
+
+	m.Learn(train)
+	correct := 0
+	for i := 0; i < len(test); i++ {
+		predictions := m.Predict(test[i])
+		for j := 0; j < len(predictions); j++ {
+			if predictions[j] == *test[i].Issue.Assignee.Login {
+				predicted[i] = predictions[j]
+				correct++
+			} else {
+				predicted[i] = predictions[0]
+			}
+		}
+	}
+	mat, err := m.BuildMatrix(expected, predicted)
+	// TODO: Repair this error generation; design idiomatically.
+	if err != nil {
+		fmt.Println(err)
+	}
+	return float64(correct) / float64(len(test)), mat
 }

@@ -84,7 +84,7 @@ func (t *BackTestRunner) Run() {
 	fmt.Println("Train")
 	fmt.Println(len(processedTrainingSet))
 
-    // NOTE: should this be the processedTrainingSet instead of trainingSet?
+	// NOTE: should this be the processedTrainingSet instead of trainingSet?
 	scoreJohn := t.Context.Model.JohnFold(trainingSet)
 	fmt.Println("JOHN FOLD:", scoreJohn)
 

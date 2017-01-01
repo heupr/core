@@ -3,7 +3,7 @@ package models
 import "coralreefci/engine/gateway/conflation"
 
 type Model struct {
-    // NOTE: possibly truncate to an embedded field
+	// NOTE: Possibly truncate to an embedded field.
 	Algorithm Algorithm
 }
 
