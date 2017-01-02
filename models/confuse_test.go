@@ -2,7 +2,7 @@ package models
 
 import (
 	"coralreefci/engine/gateway/conflation"
-    "github.com/google/go-github/github"
+	"github.com/google/go-github/github"
 	"testing"
 )
 
@@ -16,17 +16,17 @@ var metrics = map[string]float64{
 	"MikeFN":    2.0,
 	"FullCount": 9.0,
 	"Precision": 0.25,
-	"Recall":    0.33,
-	"Accuracy":  0.22,
+	"Recall":    0.3333,
+	"Accuracy":  0.2222,
 }
 
 func generateIssues(assignees []string) []conflation.ExpandedIssue {
 	issueList := []conflation.ExpandedIssue{}
 	for i := 0; i < len(assignees); i++ {
-        name := assignees[i]
-        assignee := github.User{Name: &name}
-        githubIssue := github.Issue{Assignee: &assignee}
-        crIssue := conflation.CRIssue{githubIssue, []int{}, []conflation.CRPullRequest{}}
+		login := assignees[i]
+		assignee := github.User{Login: &login}
+		githubIssue := github.Issue{Assignee: &assignee}
+		crIssue := conflation.CRIssue{githubIssue, []int{}, []conflation.CRPullRequest{}}
 		issueList = append(issueList, conflation.ExpandedIssue{Issue: crIssue})
 	}
 	return issueList
@@ -36,7 +36,7 @@ func TestBuildMatrix(t *testing.T) {
 	exp := generateIssues(expectedList)
 	pre := generateIssues(predictedList)
 
-    nbModel := Model{}
+	nbModel := Model{}
 	matrix, _ := nbModel.BuildMatrix(exp, pre)
 
 	if len(matrix) == 0 {
@@ -96,7 +96,7 @@ func TestBuildMatrix(t *testing.T) {
 	fullAccuracy := matrix.getAccuracy()
 	if metrics["Accuracy"] != fullAccuracy {
 		t.Error(
-			"\nALL TESTS INACCURATE",
+			"\nFULL MATRIX ACCURACY MISCALCULATED",
 			"\nEXPECTED:  ", metrics["Accuracy"],
 			"\nACTUAL:    ", fullAccuracy)
 	}
@@ -104,7 +104,7 @@ func TestBuildMatrix(t *testing.T) {
 	fullCount := matrix.getTestCount()
 	if metrics["FullCount"] != fullCount {
 		t.Error(
-			"\nALL TESTS MISCOUNT",
+			"\nFULL MATRIX RESULT COUNT MISCALCULATED",
 			"\nEXPECTED:  ", metrics["FullCount"],
 			"\nACTUAL:    ", fullCount)
 	}

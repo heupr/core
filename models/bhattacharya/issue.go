@@ -19,14 +19,15 @@ type Issue struct {
 	Labels   []string
 }
 
-func (n *NBClassifier) bhattacharyaConverter(ei []conflation.ExpandedIssue) []Issue {
+func (n *NBClassifier) converter(ei ...conflation.ExpandedIssue) []Issue {
 	output := []Issue{}
 	for i := 0; i < len(ei); i++ {
+		// NOTE: logic will be needed to handle empty values (possibly unless a "nil" is auto-generated from GitHub)
 		issue := Issue{
-			RepoID:   *ei[i].Issue.ID,
+			RepoID:   *ei[i].Issue.ID, // NOTE: start here; it looks like it is not being included in the initialization in the unit test
 			IssueID:  *ei[i].Issue.Number,
 			URL:      *ei[i].Issue.URL,
-			Assignee: *ei[i].Issue.User.Login,
+			Assignee: *ei[i].Issue.Assignee.Login,
 			Body:     *ei[i].Issue.Body,
 			Resolved: *ei[i].Issue.ClosedAt,
 			Labels:   labelStrings(ei[i].Issue.Labels),

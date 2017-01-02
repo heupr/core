@@ -14,6 +14,7 @@ type matrix map[string]map[string]int
 //      - predicted - slice of issues the model predicted; output data
 //      These are the same length as the latter is just predictions of the
 //      former.
+// TODO: change to an interface parameter
 func (m *Model) BuildMatrix(expected, predicted []conflation.ExpandedIssue) (matrix, error) {
 	if len(expected) != len(predicted) {
 		return nil, errors.New("INPUT SLICES ARE NOT EQUAL LENGTH")
@@ -22,8 +23,8 @@ func (m *Model) BuildMatrix(expected, predicted []conflation.ExpandedIssue) (mat
 	outputMatrix := make(map[string]map[string]int)
 
 	for i := 0; i < len(expected); i++ {
-		exp := *expected[i].Issue.Assignee.Name  // NOTE: this is a big assumption
-		pre := *predicted[i].Issue.Assignee.Name // NOTE: this is a big assumption
+		exp := *expected[i].Issue.Assignee.Login  // NOTE: this is a big assumption
+		pre := *predicted[i].Issue.Assignee.Login // NOTE: this is a big assumption
 		if _, ok := outputMatrix[exp]; ok {
 			outputMatrix[exp][pre] += 1
 		} else {

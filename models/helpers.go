@@ -1,8 +1,8 @@
 package models
 
 import (
-    "math"
-    "strconv"
+	"math"
+	"strconv"
 )
 
 // DOC: Round is a helper function for cleaning up calculated results. The

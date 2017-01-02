@@ -10,8 +10,8 @@ func linkPullRequestsToIssue(issue *ExpandedIssue) {
 	// DOC: this operation takes the values from the related go-github
 	//			PullRequest struct ("User") and places it into the go-github Issue
 	//			struct field "Assignee" (which is a "User" struct).
-    // NOTE: Assignee and Assignees are two separate fields on the go-github
-    //       Issue struct - the latter is the slice of "User"
+	// NOTE: Assignee and Assignees are two separate fields on the go-github
+	//       Issue struct - the latter is the slice of "User"
 	issue.Issue.Assignee = issue.Issue.RefPulls[0].User
 	if issue.Issue.Body != nil && issue.Issue.RefPulls[0].Body != nil {
 		*issue.Issue.Body = *issue.Issue.Body + " " + *issue.Issue.RefPulls[0].Body

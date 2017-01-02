@@ -1,20 +1,18 @@
-package backtests
+package main
 
 import (
 	"coralreefci/engine/gateway"
 	"coralreefci/engine/gateway/conflation"
-    "coralreefci/models" // TODO: START HERE TOMORROW MORNING
-    "coralreefci/models/bhattacharya"
+	"coralreefci/models"
+	"coralreefci/models/bhattacharya"
 	"fmt"
 	. "github.com/ahmetalpbalkan/go-linq"
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 )
 
-// TODO: THIS NEEDS TO BE CHANGED TO THE MODEL STRUCT IN MODELS/ DIRECTORY
 type TestContext struct {
-    Model models.Model
-//	Model models.Model{Algorithm: bhattacharya.NBClassifier}
+	Model models.Model
 }
 
 type BackTestRunner struct {
@@ -43,7 +41,7 @@ func (t *BackTestRunner) Run() {
 
 	// TODO: Evaluate this particular snippet of code as it has potential
 	//       performance optimization capabilities related to the hardware
-    //       level. This may ultimately live in the actual gateway.go file to
+	//       level. This may ultimately live in the actual gateway.go file to
 	//	     improve the actual download operations.
 	for i := 0; i < len(issuesCopy); i++ {
 		issuesCopy[i] = *githubIssues[i]
@@ -58,7 +56,7 @@ func (t *BackTestRunner) Run() {
 	conflator.Conflate()
 
 	trainingSet := []conflation.ExpandedIssue{}
-    trainingSet = append(trainingSet, conflator.Context.Issues...)
+	trainingSet = append(trainingSet, conflator.Context.Issues...)
 	processedTrainingSet := []conflation.ExpandedIssue{}
 
 	groupby := From(trainingSet).GroupBy(
@@ -81,17 +79,18 @@ func (t *BackTestRunner) Run() {
 	// 	return orderby.(Group).Key
 	// }).ToSlice(&assignees)
 
-	bhattacharya.Shuffle(processedTrainingSet, int64(5))
+	Shuffle(processedTrainingSet, int64(5))
 
 	fmt.Println("Train")
 	fmt.Println(len(processedTrainingSet))
 
-	scoreJohn, _ := t.Context.Model.JohnFold(trainingSet)
+    // NOTE: should this be the processedTrainingSet instead of trainingSet?
+	scoreJohn := t.Context.Model.JohnFold(trainingSet)
 	fmt.Println("JOHN FOLD:", scoreJohn)
 
-	scoreTen, _ := t.Context.Model.TenFold(trainingSet)
+	scoreTen := t.Context.Model.TenFold(trainingSet)
 	fmt.Println("TEN FOLD:", scoreTen)
 
-	scoreTwo, _ := t.Context.Model.TwoFold(trainingSet)
+	scoreTwo := t.Context.Model.TwoFold(trainingSet)
 	fmt.Println("TWO FOLD:", scoreTwo)
 }
