@@ -4,8 +4,8 @@ type Normalizer struct {
 	Context *Context
 }
 
-//One level deep (simple)
-//TODO: handle deeper webs
+// NOTE: this is "one level deep" logic and would need a loop to handle more
+// TODO: handle deeper webs (implement a loop)
 func (n *Normalizer) Normalize() {
 	expandedIssues := n.Context.Issues
 	for i := 0; i < len(expandedIssues); i++ {

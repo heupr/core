@@ -24,13 +24,13 @@ var (
 )
 
 var TestWithIssue = &ExpandedIssue{
-	Issue:       CrIssue{testIssue, []int{}, []CrPullRequest{}},
-	PullRequest: CrPullRequest{testPullRequest, []int{}, []CrIssue{}},
+	Issue:       CRIssue{testIssue, []int{}, []CRPullRequest{}},
+	PullRequest: CRPullRequest{testPullRequest, []int{}, []CRIssue{}},
 }
 
 var TestWithoutIssue = &ExpandedIssue{
-	Issue:       CrIssue{nonIssue, []int{}, []CrPullRequest{}},
-	PullRequest: CrPullRequest{testPullRequest, []int{}, []CrIssue{}},
+	Issue:       CRIssue{nonIssue, []int{}, []CRPullRequest{}},
+	PullRequest: CRPullRequest{testPullRequest, []int{}, []CRIssue{}},
 }
 
 func TestFilter1b(t *testing.T) {

@@ -11,7 +11,7 @@ var testScenario4a = Scenario4a{Words: 4}
 var bodyText = "I am your father."
 var wordCount = 4
 var issue = github.Issue{Body: &bodyText}
-var testExpandedIssue = &ExpandedIssue{Issue: CrIssue{issue, []int{}, []CrPullRequest{}}}
+var testExpandedIssue = &ExpandedIssue{Issue: CRIssue{issue, []int{}, []CRPullRequest{}}}
 
 func TestFilter4a(t *testing.T) {
 	functionCount := strings.Count(*testExpandedIssue.Issue.Body, " ") + 1

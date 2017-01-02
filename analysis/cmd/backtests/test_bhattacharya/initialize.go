@@ -1,10 +1,10 @@
-package grades
+package main
 
 import (
 	"coralreefci/engine/gateway"
 	"coralreefci/engine/gateway/conflation"
+	"coralreefci/models"
 	"coralreefci/models/bhattacharya"
-	"coralreefci/models/issues"
 	"fmt"
 	. "github.com/ahmetalpbalkan/go-linq"
 	"github.com/google/go-github/github"
@@ -12,7 +12,7 @@ import (
 )
 
 type TestContext struct {
-	Model bhattacharya.Model
+	Model models.Model
 }
 
 type BackTestRunner struct {
@@ -20,7 +20,6 @@ type BackTestRunner struct {
 }
 
 func (t *BackTestRunner) Run() {
-
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "23fc398670a80700b19b1ae1587825a16aa8ce57"})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 	client := github.NewClient(tc)
@@ -41,9 +40,9 @@ func (t *BackTestRunner) Run() {
 	pullsCopy := make([]github.PullRequest, len(githubPulls))
 
 	// TODO: Evaluate this particular snippet of code as it has potential
-	//			 performance optimization capabilities related to the hardware level.
-	//			 This may ultimately live in the actual gateway.go file to
-	//			 improve the actual download operations.
+	//       performance optimization capabilities related to the hardware
+	//       level. This may ultimately live in the actual gateway.go file to
+	//	     improve the actual download operations.
 	for i := 0; i < len(issuesCopy); i++ {
 		issuesCopy[i] = *githubIssues[i]
 	}
@@ -56,47 +55,13 @@ func (t *BackTestRunner) Run() {
 	conflator.SetPullRequests(pullsCopy)
 	conflator.Conflate()
 
-	trainingSet := []issues.Issue{}
-	processedTrainingSet := []issues.Issue{}
-
-	for i := 0; i < len(conflator.Context.Issues); i++ {
-		expandedIssue := conflator.Context.Issues[i]
-		if expandedIssue.PullRequest.Number != nil && expandedIssue.Conflate {
-			truncatedIssue := issues.Issue{
-				RepoID:   *expandedIssue.PullRequest.ID,
-				IssueID:  *expandedIssue.PullRequest.Number,
-				Url:      *expandedIssue.PullRequest.URL,
-				Assignee: *expandedIssue.PullRequest.User.Login,
-			}
-			if expandedIssue.PullRequest.Body != nil {
-				truncatedIssue.Body = *expandedIssue.PullRequest.Body
-			}
-			trainingSet = append(trainingSet, truncatedIssue)
-		} else if expandedIssue.Issue.Number != nil && expandedIssue.Conflate {
-			truncatedIssue := issues.Issue{
-				RepoID:   *expandedIssue.Issue.ID,
-				IssueID:  *expandedIssue.Issue.Number,
-				Url:      *expandedIssue.Issue.URL,
-				Assignee: *expandedIssue.Issue.User.Login,
-				Resolved: *expandedIssue.Issue.ClosedAt,
-			}
-			if expandedIssue.Issue.Body != nil {
-				truncatedIssue.Body = *expandedIssue.Issue.Body
-			}
-			trainingSet = append(trainingSet, truncatedIssue)
-		}
-	}
-	// TODO: remove this workaround eventually
-	// BOTS: dotnet-bot, dotnet-mc-bot, 00101010b
-	// PROJECT MANAGERS: stephentoub
-	// excludeAssignees := []string{"dotnet-bot", "dotnet-mc-bot", "00101010b", "stephentoub"}
-	// fileData := readFile(filePath, excludeAssignees)
-	// TODO: implement a linq statement to remove the excludeAssignees
-	// referecne: excludeAssignees := []string{"dotnet-bot", "dotnet-mc-bot", "00101010b", "stephentoub"}
+	trainingSet := []conflation.ExpandedIssue{}
+	trainingSet = append(trainingSet, conflator.Context.Issues...)
+	processedTrainingSet := []conflation.ExpandedIssue{}
 
 	groupby := From(trainingSet).GroupBy(
-		func(r interface{}) interface{} { return r.(issues.Issue).Assignee },
-		func(r interface{}) interface{} { return r.(issues.Issue) })
+		func(r interface{}) interface{} { return r.(bhattacharya.Issue).Assignee },
+		func(r interface{}) interface{} { return r.(bhattacharya.Issue) })
 
 	where := groupby.Where(func(groupby interface{}) bool {
 		return len(groupby.(Group).Group) >= 10
@@ -114,21 +79,18 @@ func (t *BackTestRunner) Run() {
 	// 	return orderby.(Group).Key
 	// }).ToSlice(&assignees)
 
-	bhattacharya.Shuffle(processedTrainingSet, int64(5))
-
-	// logger := bhattacharya.CreateLog("backtest-summary")
-	// logger.Log("NUMBER OF ASSIGNEES:" + string(len(distinctAssignees(trainingSet))))
-	// logger.Log("NUMBER OF ISSUES:" + string(len(trainingSet)))
+	Shuffle(processedTrainingSet, int64(5))
 
 	fmt.Println("Train")
 	fmt.Println(len(processedTrainingSet))
 
-	scoreJohn, _ := t.Context.Model.JohnFold(trainingSet)
+	// NOTE: should this be the processedTrainingSet instead of trainingSet?
+	scoreJohn := t.Context.Model.JohnFold(trainingSet)
 	fmt.Println("JOHN FOLD:", scoreJohn)
 
-	scoreTen, _ := t.Context.Model.TenFold(trainingSet)
+	scoreTen := t.Context.Model.TenFold(trainingSet)
 	fmt.Println("TEN FOLD:", scoreTen)
 
-	scoreTwo, _ := t.Context.Model.TwoFold(trainingSet)
+	scoreTwo := t.Context.Model.TwoFold(trainingSet)
 	fmt.Println("TWO FOLD:", scoreTwo)
 }
