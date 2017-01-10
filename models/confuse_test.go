@@ -20,7 +20,7 @@ var metrics = map[string]float64{
 
 func TestBuildMatrix(t *testing.T) {
 	nbModel := Model{}
-	matrix, _ := nbModel.BuildMatrix(exp, pre)
+	matrix, _, _ := nbModel.BuildMatrix(exp, pre)
 
 	if len(matrix) == 0 {
 		t.Error(

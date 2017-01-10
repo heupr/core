@@ -24,12 +24,21 @@ func buildTestIssues() []conflation.ExpandedIssue {
 			login := "Sebulba"
 			assignee = github.User{Login: &login}
 		}
+		assignees := []*github.User{&assignee}
 		body := "Let the race begin!"
 		resolved := time.Time{}
 		name := "pit-droid"
 		labels := []github.Label{github.Label{Name: &name}}
-		githubIssue := github.Issue{ID: &id, Number: &number, URL: &url, Title: &title, Assignee: &assignee, Body: &body, ClosedAt: &resolved, Labels: labels}
-		// NOTE: THIS IS THE PROPER INITIALIZATION WITH EMPTY VALUES FOR ALL FIELDS
+		githubIssue := github.Issue{
+			ID:        &id,
+			Number:    &number,
+			URL:       &url,
+			Title:     &title,
+			Assignees: assignees,
+			Body:      &body,
+			ClosedAt:  &resolved,
+			Labels:    labels,
+		}
 		crIssue := conflation.CRIssue{githubIssue, []int{}, []conflation.CRPullRequest{}}
 		issues = append(issues, conflation.ExpandedIssue{Issue: crIssue})
 	}
@@ -37,7 +46,7 @@ func buildTestIssues() []conflation.ExpandedIssue {
 }
 
 func TestJohnFold(t *testing.T) {
-	nbModel := Model{Algorithm: &bhattacharya.NBClassifier{}}
+	nbModel := Model{Algorithm: &bhattacharya.NBModel{}}
 	testingIssues := buildTestIssues()
 	result := nbModel.JohnFold(testingIssues)
 	number, _ := strconv.ParseFloat(result, 64)
@@ -50,7 +59,7 @@ func TestJohnFold(t *testing.T) {
 }
 
 func TestTwoFold(t *testing.T) {
-	nbModel := Model{Algorithm: &bhattacharya.NBClassifier{}}
+	nbModel := Model{Algorithm: &bhattacharya.NBModel{}}
 	testingIssues := buildTestIssues()
 	result := nbModel.TwoFold(testingIssues)
 	number, _ := strconv.ParseFloat(result, 64)
@@ -63,7 +72,7 @@ func TestTwoFold(t *testing.T) {
 }
 
 func TestTenFold(t *testing.T) {
-	nbModel := Model{Algorithm: &bhattacharya.NBClassifier{}}
+	nbModel := Model{Algorithm: &bhattacharya.NBModel{}}
 	testingIssues := buildTestIssues()
 	result := nbModel.TenFold(testingIssues)
 	number, _ := strconv.ParseFloat(result, 64)

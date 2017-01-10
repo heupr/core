@@ -19,7 +19,7 @@ var stemmedIssues = []Issue{
 }
 
 func TestStemIssues(t *testing.T) {
-	StemIssues(nonstemmedIssues...)
+	stemIssues(nonstemmedIssues...)
 	for i := 0; i < len(nonstemmedIssues); i++ {
 		if nonstemmedIssues[i].Body != stemmedIssues[i].Body {
 			t.Error(

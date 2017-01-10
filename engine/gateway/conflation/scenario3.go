@@ -5,15 +5,21 @@ import (
 	"strings"
 )
 
-type Scenario2b struct {
+type Scenario3 struct{}
+
+// DOC: Scenario4 provides a filter to identify pull requests that have closed
+//      specific issues on GitHub.
+func (s *Scenario3) Filter(expandedIssue *ExpandedIssue) bool {
+	if expandedIssue.PullRequest.Body != nil {
+		return s.ResolveIssueID(expandedIssue)
+	} else {
+		return false
+	}
 }
 
 var keywords = []string{"Close #", "Closes #", "Closed #", "Fix #", "Fixes #", "Fixed #", "Resolve #", "Resolves #", "Resolved #"}
 
-// TODO: evaluate optimization
-// There could be a better way to handle this logic. Once our unit testing is
-// robust @taylor will play around (if needed for performance).
-func extractIssueId(expandedIssue *ExpandedIssue) int {
+func extractIssueID(expandedIssue *ExpandedIssue) int {
 	fixIdx := 0
 	for i := 0; i < len(keywords); i++ {
 		fixIdx = strings.LastIndex(*expandedIssue.PullRequest.Body, keywords[i])
@@ -31,19 +37,11 @@ func extractIssueId(expandedIssue *ExpandedIssue) int {
 	return int(issueId)
 }
 
-func (s *Scenario2b) ResolveIssueId(expandedIssue *ExpandedIssue) bool {
-	issueId := extractIssueId(expandedIssue)
+func (s *Scenario3) ResolveIssueID(expandedIssue *ExpandedIssue) bool {
+	issueId := extractIssueID(expandedIssue)
 	if issueId != -1 {
 		expandedIssue.PullRequest.RefIssueIds = []int{issueId}
 		return true
-	} else {
-		return false
-	}
-}
-
-func (s *Scenario2b) Filter(expandedIssue *ExpandedIssue) bool {
-	if expandedIssue.PullRequest.Body != nil {
-		return s.ResolveIssueId(expandedIssue)
 	} else {
 		return false
 	}

@@ -44,14 +44,11 @@ func (c *Gateway) GetIssues(org string, project string) ([]*github.Issue, error)
 	filteredIssues := []*github.Issue{}
 	for {
 		issues, resp, err := c.Client.Issues.ListByRepo(org, project, issuesOpt)
-		for i := 0; i < len(issues); i++ {
-			if err != nil {
-				return nil, err
-			}
-			if issues[i].PullRequestLinks == nil {
-				filteredIssues = append(filteredIssues, issues[i])
-			}
+		if err != nil {
+			return nil, err
 		}
+		filteredIssues = append(filteredIssues, issues...)
+
 		if resp.NextPage == 0 || c.UnitTesting {
 			break
 		} else {

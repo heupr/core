@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"coralreefci/utils"
 	"encoding/gob"
 	"os"
 )
@@ -9,7 +10,7 @@ type DiskCache struct {
 }
 
 func (d *DiskCache) Set(key string, values interface{}) (err error) {
-	file, err := os.OpenFile("../../data/caches/"+key, os.O_WRONLY|os.O_CREATE, 0644)
+	file, err := os.OpenFile(utils.Config.DataCachesPath+key, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
@@ -19,14 +20,14 @@ func (d *DiskCache) Set(key string, values interface{}) (err error) {
 }
 
 func (d *DiskCache) TryGet(key string, values interface{}) (err error) {
-	if _, err = os.Stat(key); err == nil {
+	if _, err = os.Stat(utils.Config.DataCachesPath + key); err == nil {
 		return d.Get(key, values)
 	}
 	return
 }
 
 func (d *DiskCache) Get(key string, values interface{}) (err error) {
-	file, err := os.Open(key)
+	file, err := os.Open(utils.Config.DataCachesPath + key)
 	if err != nil {
 		return err
 	}

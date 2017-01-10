@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var TestScenario1b = Scenario1b{}
+var TestScenario2 = Scenario2{}
 
 // DOC: this is the variable contruction for the dummy pure GitHub issue.
 var (
@@ -33,8 +33,8 @@ var TestWithoutIssue = &ExpandedIssue{
 	PullRequest: CRPullRequest{testPullRequest, []int{}, []CRIssue{}},
 }
 
-func TestFilter1b(t *testing.T) {
-	firstOutput := TestScenario1b.Filter(TestWithIssue)
+func TestFilter2(t *testing.T) {
+	firstOutput := TestScenario2.Filter(TestWithIssue)
 	if firstOutput != true {
 		t.Error(
 			"\nISSUE WITH COMMENT INCORRECTLY FILTERED OUT",
@@ -42,7 +42,7 @@ func TestFilter1b(t *testing.T) {
 			"\nBOOLEAN FILTER RETURN: ", firstOutput,
 		)
 	}
-	secondOutput := TestScenario1b.Filter(TestWithoutIssue)
+	secondOutput := TestScenario2.Filter(TestWithoutIssue)
 	if secondOutput != false {
 		t.Error(
 			"\nNONEXISTENT ISSUE NOT FILTERED",

@@ -4,6 +4,8 @@ import (
 	"github.com/google/go-github/github"
 )
 
+// TODO: Repair erroneous "Ids" naming convention.
+// TODO: Rename fields to "Numbers" instead of "IDs"
 type CRPullRequest struct {
 	github.PullRequest
 	RefIssueIds []int

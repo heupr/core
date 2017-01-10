@@ -1,11 +1,11 @@
 package conflation
 
-type Scenario3a struct {
+type Scenario4 struct {
 }
 
-// DOC: Scenario3a filters for "naked" pull requests.
+// DOC: Scenario4 filters for "naked" pull requests.
 //      These are pull requests without an associated issue.
-func (s *Scenario3a) Filter(expandedIssue *ExpandedIssue) bool {
+func (s *Scenario4) Filter(expandedIssue *ExpandedIssue) bool {
 	if expandedIssue.PullRequest.RefIssueIds == nil {
 		return true
 	} else {

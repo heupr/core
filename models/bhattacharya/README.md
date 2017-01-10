@@ -24,3 +24,5 @@ for future models.
   assignment
   - TF-IDF is an efficient means of identifying training features
   - Naive Bayes correctly classifies features
+  - Lapace smoothing is implemented with a smoothing variable of 1
+  - regularization has not been implemented in the model

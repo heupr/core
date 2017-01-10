@@ -5,10 +5,9 @@ import (
 	"strings"
 )
 
-// DOC: StemIssues finds the stem of each word in the input issues body text.
-//      This applies the snowball stemmer formula to the target words.
-func StemIssues(issueList ...Issue) {
-	// TODO: change the parameter types to "...*bhattacharyaIssue"; this could
+// DOC: This applies the snowball stemmer formula to the target words.
+func stemIssues(issueList ...Issue) {
+	// TODO: change the parameter types to "...*Issue"; this could
 	//       possibly resolve the copy value errors and allow for the removal
 	//       of the StemIssuesSingle workaround (also see StopWords for the
 	//       same solution)
@@ -24,7 +23,7 @@ func StemIssues(issueList ...Issue) {
 	}
 }
 
-func StemIssuesSingle(issue *Issue) {
+func stemIssuesSingle(issue *Issue) {
 	wordList := []string{}
 	words := strings.Split(issue.Body, " ")
 	for _, word := range words {

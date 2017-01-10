@@ -1,0 +1,9 @@
+{
+  "logpath": "$GOPATH/src/coralreefci/data/backtests/application-%Y%m%d%H%M.log",
+  "modelsummarypath": "$GOPATH/src/coralreefci/data/backtests/model-%Y%m%d%H%M.log",
+  "modeldetailspath": "$GOPATH/src/coralreefci/data/backtests/modeldetails-%Y%m%d%H%M.log",
+  "datacachespath": "$GOPATH/src/coralreefci/data/caches",
+  "slackuser": "coralreef-bot",
+  "slackchannel": "#model-bhattacharya",
+  "slackhook": "https://hooks.slack.com/services/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"
+}

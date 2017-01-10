@@ -3,37 +3,38 @@
 Welcome to **CoralReefCI**!  
 
 We welcome any and all constructive contributions to our public repositories.
-Below are several guidelines on how to best contribute to the project.
+Below are several guidelines on how to best contribute to the project.  
 
 ## Reporting issues
 
-- via GitHub
-- example issue
+Issues and are accepted exclusively through GitHub. Please keep your
+descriptions clear and comprehensive enough for rapid review and collaborative
+discussions.  
 
 ## Code guidelines
 
 We believe that code shouldn't just be *functional*, it should be *beautiful*.
 As such, we take great lengths to ensure that we provide our community with
-rich, well-designed repositories to contribute to.
+rich, well-designed repositories to contribute to.  
 
-Some guidelines we require all submitted code to adhere to are:
-- all code must follow official Go-styled formatting
-  - running `gofmt -w filename.go` on all changed files is recommended
-- new functionality should be reflected in testing files
-  - internally we follow a TDD process and encourage our community to do so as
-  well
-- adjust documentation as it is required; not too much, not too little
-  - refer to examples of in-code documentation for guidance
-- all contributors must sign the [CLA](https://cla-assistant.io/)
-  - pull requests will not be accepted unless the CLA is completed
-- include relevant issue numbers (if available)
-  - this makes tracking progress easier for everyone involved
+Additionally, we believe that code should be **self documenting** in that
+naming and writing conventions should be understandable with *minimal* in-code
+documentation and comments.  
+
+If comments are necessary, please use `// DOC: Comments go here.` as the
+style.  
+
+Lastly, all changes should pass `gofmt` (for uniformity) and unit tests with
+`go test` (conforming to TDD).  
 
 ## Commit messages
 
-- follow guidelines
-- imperative, sentence case, no period
+For clarity, follow [these guidelines](http://chris.beams.io/posts/git-commit/)
+with regards to writing your commit messages. Include a title sentence using
+the imperative tense, followed by a description with details and notes with any
+pertinent information.
 
-## Questions
+## Contributing
 
-- contact info
+All contributors must sign the [CLA](https://cla-assistant.io/) prior to having
+any changes included in the project.  
