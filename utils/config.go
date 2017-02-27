@@ -32,6 +32,7 @@ func init() {
 
 func loadConfig() Configuration {
 	file, err := os.Open("./config.json")
+	defer file.Close()
 	if err != nil {
 		if configEnvPath := os.Getenv(ConfigEnv); configEnvPath != "" {
 			file, err = os.Open(configEnvPath)

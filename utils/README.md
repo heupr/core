@@ -1,4 +1,4 @@
-# CoralReefCI&trade; General Utilities
+# Heupr&trade; General Utilities
 
 ## Description
 

@@ -23,8 +23,11 @@ func (n *NBModel) converter(expandedIssue ...conflation.ExpandedIssue) []Issue {
 		issue := Issue{
 			IssueNumber: *expandedIssue[i].Issue.Number,
 			URL:         *expandedIssue[i].Issue.URL,
-			Resolved:    *expandedIssue[i].Issue.ClosedAt,
 			Labels:      labelStrings(expandedIssue[i].Issue.Labels),
+		}
+
+		if expandedIssue[i].Issue.ClosedAt != nil {
+			issue.Resolved = *expandedIssue[i].Issue.ClosedAt
 		}
 		if expandedIssue[i].Issue.Body == nil {
 			issue.Body = "no body"

@@ -1,8 +1,8 @@
-# CoralReefCI&trade; Models
+# Heupr&trade; Models
 
 ## Description
 
-All **back-end logic** powering the CoralReefCI&trade; project is stored in
+All **back-end logic** powering the Heupr&trade; project is stored in
 this directory. Each model is separated into a unique directory which is titled
 the name of the given model. In addition to necessary code assets, these
 directories will contain the necessary READMEs, documentation, and resource

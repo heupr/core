@@ -1,4 +1,4 @@
-# CoralReefCI&trade; Data Storage
+# Heupr&trade; Data Storage
 
 ## Description
 

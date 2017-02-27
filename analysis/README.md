@@ -1,9 +1,9 @@
-# CoralReefCI&trade; Performance Analysis
+# Heupr&trade; Performance Analysis
 
 ## Description
 
 This directory contains the various **testing structures** necessary for the
-CoralReefCI project. These will include several types such as model
+Heupr project. These will include several types such as model
 backtesting, stress testing infrastructure, handling failure scenarios, and
 others (as they are developed).  
 

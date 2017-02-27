@@ -1,11 +1,11 @@
-# CoralReefCI&trade; Core
+# Heupr&trade; Core
 
 ### Build well
 
 ## Description
 
 This is the internal, private repository containing all relevant code for
-the **CoralReefCI** software suite. Various subdirectories will be made
+the **Heupr** software suite. Various subdirectories will be made
 available for open source use when deemed possible and will be established on
 a case-by-case basis. Otherwise the code here is proprietary in nature and
 should be treated as such.  
