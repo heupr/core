@@ -15,15 +15,11 @@ type HeuprServer struct {
 	Conflator conflation.Conflator
 }
 
-func (h *HeuprServer) Start() {
+func (h *HeuprServer) routes() *http.ServeMux {
 	mux := http.NewServeMux()
-	h.Server = http.Server{}
-	h.Server.Addr = "127.0.0.1:8080"
-	h.Server.Handler = mux
 	mux.HandleFunc("/", mainHandle)
 	mux.HandleFunc("/login", githubLoginHandle)
-	mux.Handle("/hook", collectorHandler(""))
-
+	mux.Handle("/hook", collectorHandler())
 	// TODO: This is a temporary work around until actual code can be built
 	//       that will return the necessary repository struct.
 	//       NOTE: http.HandleFunc("/select", githubRepoSelect) <- EXAMPLE
@@ -31,16 +27,14 @@ func (h *HeuprServer) Start() {
 	user := &github.User{Login: &login}
 	name := "test"
 	id := 1
-	repo := github.Repository{
-		Name:  &name,
-		Owner: user,
-		ID:    &id,
-	}
+	repo := github.Repository{Name: &name, Owner: user, ID: &id}
 	mux.Handle("/test", h.TesthookHandler(&repo, testClient()))
 	mux.Handle("/github_oauth_cb", h.hookHandler(&repo))
-	// if err := http.ListenAndServe(addr, nil); err != nil {
-	// 	fmt.Println(err)
-	// }
+	return mux
+}
+
+func (h *HeuprServer) Start() {
+	h.Server = http.Server{Addr: "127.0.0.1:8080", Handler: h.routes()}
 	// TODO: Add in logging and remove print statement.
 	err := h.Server.ListenAndServe()
 	if err != nil {
@@ -65,7 +59,6 @@ func testClient() *github.Client {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "634a8f39667f799a99bf2d7a852fcc5cbe412c93"})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 	client := github.NewClient(tc)
-	client.UserAgent = "heupr"
 	return client
 }
 

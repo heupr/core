@@ -14,7 +14,7 @@ import (
 
 var Workload = make(chan github.Issue, 100)
 
-func collectorHandler(repo string) http.Handler {
+func collectorHandler() http.Handler {
 	// NOTE: Temporarily removed the "secret" argument - eventually implement
 	//       for security purposes.
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -60,6 +60,8 @@ func collectorHandler(repo string) http.Handler {
 			return
 		}
 
+		//TODO: Get Repo Name from Issue object
+		repo := "TEST_REPO_NAME"
 		fmt.Printf("Handling '%s' event for %s", eventType, repo)
 
 		Workload <- *event.Issue

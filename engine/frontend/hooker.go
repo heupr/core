@@ -12,7 +12,7 @@ import (
 )
 
 func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) error {
-	if check, err := h.CheckHook(repo, client); check {
+	if check, err := h.HookExists(repo, client); check {
 		// TODO: Logic for handling an error here will be implemented; this
 		//       will take the form of an exit from the parent NewHook method
 		//       as well as a generation of an error/redirect page option to
@@ -47,7 +47,7 @@ func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) er
 	return nil
 }
 
-func (h *HeuprServer) CheckHook(repo *github.Repository, client *github.Client) (bool, error) {
+func (h *HeuprServer) HookExists(repo *github.Repository, client *github.Client) (bool, error) {
 	name := *repo.Name
 	owner := *repo.Owner.Login
 	hookID, err := retrieveData(*repo.ID, "hookID")
