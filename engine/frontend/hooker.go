@@ -12,17 +12,19 @@ import (
 )
 
 func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) error {
-	if check, err := h.HookExists(repo, client); check {
-		// TODO: Logic for handling an error here will be implemented; this
-		//       will take the form of an exit from the parent NewHook method
-		//       as well as a generation of an error/redirect page option to
-		//       the end user of the Heupr application.
-		return err
-	}
+	//TODO: Runtime Error
+	/*
+		if check, err := h.HookExists(repo, client); check {
+			// TODO: Logic for handling an error here will be implemented; this
+			//       will take the form of an exit from the parent NewHook method
+			//       as well as a generation of an error/redirect page option to
+			//       the end user of the Heupr application.
+			return err
+		}*/
 
 	name := *repo.Name
 	owner := *repo.Owner.Login
-	url := "http://758a4cc0.ngrok.io/hook"
+	url := "http://b32ddb5e.ngrok.io/hook"
 	secret := "chalmun's-spaceport-cantina"
 
 	hook, _, err := client.Repositories.CreateHook(owner, name, &github.Hook{

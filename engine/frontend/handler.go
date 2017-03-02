@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-var Workload = make(chan github.Issue, 100)
+var Workload = make(chan github.IssuesEvent, 100)
 
 func collectorHandler() http.Handler {
 	// NOTE: Temporarily removed the "secret" argument - eventually implement
@@ -52,7 +52,7 @@ func collectorHandler() http.Handler {
 			}
 		}
 
-		event := github.IssueEvent{}
+		event := github.IssuesEvent{}
 		err = json.Unmarshal(body, &event)
 		if err != nil {
 			fmt.Printf("Ignoring '%s' event with invalid payload", eventType)
@@ -60,10 +60,8 @@ func collectorHandler() http.Handler {
 			return
 		}
 
-		//TODO: Get Repo Name from Issue object
-		repo := "TEST_REPO_NAME"
-		fmt.Printf("Handling '%s' event for %s", eventType, repo)
+		fmt.Printf("Handling '%s' event for %s", eventType, *event.Repo)
 
-		Workload <- *event.Issue
+		Workload <- event
 	})
 }
