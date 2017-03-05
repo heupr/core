@@ -11,6 +11,8 @@ import (
 	"github.com/google/go-github/github"
 )
 
+const secretKey = "chalmun"
+
 func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) error {
 	//TODO: Runtime Error
 	/*
@@ -25,7 +27,6 @@ func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) er
 	name := *repo.Name
 	owner := *repo.Owner.Login
 	url := "http://00ad0ac7.ngrok.io/hook"
-	secret := "chalmun's-spaceport-cantina"
 
 	hook, _, err := client.Repositories.CreateHook(owner, name, &github.Hook{
 		Name:   github.String("web"),
@@ -33,7 +34,7 @@ func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) er
 		Active: github.Bool(true),
 		Config: map[string]interface{}{
 			"url":          url,
-			"secret":       secret,
+			"secret":       secretKey,
 			"content_type": "json",
 			"insecure_ssl": false,
 		},
@@ -42,7 +43,7 @@ func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) er
 		return err
 	}
 
-	err = storeData(*repo.ID, "hookID", *hook.ID)
+	err = h.Database.storeData(*repo.ID, "hookID", *hook.ID)
 	if err != nil {
 		return err
 	}
@@ -52,7 +53,7 @@ func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) er
 func (h *HeuprServer) HookExists(repo *github.Repository, client *github.Client) (bool, error) {
 	name := *repo.Name
 	owner := *repo.Owner.Login
-	hookID, err := retrieveData(*repo.ID, "hookID")
+	hookID, err := h.Database.retrieveData(*repo.ID, "hookID")
 	if err != nil {
 		return false, err
 	}

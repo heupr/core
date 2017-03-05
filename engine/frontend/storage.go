@@ -4,16 +4,32 @@ import (
 	"fmt"
 	"strconv"
 
-	// "golang.org/x/crypto/bcrypt"
 	"github.com/boltdb/bolt"
 )
 
-func storeData(repoID int, key string, value interface{}) error {
-	db, err := bolt.Open("storage.db", 0644, nil)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+type BoltDB struct {
+	db *bolt.DB
+}
+
+// func (b *BoltDB) open() error {
+// 	boltDB, err := bolt.Open("storage.db", 0644, nil)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	b.db = boltDB
+// 	return nil
+// }
+
+// func (b *BoltDB) close() {
+// 	b.db.Close()
+// }
+
+func (b *BoltDB) storeData(repoID int, key string, value interface{}) error {
+	// db, err := bolt.Open("storage.db", 0644, nil)
+	// if err != nil {
+	// 	return err
+	// }
+	// defer db.Close()
 
 	idBytes := []byte(strconv.Itoa(repoID))
 	keyBytes := []byte(key)
@@ -31,7 +47,7 @@ func storeData(repoID int, key string, value interface{}) error {
 		return err
 	}
 
-	err = db.Update(func(tx *bolt.Tx) error {
+	err = b.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(idBytes)
 		if err != nil {
 			return err
@@ -49,18 +65,18 @@ func storeData(repoID int, key string, value interface{}) error {
 	return nil
 }
 
-func retrieveData(repoID int, key string) (interface{}, error) {
-	db, err := bolt.Open("storage.db", 0644, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
+func (b *BoltDB) retrieveData(repoID int, key string) (interface{}, error) {
+	// db, err := bolt.Open("storage.db", 0644, nil)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// defer db.Close()
 
 	idBytes := []byte(strconv.Itoa(repoID))
 	keyBytes := []byte(key)
 	valueBytes := []byte{}
 
-	err = db.View(func(tx *bolt.Tx) error {
+	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(idBytes)
 		if bucket == nil {
 			return fmt.Errorf("Repository %v not found in database", repoID)
@@ -88,16 +104,16 @@ func retrieveData(repoID int, key string) (interface{}, error) {
 	return result, nil
 }
 
-func deleteData(repoID int) error {
-	db, err := bolt.Open("storage.db", 0644, nil)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+func (b *BoltDB) deleteData(repoID int) error {
+	// db, err := bolt.Open("storage.db", 0644, nil)
+	// if err != nil {
+	// 	return err
+	// }
+	// defer db.Close()
 
 	idBytes := []byte(strconv.Itoa(repoID))
 
-	err = db.Update(func(tx *bolt.Tx) error {
+	err := b.db.Update(func(tx *bolt.Tx) error {
 		if err := tx.DeleteBucket(idBytes); err != nil {
 			return err
 		}

@@ -6,8 +6,6 @@ import (
 	"net/http"
 )
 
-const secretKey = "chalmun"
-
 var Workload = make(chan github.IssuesEvent, 100)
 
 func collectorHandler() http.Handler {

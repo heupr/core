@@ -15,7 +15,9 @@ import (
 func TestNewHook(t *testing.T) {
 	mux := http.NewServeMux()
 	server := httptest.NewServer(mux)
+	// go server.Start()
 	defer server.Close()
+
 	client := github.NewClient(nil)
 	url, _ := url.Parse(server.URL)
 	client.BaseURL = url
@@ -24,7 +26,7 @@ func TestNewHook(t *testing.T) {
 	mods := make(map[int]models.Model)
 	mods[0] = models.Model{Algorithm: &bhattacharya.NBModel{}}
 
-	testHeuprServer := HeuprServer{
+	testServer := HeuprServer{
 		Models: mods,
 	}
 	mux.HandleFunc("/repos/nihilus/hunger/hooks", func(w http.ResponseWriter, r *http.Request) {
@@ -43,9 +45,15 @@ func TestNewHook(t *testing.T) {
 		ID:    &id,
 	}
 
-	err := testHeuprServer.NewHook(&testRepo, client)
+	defer testServer.closeDB()
+	err := testServer.openDB()
 	if err != nil {
-		t.Error(err)
+		t.Error(err) // TODO: Flesh out message
+	}
+
+	err = testServer.NewHook(&testRepo, client)
+	if err != nil {
+		t.Error(err) // TODO: Flesh out message
 	}
 	// server.Close()
 	// fmt.Println("END OF TEST")
