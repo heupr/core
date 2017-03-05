@@ -26,7 +26,7 @@ func (h *HeuprServer) routes() *http.ServeMux {
 	login := "heupr"
 	user := &github.User{Login: &login}
 	name := "test"
-	id := 1
+	id := 81689981
 	repo := github.Repository{Name: &name, Owner: user, ID: &id}
 	mux.Handle("/test", h.TesthookHandler(&repo, testClient()))
 	mux.Handle("/github_oauth_cb", h.hookHandler(&repo))
