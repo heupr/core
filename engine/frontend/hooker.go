@@ -25,15 +25,14 @@ func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) er
 	name := *repo.Name
 	owner := *repo.Owner.Login
 	url := "http://00ad0ac7.ngrok.io/hook"
-	secret := "chalmun's-spaceport-cantina"
-
+	
 	hook, _, err := client.Repositories.CreateHook(owner, name, &github.Hook{
 		Name:   github.String("web"),
 		Events: []string{"issues", "repository"},
 		Active: github.Bool(true),
 		Config: map[string]interface{}{
 			"url":          url,
-			"secret":       secret,
+			"secret":       secretKey,
 			"content_type": "json",
 			"insecure_ssl": false,
 		},
