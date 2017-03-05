@@ -1,67 +1,52 @@
 package frontend
 
 import (
-	"crypto/hmac"
-	"crypto/sha1"
-	"encoding/hex"
-	"encoding/json"
-	"fmt" // TEMPORARY
+	"fmt"
 	"github.com/google/go-github/github"
-	"io/ioutil"
 	"net/http"
-	"strings"
 )
 
-var Workload = make(chan github.Issue, 100)
+const secretKey = "chalmun"
+
+// var Workload = make(chan github.Issue, 100)
+var Workload = make(chan github.IssuesEvent, 100)
 
 func collectorHandler(repo string) http.Handler {
-	// NOTE: Temporarily removed the "secret" argument - eventually implement
-	//       for security purposes.
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//TODO: Pass in secret
-		secret := "chalmun's-spaceport-cantina"
 		eventType := r.Header.Get("X-Github-Event")
 		if eventType != "issues" {
-			fmt.Printf("Ignoring '%s' event", eventType)
+			fmt.Printf("Ignoring '%v' event", eventType)
 			return
 		}
-
-		body, err := ioutil.ReadAll(r.Body)
+        payload, err := github.ValidatePayload(r, []byte(secretKey))
 		if err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
-		if secret != "" {
-			ok := false
-			for _, sig := range strings.Fields(r.Header.Get("X-Hub-Signature")) {
-				if !strings.HasPrefix(sig, "sha1=") {
-					continue
-				}
-				sig = strings.TrimPrefix(sig, "sha1=")
-				mac := hmac.New(sha1.New, []byte(secret))
-				mac.Write(body)
-				if sig == hex.EncodeToString(mac.Sum(nil)) {
-					ok = true
-					break
-				}
-			}
-			if !ok {
-				fmt.Printf("Ignoring '%s' event with incorrect signature", eventType)
-				return
-			}
-		}
+        event, err := github.ParseWebHook(github.WebHookType(r), payload)
 
-		event := github.IssueEvent{}
-		err = json.Unmarshal(body, &event)
-		if err != nil {
-			fmt.Printf("Ignoring '%s' event with invalid payload", eventType)
-			http.Error(w, "Bad Request", http.StatusBadRequest)
-			return
-		}
+        if err != nil {
+    		fmt.Printf("Could not parse webhook %v", err)
+    		return
+    	}
 
-		fmt.Printf("Handling '%s' event for %s", eventType, repo)
+		// event := github.IssueEvent{}
+		// err = json.Unmarshal(body, &event)
+        // err = json.Unmarshal(payload, &event)
+        // if err != nil {
+		// 	fmt.Printf("Ignoring '%s' event with invalid payload", eventType)
+		// 	http.Error(w, "Bad request", http.StatusBadRequest)
+		// 	return
+		// }
+		// fmt.Printf("Handling '%s' event for %s", eventType, repo)
 
-		Workload <- *event.Issue
+        issueEvent := event.(github.IssuesEvent)
+        // issueEvent := event.(github.Issue)
+        Workload <- issueEvent
+        // fmt.Println(reflect.TypeOf(event)) // TEMPORARY
+        // Workload <- *event.(&github.IssuesEvent).Issue
+        // Workload <- event
+        // Workload <- *event.(github.IssueEvent).Issue
 	})
 }
