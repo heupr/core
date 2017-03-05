@@ -1,20 +1,18 @@
-package frontend
+package onboarder
 
 import (
 	"fmt"
 	"strconv"
 
-	// "golang.org/x/crypto/bcrypt"
 	"github.com/boltdb/bolt"
 )
 
-func storeData(repoID int, key string, value interface{}) error {
-	db, err := bolt.Open("storage.db", 0644, nil)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+// DOC: Keys thus far are "hookID" and "token" in buckets named "repoID".
+type BoltDB struct {
+	db *bolt.DB
+}
 
+func (b *BoltDB) store(repoID int, key string, value interface{}) error {
 	idBytes := []byte(strconv.Itoa(repoID))
 	keyBytes := []byte(key)
 	valueBytes, err := func(input interface{}) ([]byte, error) {
@@ -24,14 +22,14 @@ func storeData(repoID int, key string, value interface{}) error {
 		case string:
 			return []byte(i), nil
 		default:
-			return nil, fmt.Errorf("Invalid input type %v\nAccepted types: int, string", i)
+			return nil, fmt.Errorf("Invalid input type %v; accepted types: int, string", i)
 		}
 	}(value)
 	if err != nil {
 		return err
 	}
 
-	err = db.Update(func(tx *bolt.Tx) error {
+	err = b.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(idBytes)
 		if err != nil {
 			return err
@@ -49,18 +47,12 @@ func storeData(repoID int, key string, value interface{}) error {
 	return nil
 }
 
-func retrieveData(repoID int, key string) (interface{}, error) {
-	db, err := bolt.Open("storage.db", 0644, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
-
+func (b *BoltDB) retrieve(repoID int, key string) (interface{}, error) {
 	idBytes := []byte(strconv.Itoa(repoID))
 	keyBytes := []byte(key)
 	valueBytes := []byte{}
 
-	err = db.View(func(tx *bolt.Tx) error {
+	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(idBytes)
 		if bucket == nil {
 			return fmt.Errorf("Repository %v not found in database", repoID)
@@ -88,16 +80,28 @@ func retrieveData(repoID int, key string) (interface{}, error) {
 	return result, nil
 }
 
-func deleteData(repoID int) error {
-	db, err := bolt.Open("storage.db", 0644, nil)
-	if err != nil {
-		return err
+func (b *BoltDB) retrieveBulk(input ...string) ([][]byte, error) {
+	tokens := [][]byte{}
+	if err := b.db.Batch(func(tx *bolt.Tx) error {
+		if err := tx.ForEach(func(name []byte, b *bolt.Bucket) error {
+			bucket := tx.Bucket(name)
+			tokens = append(tokens, bucket.Get([]byte("token")))
+			return nil
+		}); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
-	defer db.Close()
+	return tokens, nil
+}
 
+// DOC: For when users remove their repos from the Heupr service.
+func (b *BoltDB) delete(repoID int) error {
 	idBytes := []byte(strconv.Itoa(repoID))
 
-	err = db.Update(func(tx *bolt.Tx) error {
+	err := b.db.Update(func(tx *bolt.Tx) error {
 		if err := tx.DeleteBucket(idBytes); err != nil {
 			return err
 		}

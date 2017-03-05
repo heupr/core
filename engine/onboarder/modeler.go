@@ -1,82 +1,28 @@
-package frontend
+package onboarder
 
 import (
-	// "net/http"
+	"github.com/google/go-github/github"
 
 	"coralreefci/engine/gateway"
 	"coralreefci/engine/gateway/conflation"
 	"coralreefci/models"
 	"coralreefci/models/bhattacharya"
-	"coralreefci/utils"
-	"github.com/google/go-github/github"
 )
 
-func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) error {
-	if check, err := h.CheckHook(repo, client); check {
-		// TODO: Logic for handling an error here will be implemented; this
-		//       will take the form of an exit from the parent NewHook method
-		//       as well as a generation of an error/redirect page option to
-		//       the end user of the Heupr application.
-		return err
-	}
-
+func (rs *RepoServer) AddModel(repo *github.Repository, client *github.Client) error {
 	name := *repo.Name
 	owner := *repo.Owner.Login
-	url := "http://758a4cc0.ngrok.io/hook"
-	secret := "chalmun's-spaceport-cantina"
-
-	hook, _, err := client.Repositories.CreateHook(owner, name, &github.Hook{
-		Name:   github.String("web"),
-		Events: []string{"issues"},
-		Active: github.Bool(true),
-		Config: map[string]interface{}{
-			"url":          url,
-			"secret":       secret,
-			"content_type": "json",
-			"insecure_ssl": false,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	err = storeData(*repo.ID, "hookID", *hook.ID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (h *HeuprServer) CheckHook(repo *github.Repository, client *github.Client) (bool, error) {
-	name := *repo.Name
-	owner := *repo.Owner.Login
-	hookID, err := retrieveData(*repo.ID, "hookID")
-	if err != nil {
-		return false, err
-	}
-
-	_, _, err = client.Repositories.GetHook(owner, name, hookID.(int))
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-func (h *HeuprServer) AddModel(repo *github.Repository, client *github.Client) error {
-	name := *repo.Name
-	owner := *repo.Owner.Login
-
-	h.Models[555] = models.Model{Algorithm: &bhattacharya.NBModel{}}
+	repoID := *repo.ID
 	//TODO: The comments field is not cached when using CachedGateway and will
 	//      need to be fixed eventually.
 	newGateway := gateway.Gateway{Client: client}
 	githubIssues, err := newGateway.GetIssues(owner, name)
 	if err != nil {
-		utils.Log.Error("Cannot get Issues from Gateway. ", err)
+		// utils.Log.Error("Cannot get Issues from Gateway. ", err)
 	}
 	githubPulls, err := newGateway.GetPullRequests(owner, name)
 	if err != nil {
-		utils.Log.Error("Cannot get PullRequests from Gateway. ", err)
+		// utils.Log.Error("Cannot get PullRequests from Gateway. ", err)
 	}
 
 	context := &conflation.Context{}
@@ -123,6 +69,10 @@ func (h *HeuprServer) AddModel(repo *github.Repository, client *github.Client) e
 			}
 		}
 	}
-	h.Models[555].Algorithm.Learn(trainingSet)
+	// TODO: This will likely become a read from the MemSQL database which will
+	//       hold the desired state of each model as a table.
+	model := models.Model{Algorithm: &bhattacharya.NBModel{}}
+	model.Algorithm.Learn(trainingSet)
+	rs.Repos[repoID].Hive.Models = append(rs.Repos[repoID].Hive.Models, &ArchModel{Model: &model})
 	return nil
 }

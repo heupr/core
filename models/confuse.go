@@ -1,7 +1,6 @@
 package models
 
 import (
-	"coralreefci/utils"
 	"errors"
 	"strings"
 )
@@ -142,7 +141,8 @@ func (m matrix) getClassF1(class string) float64 {
 
 func (m matrix) classesEvaluation(classes []string) {
 	for i := 0; i < len(classes); i++ {
-		utils.ModelDetails.Debug("Class: " + classes[i] + "\n" + m.ClassSummary(classes[i]))
+		//TODO: Fix
+		//utils.ModelLog.Debug("Class: " + classes[i] + "\n" + m.ClassSummary(classes[i]))
 	}
 }
 

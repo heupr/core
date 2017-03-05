@@ -1,22 +1,18 @@
-package frontend
+package ingestor
 
 import (
 	"github.com/google/go-github/github"
-
-	"coralreefci/models"
 )
 
 var Workers chan chan github.IssuesEvent
 
 type Dispatcher struct {
-	Models map[int]models.Model
 }
 
 func (d *Dispatcher) Start(count int) {
 	Workers = make(chan chan github.IssuesEvent, count)
 	for i := 0; i < count; i++ {
 		worker := NewWorker(i+1, Workers)
-		worker.Models = d.Models
 		worker.Start()
 	}
 

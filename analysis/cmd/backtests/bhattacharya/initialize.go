@@ -6,8 +6,10 @@ import (
 	conf "coralreefci/engine/gateway/conflation"
 	"coralreefci/models"
 	"coralreefci/utils"
+	"fmt"
 	. "github.com/ahmetalpbalkan/go-linq"
 	"github.com/google/go-github/github"
+	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	//"runtime/debug"
 )
@@ -34,11 +36,11 @@ func (t *BackTestRunner) Run() {
 
 	githubIssues, err := newGateway.GetIssues("dotnet", "corefx")
 	if err != nil {
-		utils.Log.Error("Cannot get Issues from Github Gateway. ", err)
+		utils.AppLog.Error("Cannot get Issues from Github Gateway.", zap.Error(err))
 	}
 	githubPulls, err := newGateway.GetPullRequests("dotnet", "corefx")
 	if err != nil {
-		utils.Log.Error("Cannot get PullRequests from Github Gateway. ", err)
+		utils.AppLog.Error("Cannot get PullRequests from Github Gateway.", zap.Error(err))
 	}
 
 	context := &conf.Context{}
@@ -81,7 +83,8 @@ func (t *BackTestRunner) Run() {
 			}
 		}
 	}
-	utils.ModelSummary.Info("Training set size (before Linq): ", len(trainingSet))
+	utils.ModelLog.Info("Training set size (before Linq): ", zap.Int("TrainingSetSize", len(trainingSet)))
+	fmt.Println("Training set size (before Linq): ", len(trainingSet))
 	processedTrainingSet := []conf.ExpandedIssue{}
 
 	excludeAssignees := From(trainingSet).Where(func(exclude interface{}) bool {
@@ -115,8 +118,10 @@ func (t *BackTestRunner) Run() {
 
 	Shuffle(processedTrainingSet, int64(5))
 
-	utils.ModelSummary.Info("Backtest model training...")
-	utils.ModelSummary.Info("Training set size: ", len(processedTrainingSet))
+	//utils.ModelSummary.Info("Backtest model training...")
+	utils.ModelLog.Info("Backtest model training...")
+	fmt.Println("Training set size: ", len(processedTrainingSet))
+	//utils.ModelSummary.Info("Training set size: ", len(processedTrainingSet))
 
 	//scoreTwo := t.Context.Model.TwoFold(processedTrainingSet)
 	//utils.ModelSummary.Info("TWO FOLD:", scoreTwo)
@@ -125,6 +130,5 @@ func (t *BackTestRunner) Run() {
 	//utils.ModelSummary.Info"TEN FOLD:", scoreTen)
 
 	scoreJohn := t.Context.Model.JohnFold(processedTrainingSet)
-	utils.ModelSummary.Info("John Fold score: ", scoreJohn)
-
+	fmt.Println("John Fold:", scoreJohn)
 }

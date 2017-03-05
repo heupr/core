@@ -1,11 +1,12 @@
 package frontend
 
 import (
-	"github.com/google/go-github/github"
 	"testing"
+
+	"github.com/google/go-github/github"
 )
 
-var input = make(chan chan github.Issue)
+var input = make(chan chan github.IssuesEvent)
 
 func TestNewWorker(t *testing.T) {
 	output := NewWorker(1, input)
