@@ -7,11 +7,11 @@ import (
 )
 
 const secretKey = "chalmun"
-
-// var Workload = make(chan github.Issue, 100)
 var Workload = make(chan github.IssuesEvent, 100)
 
-func collectorHandler(repo string) http.Handler {
+func collectorHandler() http.Handler {
+	// NOTE: Temporarily removed the "secret" argument - eventually implement
+	//       for security purposes.
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		eventType := r.Header.Get("X-Github-Event")
 		if eventType != "issues" {
@@ -42,11 +42,6 @@ func collectorHandler(repo string) http.Handler {
 		// fmt.Printf("Handling '%s' event for %s", eventType, repo)
 
         issueEvent := event.(github.IssuesEvent)
-        // issueEvent := event.(github.Issue)
         Workload <- issueEvent
-        // fmt.Println(reflect.TypeOf(event)) // TEMPORARY
-        // Workload <- *event.(&github.IssuesEvent).Issue
-        // Workload <- event
-        // Workload <- *event.(github.IssueEvent).Issue
 	})
 }
