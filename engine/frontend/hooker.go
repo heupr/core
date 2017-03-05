@@ -24,12 +24,12 @@ func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) er
 
 	name := *repo.Name
 	owner := *repo.Owner.Login
-	url := "http://b32ddb5e.ngrok.io/hook"
+	url := "http://00ad0ac7.ngrok.io/hook"
 	secret := "chalmun's-spaceport-cantina"
 
 	hook, _, err := client.Repositories.CreateHook(owner, name, &github.Hook{
 		Name:   github.String("web"),
-		Events: []string{"issues"},
+		Events: []string{"issues", "repository"},
 		Active: github.Bool(true),
 		Config: map[string]interface{}{
 			"url":          url,
@@ -67,8 +67,7 @@ func (h *HeuprServer) HookExists(repo *github.Repository, client *github.Client)
 func (h *HeuprServer) AddModel(repo *github.Repository, client *github.Client) error {
 	name := *repo.Name
 	owner := *repo.Owner.Login
-
-	h.Models[555] = models.Model{Algorithm: &bhattacharya.NBModel{}}
+	repoId := *repo.ID
 	//TODO: The comments field is not cached when using CachedGateway and will
 	//      need to be fixed eventually.
 	newGateway := gateway.Gateway{Client: client}
@@ -125,6 +124,8 @@ func (h *HeuprServer) AddModel(repo *github.Repository, client *github.Client) e
 			}
 		}
 	}
-	h.Models[555].Algorithm.Learn(trainingSet)
+	model := models.Model{Algorithm: &bhattacharya.NBModel{}}
+	model.Algorithm.Learn(trainingSet)
+	h.Models[repoId] = model
 	return nil
 }

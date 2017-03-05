@@ -48,7 +48,7 @@ func (w *Worker) Start() {
 					fmt.Println(expandedIssue.Issue.URL)
 					fmt.Println(expandedIssue.Issue.Assignees)
 					//fmt.Println(issue)
-					assignees := w.Models[555].Algorithm.Predict(expandedIssue)
+					assignees := w.Models[*issuesEvent.Repo.ID].Algorithm.Predict(expandedIssue)
 					// NOTE: This is likely where the assignment function will be called.
 					assignment.AssignContributor(assignees[0], issuesEvent, testClient())
 					// HACK: using test client
