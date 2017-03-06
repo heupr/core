@@ -1,8 +1,9 @@
 package frontend
 
 import (
-	"coralreefci/models"
 	"github.com/google/go-github/github"
+
+    "coralreefci/models"
 )
 
 var Workers chan chan github.IssuesEvent

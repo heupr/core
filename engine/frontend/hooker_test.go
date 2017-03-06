@@ -1,15 +1,17 @@
 package frontend
 
 import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "net/http/httptest"
+    "net/url"
+    "testing"
+
+    "github.com/google/go-github/github"
+
 	"coralreefci/models"
 	"coralreefci/models/bhattacharya"
-	"encoding/json"
-	"fmt"
-	"github.com/google/go-github/github"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"testing"
 )
 
 func TestNewHook(t *testing.T) {

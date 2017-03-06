@@ -1,11 +1,13 @@
 package frontend
 
 import (
-	"coralreefci/engine/assignment"
-	"coralreefci/engine/gateway/conflation"
-	"coralreefci/models"
-	"fmt"
+    "fmt"
+
 	"github.com/google/go-github/github"
+
+    "coralreefci/engine/assignment"
+    "coralreefci/engine/gateway/conflation"
+    "coralreefci/models"
 )
 
 type Worker struct {

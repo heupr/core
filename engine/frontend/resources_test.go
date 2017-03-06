@@ -1,9 +1,10 @@
 package frontend
 
 import (
+    "testing"
+
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
-	"testing"
 )
 
 func TestListRepositories(t *testing.T) {

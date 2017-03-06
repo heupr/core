@@ -1,9 +1,10 @@
 package assignment
 
 import (
+    "testing"
+
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
-	"testing"
 )
 
 func TestAssignContributor(t *testing.T) {

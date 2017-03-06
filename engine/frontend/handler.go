@@ -2,8 +2,9 @@ package frontend
 
 import (
 	"fmt"
+    "net/http"
+
 	"github.com/google/go-github/github"
-	"net/http"
 )
 
 var Workload = make(chan github.IssuesEvent, 100)

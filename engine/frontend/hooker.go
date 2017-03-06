@@ -1,14 +1,13 @@
 package frontend
 
 import (
-	// "net/http"
+    "github.com/google/go-github/github"
 
 	"coralreefci/engine/gateway"
 	"coralreefci/engine/gateway/conflation"
 	"coralreefci/models"
 	"coralreefci/models/bhattacharya"
 	"coralreefci/utils"
-	"github.com/google/go-github/github"
 )
 
 const secretKey = "chalmun"

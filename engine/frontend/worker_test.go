@@ -1,8 +1,9 @@
 package frontend
 
 import (
+    "testing"
+
 	"github.com/google/go-github/github"
-	"testing"
 )
 
 var input = make(chan chan github.IssuesEvent)
