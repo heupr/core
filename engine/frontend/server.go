@@ -27,12 +27,10 @@ func (h *HeuprServer) routes() *http.ServeMux {
 	// TODO: This is a temporary work around until actual code can be built
 	//       that will return the necessary repository struct.
 	//       NOTE: http.HandleFunc("/select", githubRepoSelect) <- EXAMPLE
+	mux.Handle("/test", h.TesthookHandler(testRepos(), testClient()))
 	login := "heupr"
 	user := &github.User{Login: &login}
-	name := "test"
-	id := 81689981
-	repo := github.Repository{Name: &name, Owner: user, ID: &id}
-	mux.Handle("/test", h.TesthookHandler(&repo, testClient()))
+	repo := github.Repository{Name: github.String("test"), Owner: user, ID: github.Int(81689981)}
 	mux.Handle("/github_oauth_cb", h.hookHandler(&repo))
 	return mux
 }
@@ -80,9 +78,19 @@ func testClient() *github.Client {
 	return client
 }
 
-func (h *HeuprServer) TesthookHandler(repo *github.Repository, client *github.Client) http.Handler {
+func testRepos() []*github.Repository {
+	login := "heupr"
+	user := &github.User{Login: &login}
+	repo1 := github.Repository{Name: github.String("test"), Owner: user, ID: github.Int(81689981)}
+	repo2 := github.Repository{Name: github.String("test2"), Owner: user, ID: github.Int(84002303)}
+	return []*github.Repository{&repo1, &repo2}
+}
+
+func (h *HeuprServer) TesthookHandler(repos []*github.Repository, client *github.Client) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h.NewHook(repo, client)
-		h.AddModel(repo, client)
+		for i := 0; i < len(repos); i++ {
+			h.NewHook(repos[i], client)
+			h.AddModel(repos[i], client)
+		}
 	})
 }
