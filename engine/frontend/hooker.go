@@ -1,7 +1,7 @@
 package frontend
 
 import (
-    "github.com/google/go-github/github"
+	"github.com/google/go-github/github"
 
 	"coralreefci/engine/gateway"
 	"coralreefci/engine/gateway/conflation"
