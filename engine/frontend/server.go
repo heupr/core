@@ -23,13 +23,16 @@ func (h *HeuprServer) routes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", mainHandle)
 	mux.HandleFunc("/login", githubLoginHandle)
-	mux.Handle("/hook", collectorHandler())
+    // TODO: collectorHandler will be moved out into a separate server instance
+    //       that handles the newly raised issues & assigns them.
+	// mux.Handle("/hook", collectorHandler()) // TEMPORARILY REMOVED
 	// TODO: This is a temporary work around until actual code can be built
 	//       that will return the necessary repository struct.
 	//       NOTE: http.HandleFunc("/select", githubRepoSelect) <- EXAMPLE
 	mux.Handle("/test", h.TesthookHandler(testRepos(), testClient()))
 	login := "heupr"
 	user := &github.User{Login: &login}
+    // NOTE: This is also a workaround for temporary testing measures.
 	repo := github.Repository{Name: github.String("test"), Owner: user, ID: github.Int(81689981)}
 	mux.Handle("/github_oauth_cb", h.hookHandler(&repo))
 	return mux

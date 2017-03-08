@@ -37,12 +37,13 @@ func githubLoginHandle(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-// func githubRepoSelect() (http.Handler, *github.Repository) {
-//     repo := *github.Repository{}
-//     handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//
-//     })
-// }
+/*
+func githubRepoSelect() (http.Handler, *github.Repository) {
+    repo := *github.Repository{}
+    handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    })
+}
+*/
 
 func githubCallbackHandle() (http.Handler, *github.Client) {
 	client := github.NewClient(nil)

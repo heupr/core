@@ -28,8 +28,6 @@ func collectorHandler() http.Handler {
 			fmt.Printf("Could not parse webhook %v", err)
 			return
 		}
-
-		// issueEvent := *event.(*github.IssuesEvent)
 		Workload <- *event.(*github.IssuesEvent)
 	})
 }
