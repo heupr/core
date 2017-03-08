@@ -1,13 +1,7 @@
 package frontend
 
-/*
-import (
-	"testing"
-)
+import "testing"
 
 func TestStart(t *testing.T) {
-	server := &HeuprServer{Models: nil}
-	defer server.Stop()
-	go server.Start()
+
 }
-*/

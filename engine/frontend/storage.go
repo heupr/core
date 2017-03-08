@@ -3,13 +3,11 @@ package frontend
 import (
 	"fmt"
 	"strconv"
-	"sync"
 
 	"github.com/boltdb/bolt"
 )
 
 type BoltDB struct {
-	sync.Mutex
 	db *bolt.DB
 }
 
@@ -31,8 +29,6 @@ func (b *BoltDB) storeData(repoID int, key string, value interface{}) error {
 		return err
 	}
 
-	b.Lock()
-	defer b.Unlock()
 	err = b.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(idBytes)
 		if err != nil {
@@ -56,8 +52,6 @@ func (b *BoltDB) retrieveData(repoID int, key string) (interface{}, error) {
 	keyBytes := []byte(key)
 	valueBytes := []byte{}
 
-	b.Lock()
-	defer b.Unlock()
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(idBytes)
 		if bucket == nil {
@@ -89,8 +83,6 @@ func (b *BoltDB) retrieveData(repoID int, key string) (interface{}, error) {
 func (b *BoltDB) deleteData(repoID int) error {
 	idBytes := []byte(strconv.Itoa(repoID))
 
-	b.Lock()
-	defer b.Unlock()
 	err := b.db.Update(func(tx *bolt.Tx) error {
 		if err := tx.DeleteBucket(idBytes); err != nil {
 			return err
