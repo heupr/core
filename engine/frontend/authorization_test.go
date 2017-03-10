@@ -8,7 +8,7 @@ import (
 
 func Test_mainHandle(t *testing.T) {
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/handler-test", nil)
+	req, err := http.NewRequest("GET", "/handler-test", nil)
 	if err != nil {
 		t.Error(
 			"Failure generating testing request",
@@ -24,7 +24,7 @@ func Test_mainHandle(t *testing.T) {
 
 func Test_githubLoginHandle(t *testing.T) {
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/handler-test", nil)
+	req, err := http.NewRequest("GET", "/handler-test", nil)
 	if err != nil {
 		t.Error(
 			"Failure generating testing request",
@@ -32,22 +32,6 @@ func Test_githubLoginHandle(t *testing.T) {
 		)
 	}
 	handler := http.HandlerFunc(githubLoginHandle)
-	handler.ServeHTTP(rec, req)
-	if status := rec.Code; status != http.StatusTemporaryRedirect {
-		t.Errorf("Handler returning incorrect status code; returning %v", status)
-	}
-}
-
-func Test_githubCallbackHandle(t *testing.T) {
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/handler-check", nil)
-	if err != nil {
-		t.Error(
-			"Failure generating testing request",
-			"\n", err,
-		)
-	}
-	handler, _ := githubCallbackHandle()
 	handler.ServeHTTP(rec, req)
 	if status := rec.Code; status != http.StatusTemporaryRedirect {
 		t.Errorf("Handler returning incorrect status code; returning %v", status)
