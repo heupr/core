@@ -1,6 +1,8 @@
 package frontend
 
 import (
+	// "net/http"
+
 	"github.com/google/go-github/github"
 
 	"coralreefci/engine/gateway"
@@ -13,11 +15,15 @@ import (
 const secretKey = "chalmun"
 
 func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) error {
-	if check, err := h.HookExists(repo, client); check {
+	if check, err := h.hookExists(repo, client); check {
+		// handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//
+		// })
 		// TODO: Logic for handling an error here will be implemented; this
 		//       will take the form of an exit from the parent NewHook method
 		//       as well as a generation of an error/redirect page option to
 		//       the end user of the Heupr application.
+		// return handler, err
 		return err
 	}
 
@@ -47,14 +53,14 @@ func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) er
 	return nil
 }
 
-func (h *HeuprServer) HookExists(repo *github.Repository, client *github.Client) (bool, error) {
-    name, owner := "", ""
-    if repo.Name != nil {
-        name = *repo.Name
-    }
-    if repo.Owner.Login != nil {
-        owner = *repo.Owner.Login
-    }
+func (h *HeuprServer) hookExists(repo *github.Repository, client *github.Client) (bool, error) {
+	name, owner := "", ""
+	if repo.Name != nil {
+		name = *repo.Name
+	}
+	if repo.Owner.Login != nil {
+		owner = *repo.Owner.Login
+	}
 	hookID, err := h.Database.retrieveData(*repo.ID, "hookID")
 	if err != nil {
 		return false, err
@@ -67,6 +73,7 @@ func (h *HeuprServer) HookExists(repo *github.Repository, client *github.Client)
 	return true, nil
 }
 
+// NOTE: Possibly split out into separate file for handling model addition logic.
 func (h *HeuprServer) AddModel(repo *github.Repository, client *github.Client) error {
 	name := *repo.Name
 	owner := *repo.Owner.Login

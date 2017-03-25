@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/go-github/github"
 
-	"coralreefci/engine/assignment"
+	// "coralreefci/engine/assignment"
 	"coralreefci/engine/gateway/conflation"
 	"coralreefci/models"
 )
@@ -50,9 +50,9 @@ func (w *Worker) Start() {
 					fmt.Println(expandedIssue.Issue.URL)
 					fmt.Println(expandedIssue.Issue.Assignees)
 					//fmt.Println(issue)
-					assignees := w.Models[*issuesEvent.Repo.ID].Algorithm.Predict(expandedIssue)
+					// assignees := w.Models[*issuesEvent.Repo.ID].Algorithm.Predict(expandedIssue)
 					// NOTE: This is likely where the assignment function will be called.
-					assignment.AssignContributor(assignees[0], issuesEvent, testClient())
+					// assignment.AssignContributor(assignees[0], issuesEvent, testClient())
 					// HACK: using test client
 				}
 			case <-w.Quit:

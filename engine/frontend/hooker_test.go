@@ -17,7 +17,6 @@ import (
 func TestNewHook(t *testing.T) {
 	mux := http.NewServeMux()
 	server := httptest.NewServer(mux)
-	// go server.Start()
 	defer server.Close()
 
 	client := github.NewClient(nil)
@@ -60,26 +59,3 @@ func TestNewHook(t *testing.T) {
 	// server.Close()
 	// fmt.Println("END OF TEST")
 }
-
-// mux.HandleFunc("/repos/nihilus/hunger/issues", func(w http.ResponseWriter, r *http.Request) {
-//     name1 := "sion"
-//     user1 := github.User{Login: &name1}
-//     body1 := "I am pain"
-//     issue1 := &github.Issue{
-//         User: &user1,
-//         Body: &body1,
-//     }
-//     name2 := "treya"
-//     user2 := github.User{Login: &name2}
-//     body2 := "I am betrayl"
-//     issue2 := &github.Issue{
-//         User: &user2,
-//         Body: &body2,
-//     }
-//     list := []*github.Issue{issue1, issue2}
-//     var issues struct {
-//         Issues []github.Issue
-//     }
-//     json.NewDecoder(list).Decode(&issues)
-// })
-// mux.HandleFunc("/repos/nihilus/hunger/pulls", func(w http.ResponseWriter, r *http.Request) {})

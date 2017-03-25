@@ -7,12 +7,12 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func TestListRepositories(t *testing.T) {
+func Test_listRepositories(t *testing.T) {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "552cfadac27c94e91ce960c36cc3a1ee15fb134a"})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
-	client := github.NewClient(tc)
+	client := *github.NewClient(tc)
 
-	r, e := ListRepositories(client)
+	r, e := listRepositories(&client)
 
 	names := []string{}
 

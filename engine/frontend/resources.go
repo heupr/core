@@ -2,7 +2,7 @@ package frontend
 
 import "github.com/google/go-github/github"
 
-func ListRepositories(client *github.Client) ([]*github.Repository, error) {
+func listRepositories(client *github.Client) ([]*github.Repository, error) {
 	opts := &github.RepositoryListOptions{
 		Type: "all",
 	}
