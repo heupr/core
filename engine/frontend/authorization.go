@@ -30,13 +30,13 @@ const htmlIndex = `
 </html>
 `
 
-func mainHandle(w http.ResponseWriter, r *http.Request) {
+func mainHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(htmlIndex))
 }
 
-func githubLoginHandle(w http.ResponseWriter, r *http.Request) {
+func githubLoginHandler(w http.ResponseWriter, r *http.Request) {
 	url := oaConfig.AuthCodeURL(oaState, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }

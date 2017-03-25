@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func Test_mainHandle(t *testing.T) {
+func Test_mainHandler(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/handler-test", nil)
 	if err != nil {
@@ -15,14 +15,14 @@ func Test_mainHandle(t *testing.T) {
 			"\n", err,
 		)
 	}
-	handler := http.HandlerFunc(mainHandle)
+	handler := http.HandlerFunc(mainHandler)
 	handler.ServeHTTP(rec, req)
 	if status := rec.Code; status != http.StatusOK {
 		t.Errorf("Handler returning incorrect status code; returning %v", status)
 	}
 }
 
-func Test_githubLoginHandle(t *testing.T) {
+func Test_githubLoginHandler(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/handler-test", nil)
 	if err != nil {
@@ -31,7 +31,7 @@ func Test_githubLoginHandle(t *testing.T) {
 			"\n", err,
 		)
 	}
-	handler := http.HandlerFunc(githubLoginHandle)
+	handler := http.HandlerFunc(githubLoginHandler)
 	handler.ServeHTTP(rec, req)
 	if status := rec.Code; status != http.StatusTemporaryRedirect {
 		t.Errorf("Handler returning incorrect status code; returning %v", status)

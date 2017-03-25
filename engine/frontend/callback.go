@@ -45,7 +45,7 @@ type Resources struct {
 	Repos []*github.Repository
 }
 
-func (h *HeuprServer) githubCallbackHandle(w http.ResponseWriter, r *http.Request) {
+func (h *HeuprServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("state") != oaState {
 		fmt.Println("FIRST ERROR")                             // TEMPORARY
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // TODO: Write specific redirect URL.
