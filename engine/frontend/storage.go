@@ -11,26 +11,8 @@ type BoltDB struct {
 	db *bolt.DB
 }
 
-// func (b *BoltDB) open() error {
-// 	boltDB, err := bolt.Open("storage.db", 0644, nil)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	b.db = boltDB
-// 	return nil
-// }
-
-// func (b *BoltDB) close() {
-// 	b.db.Close()
-// }
-
+// https://medium.com/@deckarep/dancing-with-go-s-mutexes-92407ae927bf#.e9o9un5nx
 func (b *BoltDB) storeData(repoID int, key string, value interface{}) error {
-	// db, err := bolt.Open("storage.db", 0644, nil)
-	// if err != nil {
-	// 	return err
-	// }
-	// defer db.Close()
-
 	idBytes := []byte(strconv.Itoa(repoID))
 	keyBytes := []byte(key)
 	valueBytes, err := func(input interface{}) ([]byte, error) {
@@ -66,12 +48,6 @@ func (b *BoltDB) storeData(repoID int, key string, value interface{}) error {
 }
 
 func (b *BoltDB) retrieveData(repoID int, key string) (interface{}, error) {
-	// db, err := bolt.Open("storage.db", 0644, nil)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// defer db.Close()
-
 	idBytes := []byte(strconv.Itoa(repoID))
 	keyBytes := []byte(key)
 	valueBytes := []byte{}
@@ -105,12 +81,6 @@ func (b *BoltDB) retrieveData(repoID int, key string) (interface{}, error) {
 }
 
 func (b *BoltDB) deleteData(repoID int) error {
-	// db, err := bolt.Open("storage.db", 0644, nil)
-	// if err != nil {
-	// 	return err
-	// }
-	// defer db.Close()
-
 	idBytes := []byte(strconv.Itoa(repoID))
 
 	err := b.db.Update(func(tx *bolt.Tx) error {

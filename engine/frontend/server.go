@@ -23,15 +23,19 @@ func (h *HeuprServer) routes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", mainHandle)
 	mux.HandleFunc("/login", githubLoginHandle)
-	mux.Handle("/hook", collectorHandler())
+	// mux.Handle("/hook", collectorHandler()) // TEMPORARILY REMOVED
 	// TODO: This is a temporary work around until actual code can be built
 	//       that will return the necessary repository struct.
 	//       NOTE: http.HandleFunc("/select", githubRepoSelect) <- EXAMPLE
 	mux.Handle("/test", h.TesthookHandler(testRepos(), testClient()))
 	login := "heupr"
 	user := &github.User{Login: &login}
+	// NOTE: This is also a workaround for temporary testing measures.
 	repo := github.Repository{Name: github.String("test"), Owner: user, ID: github.Int(81689981)}
 	mux.Handle("/github_oauth_cb", h.hookHandler(&repo))
+	// TODO: Implement resource handler function.
+	// mux.Handle("/select_repo", h.selectRepo())
+	// ^ NOTE: Needs acces to the authenticated client.
 	return mux
 }
 
@@ -62,14 +66,29 @@ func (h *HeuprServer) Stop() {
 	//      implemented in the future.
 }
 
+// TODO: Rename and move into separate file.
 func (h *HeuprServer) hookHandler(repo *github.Repository) http.Handler {
 	handler, client := githubCallbackHandle()
 	h.NewHook(repo, client)
+	// TODO: This is an example of possible implementation:
+	// errHandler := h.NewHook(repo, client)
+	// if errHandler != nil {
+	//     handler = errHandler
+	// }
 	return handler
 	// TODO: Some sort of check to ensure the incoming traffic / payload is
 	//	     what you're looking to receive (e.g. the request to setup a new
 	//       webhook on the target repo - whatever struct that happens to be).
 }
+
+/*
+func selectRepo() (http.Handler, *github.Repository) {
+    repo := *github.Repository{}
+    handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+    })
+}
+*/
 
 func testClient() *github.Client {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "634a8f39667f799a99bf2d7a852fcc5cbe412c93"})

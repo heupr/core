@@ -2,17 +2,8 @@ package frontend
 
 import "testing"
 
-// var (
-//     testHeuprServer := HeuprServer{}
-// 	testDB     = BoltDB{}
-// 	testBucket = 2187
-// 	testKey    = "Leia"
-// 	testValue  = "Princess of Alderaan"
-// )
-
 func Test_open(t *testing.T) {
 	testServer := HeuprServer{}
-	// testDB     := BoltDB{}
 	testBucket := 2187
 	testKey := "Leia"
 	testValue := "Princess of Alderaan"
@@ -20,7 +11,7 @@ func Test_open(t *testing.T) {
 	defer testServer.closeDB()
 	err := testServer.openDB()
 	if err != nil {
-		t.Error(err) // TODO: Flesh out message
+		t.Errorf("Error opening test database: ", err)
 	}
 
 	if err != nil {
@@ -51,30 +42,3 @@ func Test_open(t *testing.T) {
 		}
 	})
 }
-
-// func Test_storeData(t *testing.T) {
-// 	err := storeData(testBucket, testKey, testValue)
-// 	if err != nil {
-// 		t.Error("Error in adding data to database file")
-// 	}
-// }
-
-// func Test_retrieveData(t *testing.T) {
-// 	value, err := retrieveData(testBucket, testKey)
-// 	if err != nil {
-// 		t.Errorf(
-// 			"Error retrieving data from database",
-// 			"\nExpected %v; received %v", testValue, value,
-// 		)
-// 	}
-// }
-
-// func Test_deleteData(t *testing.T) {
-// 	err := deleteData(testBucket)
-// 	if err != nil {
-// 		t.Errorf(
-// 			"Error deleting database entry",
-// 			"\n", err,
-// 		)
-// 	}
-// }

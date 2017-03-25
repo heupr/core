@@ -1,14 +1,14 @@
 package frontend
 
 import (
-    "encoding/json"
-    "fmt"
-    "net/http"
-    "net/http/httptest"
-    "net/url"
-    "testing"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"testing"
 
-    "github.com/google/go-github/github"
+	"github.com/google/go-github/github"
 
 	"coralreefci/models"
 	"coralreefci/models/bhattacharya"

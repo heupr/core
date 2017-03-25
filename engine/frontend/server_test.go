@@ -1,13 +1,9 @@
 package frontend
 
-/*
-import (
-	"testing"
-)
+import "testing"
 
 func TestStart(t *testing.T) {
-	server := &HeuprServer{Models: nil}
-	defer server.Stop()
-	go server.Start()
+	// TODO: For simplification purposes, we may want to place some "global"
+	//       testing variables in this file so that we do not need to
+	//       constantly redeclare them throughout the unit tests.
 }
-*/

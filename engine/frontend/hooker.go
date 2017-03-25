@@ -1,7 +1,7 @@
 package frontend
 
 import (
-    "github.com/google/go-github/github"
+	"github.com/google/go-github/github"
 
 	"coralreefci/engine/gateway"
 	"coralreefci/engine/gateway/conflation"
@@ -13,15 +13,13 @@ import (
 const secretKey = "chalmun"
 
 func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) error {
-	//TODO: Runtime Error
-	/*
-		if check, err := h.HookExists(repo, client); check {
-			// TODO: Logic for handling an error here will be implemented; this
-			//       will take the form of an exit from the parent NewHook method
-			//       as well as a generation of an error/redirect page option to
-			//       the end user of the Heupr application.
-			return err
-		}*/
+	if check, err := h.HookExists(repo, client); check {
+		// TODO: Logic for handling an error here will be implemented; this
+		//       will take the form of an exit from the parent NewHook method
+		//       as well as a generation of an error/redirect page option to
+		//       the end user of the Heupr application.
+		return err
+	}
 
 	name := *repo.Name
 	owner := *repo.Owner.Login
@@ -50,8 +48,13 @@ func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) er
 }
 
 func (h *HeuprServer) HookExists(repo *github.Repository, client *github.Client) (bool, error) {
-	name := *repo.Name
-	owner := *repo.Owner.Login
+    name, owner := "", ""
+    if repo.Name != nil {
+        name = *repo.Name
+    }
+    if repo.Owner.Login != nil {
+        owner = *repo.Owner.Login
+    }
 	hookID, err := h.Database.retrieveData(*repo.ID, "hookID")
 	if err != nil {
 		return false, err
