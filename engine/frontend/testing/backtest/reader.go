@@ -38,7 +38,7 @@ func (r *ReplayServer) WalkArchive(dir string) error {
 					return err
 				}
 				switch e.Type {
-                // TODO: Possibly implement pull request events as well.
+				// TODO: Possibly implement pull request events as well.
 				case "IssuesEvent":
 					buf := bytes.NewBufferString(string(e.Payload))
 					r.HTTPPost(buf)
