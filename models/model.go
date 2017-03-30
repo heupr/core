@@ -8,6 +8,7 @@ type Model struct {
 
 type Algorithm interface {
 	Learn(input []conflation.ExpandedIssue)
+	OnlineLearn(input []conflation.ExpandedIssue)
 	Predict(input conflation.ExpandedIssue) []string
 	GenerateRecoveryFile(path string) error
 	RecoverModelFromFile(path string) error
@@ -15,6 +16,10 @@ type Algorithm interface {
 
 func (m *Model) Learn(input []conflation.ExpandedIssue) {
 	m.Algorithm.Learn(input)
+}
+
+func (m *Model) OnlineLearn(input []conflation.ExpandedIssue) {
+	m.Algorithm.OnlineLearn(input)
 }
 
 func (m *Model) Predict(input conflation.ExpandedIssue) []string {

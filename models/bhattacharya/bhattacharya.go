@@ -53,7 +53,15 @@ func (c *NBModel) Learn(input []conflation.ExpandedIssue) {
 		wordcount := c.classifier.WordsByClass(NBClass(class))
 		utils.ModelDetails.Debug(wordcount)
 	}
+}
 
+func (c *NBModel) OnlineLearn(input []conflation.ExpandedIssue) {
+	adjusted := c.converter(input...)
+	removeStopWords(adjusted...)
+	stemIssues(adjusted...)
+	for i := 0; i < len(input); i++ {
+		c.classifier.OnlineLearn(strings.Split(adjusted[i].Body, " "), NBClass(adjusted[i].Assignees[0])) // NOTE: First position is a workaround
+	}
 }
 
 func (c *NBModel) Predict(input conflation.ExpandedIssue) []string {

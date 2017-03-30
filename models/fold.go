@@ -9,13 +9,20 @@ import (
 func (m *Model) JohnFold(issues []conflation.ExpandedIssue) string {
 	utils.ModelSummary.Info("John Fold issues count: ", len(issues))
 	finalScore := 0.00
+	var score float64
+	var mat matrix
+	var distinct []string
 	for i := 0.10; i < 0.90; i += 0.10 {
 		split := int(Round(i * float64(len(issues))))
-		score, matrix, distinct := m.FoldImplementation(issues[:split], issues[split:])
+		if i < 0.80 {
+			score, mat, distinct = m.Fold(issues[:split], issues[split:])
+		} else {
+			score, mat, distinct = m.OnlineFold(issues[:split], issues[split:])
+		}
 		modelRecoveryFile := utils.Config.DataCachesPath + "/JFold" + ToString(i*10.0) + ".model"
 		m.GenerateRecoveryFile(modelRecoveryFile)
 		utils.ModelSummary.Info("Loop: " + ToString(i*10.0) + ", Accuracy: " + ToString(score))
-		matrix.classesEvaluation(distinct)
+		mat.classesEvaluation(distinct)
 		finalScore += score
 	}
 	return ToString(Round(finalScore / 9.00))
@@ -25,10 +32,10 @@ func (m *Model) JohnFold(issues []conflation.ExpandedIssue) string {
 func (m *Model) TwoFold(issues []conflation.ExpandedIssue) string {
 	utils.ModelSummary.Info("Two Fold issues count: ", len(issues))
 	split := int(0.50 * float64(len(issues)))
-	firstScore, firstMatrix, firstDistinct := m.FoldImplementation(issues[:split], issues[split:])
+	firstScore, firstMatrix, firstDistinct := m.Fold(issues[:split], issues[split:])
 	utils.ModelSummary.Info("First half, Accuracy: " + ToString(firstScore))
 	firstMatrix.classesEvaluation(firstDistinct)
-	secondScore, secondMatrix, secondDistinct := m.FoldImplementation(issues[split:], issues[:split])
+	secondScore, secondMatrix, secondDistinct := m.Fold(issues[split:], issues[:split])
 	utils.ModelSummary.Info("Second half, Accuracy: " + ToString(secondScore))
 	secondMatrix.classesEvaluation(secondDistinct)
 	score := firstScore + secondScore
@@ -45,7 +52,7 @@ func (m *Model) TenFold(issues []conflation.ExpandedIssue) string {
 		segment := issues[start:end]
 		remainder := []conflation.ExpandedIssue{}
 		remainder = append(issues[:start], issues[end:]...)
-		score, matrix, distinct := m.FoldImplementation(segment, remainder)
+		score, matrix, distinct := m.Fold(segment, remainder)
 		utils.ModelSummary.Info("Loop: " + ToString(i*10.0) + ", Accuracy: " + ToString(score))
 		matrix.classesEvaluation(distinct)
 		finalScore += score
@@ -54,7 +61,7 @@ func (m *Model) TenFold(issues []conflation.ExpandedIssue) string {
 	return ToString(Round(finalScore / 10.00))
 }
 
-func (m *Model) FoldImplementation(train, test []conflation.ExpandedIssue) (float64, matrix, []string) {
+func (m *Model) FoldImplementation(test []conflation.ExpandedIssue) (float64, matrix, []string) {
 	expected := []string{}
 	predicted := []string{}
 
@@ -66,11 +73,11 @@ func (m *Model) FoldImplementation(train, test []conflation.ExpandedIssue) (floa
 		}
 	}
 
-	m.Learn(train)
 	correct := 0
 	for i := 0; i < len(test); i++ {
 		utils.ModelSummary.Debug("Actual Assignee: ", *test[i].Issue.Assignees[0].Login)
 		predictions := m.Predict(test[i])
+		utils.ModelSummary.Debug("Predicted: ", predictions)
 		length := 5
 		if len(predictions) < 5 {
 			length = len(predictions)
@@ -92,4 +99,14 @@ func (m *Model) FoldImplementation(train, test []conflation.ExpandedIssue) (floa
 		utils.ModelSummary.Panic(err)
 	}
 	return float64(correct) / float64(len(test)), mat, dist
+}
+
+func (m *Model) Fold(train, test []conflation.ExpandedIssue) (float64, matrix, []string) {
+	m.Learn(train)
+	return m.FoldImplementation(test)
+}
+
+func (m *Model) OnlineFold(train, test []conflation.ExpandedIssue) (float64, matrix, []string) {
+	m.OnlineLearn(train)
+	return m.FoldImplementation(test)
 }

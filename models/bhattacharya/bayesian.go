@@ -23,6 +23,7 @@ type NBClassifier struct {
 	learned         int
 	seen            int32
 	datas           map[NBClass]*classData
+	rawDatas        map[NBClass]*classData
 	tfIdf           bool
 	DidConvertTfIdf bool
 }
@@ -34,6 +35,7 @@ type serializableClassifier struct {
 	Learned         int
 	Seen            int
 	Datas           map[NBClass]*classData
+	RawDatas        map[NBClass]*classData
 	TfIdf           bool
 	DidConvertTfIdf bool
 }
@@ -88,12 +90,14 @@ func classifierChecks(classes ...NBClass) {
 func NewNBClassifierTfIdf(classes ...NBClass) (c *NBClassifier) {
 	classifierChecks(classes...)
 	c = &NBClassifier{
-		Classes: classes,
-		datas:   make(map[NBClass]*classData, len(classes)),
-		tfIdf:   true,
+		Classes:  classes,
+		datas:    make(map[NBClass]*classData, len(classes)),
+		rawDatas: make(map[NBClass]*classData, len(classes)),
+		tfIdf:    true,
 	}
 	for _, class := range classes {
 		c.datas[class] = newClassData()
+		c.rawDatas[class] = newClassData()
 	}
 	return
 }
@@ -103,11 +107,13 @@ func NewNBClassifier(classes ...NBClass) (c *NBClassifier) {
 	c = &NBClassifier{
 		Classes:         classes,
 		datas:           make(map[NBClass]*classData, len(classes)),
+		rawDatas:        make(map[NBClass]*classData, len(classes)),
 		tfIdf:           false,
 		DidConvertTfIdf: false,
 	}
 	for _, class := range classes {
 		c.datas[class] = newClassData()
+		c.rawDatas[class] = newClassData()
 	}
 	return
 }
@@ -127,7 +133,7 @@ func NewNBClassifierFromReader(r io.Reader) (c *NBClassifier, err error) {
 	w := new(serializableClassifier)
 	err = dec.Decode(w)
 
-	return &NBClassifier{w.Classes, w.Learned, int32(w.Seen), w.Datas, w.TfIdf, w.DidConvertTfIdf}, err
+	return &NBClassifier{w.Classes, w.Learned, int32(w.Seen), w.Datas, w.RawDatas, w.TfIdf, w.DidConvertTfIdf}, err
 }
 
 func (c *NBClassifier) getPriors() (priors []float64) {
@@ -195,15 +201,66 @@ func (c *NBClassifier) Learn(document []string, which NBClass) {
 		for wIndex, wCount := range docTf {
 			docTf[wIndex] = wCount / docLen
 			c.datas[which].FreqTfs[wIndex] = append(c.datas[which].FreqTfs[wIndex], docTf[wIndex])
+			c.rawDatas[which].FreqTfs[wIndex] = append(c.rawDatas[which].FreqTfs[wIndex], docTf[wIndex])
 		}
 	}
 
 	data := c.datas[which]
+	rawData := c.rawDatas[which]
 	for _, word := range document {
 		data.Freqs[word]++
 		data.Total++
+		rawData.Freqs[word]++
+		rawData.Total++
 	}
 	c.learned++
+}
+
+func (c *NBClassifier) OnlineLearn(document []string, which NBClass) {
+	if !c.tfIdf {
+		c.Learn(document, which)
+	}
+	// DOC: Term frequency: word count in document / document length.
+	docTf := make(map[string]float64)
+	for _, word := range document {
+		docTf[word]++
+	}
+
+	if c.rawDatas[which] == nil {
+		c.rawDatas[which] = newClassData()
+		c.datas[which] = newClassData()
+	}
+
+	docLen := float64(len(document))
+	for wIndex, wCount := range docTf {
+		docTf[wIndex] = wCount / docLen
+		c.rawDatas[which].FreqTfs[wIndex] = append(c.rawDatas[which].FreqTfs[wIndex], docTf[wIndex])
+		c.datas[which].FreqTfs[wIndex] = append(c.datas[which].FreqTfs[wIndex], docTf[wIndex])
+	}
+
+	data := c.datas[which]
+	rawData := c.rawDatas[which]
+	for _, word := range document {
+		data.Freqs[word]++
+		data.Total++
+		rawData.Freqs[word]++
+		rawData.Total++
+	}
+	c.learned++
+
+	for className, _ := range c.rawDatas {
+		sample := math.Log1p(float64(c.learned) / float64(c.rawDatas[className].Total))
+		for wIndex, _ := range c.rawDatas[className].FreqTfs {
+			tfIdfAdder := float64(0)
+			freqTfs := c.datas[className].FreqTfs[wIndex]
+			for tfSampleIndex, tf := range c.rawDatas[className].FreqTfs[wIndex] {
+				result := math.Log1p(tf) * sample
+				tfIdfAdder += result
+				freqTfs[tfSampleIndex] = result
+			}
+			c.datas[className].Freqs[wIndex] = tfIdfAdder
+		}
+	}
 }
 
 func (c *NBClassifier) ConvertTermsFreqToTfIdf() {
@@ -362,7 +419,7 @@ func (c *NBClassifier) WriteClassToFile(name NBClass, rootPath string) (err erro
 
 func (c *NBClassifier) WriteTo(w io.Writer) (err error) {
 	enc := gob.NewEncoder(w)
-	err = enc.Encode(&serializableClassifier{c.Classes, c.learned, int(c.seen), c.datas, c.tfIdf, c.DidConvertTfIdf})
+	err = enc.Encode(&serializableClassifier{c.Classes, c.learned, int(c.seen), c.datas, c.rawDatas, c.tfIdf, c.DidConvertTfIdf})
 
 	return
 }
