@@ -1,52 +1,54 @@
 package backtest
 
 import (
-    "encoding/json"
-    "fmt" // TEMPORARY
-    "io/ioutil"
-    "os"
-    "path/filepath"
-
-    "github.com/google/go-github/github"
+	"bytes"
+	"compress/gzip"
+	"encoding/json"
+	"io"
+	"os"
+	"path/filepath"
 )
 
-func (r *ReplayServer) DirectoryWalk() error {
-    rel := "/home/forstmeier/Downloads/test"
-    var contents []github.Event
-    // contents := make([]github.Event, 0)
-    err := filepath.Walk(rel, func(fp string, fi os.FileInfo, err error) error {
-        if !fi.IsDir() {
+type Event struct {
+	Type    string          `json:"type"`
+	Payload json.RawMessage `json:"payload"`
+}
 
-            f, err := ioutil.ReadFile(fp)
-            if err != nil {
-                return err
-            }
-            err = json.Unmarshal(f, &contents)
-            if err != nil {
-                return err
-            }
-
-            // fb, err := os.Open(path)
-            // if err != nil {
-            //     return err
-            // }
-            // jsonParser := json.NewDecoder(fb)
-            // if err = jsonParser.Decode(&contents); err != nil {
-            //     return err
-            // }
-            // fb, err := ioutil.ReadFile(path)
-            // if err != nil {
-            //     return err
-            // }
-            // if err = json.Unmarshal(fb, &contents); err != nil {
-            //     return err
-            // }
-        }
-        return nil
-    })
-    if err != nil {
-        return err
-    }
-    fmt.Println(contents)
-    return nil
+// TODO: Change input to be a command line argument.
+// TODO: Provide error handling logic for incorrect paths.
+func (r *ReplayServer) WalkArchive(dir string) error {
+	err := filepath.Walk(dir, func(fp string, fi os.FileInfo, err error) error {
+		if !fi.IsDir() {
+			f, err := os.Open(fp)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			gr, err := gzip.NewReader(f)
+			if err != nil {
+				return err
+			}
+			defer gr.Close()
+			jd := json.NewDecoder(gr)
+			for {
+				e := Event{}
+				if err := jd.Decode(&e); err == io.EOF {
+					break
+				} else if err != nil {
+					return err
+				}
+				switch e.Type {
+				// TODO: Possibly implement pull request events as well.
+				case "IssuesEvent":
+					buf := bytes.NewBufferString(string(e.Payload))
+					r.HTTPPost(buf)
+				}
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
