@@ -24,12 +24,18 @@ func TestNewHook(t *testing.T) {
 	client.BaseURL = url
 	client.UploadURL = url
 
-	mods := make(map[int]models.Model)
-	mods[0] = models.Model{Algorithm: &bhattacharya.NBModel{}}
-
-	testServer := HeuprServer{
-		Models: mods,
+	mods := make(map[int]*HeuprRepo)
+	mods[0] = &HeuprRepo{
+		Hive: &HeuprHive{
+			Models: []*HeuprModel{&HeuprModel{
+				Model: &models.Model{
+					Algorithm: &bhattacharya.NBModel{},
+				}},
+			},
+		},
 	}
+
+	testServer := HeuprServer{Repos: mods}
 	mux.HandleFunc("/repos/nihilus/hunger/hooks", func(w http.ResponseWriter, r *http.Request) {
 		v := new(github.Hook)
 		json.NewDecoder(r.Body).Decode(v)
@@ -45,6 +51,7 @@ func TestNewHook(t *testing.T) {
 		Owner: user,
 		ID:    &id,
 	}
+	testRepos := []*github.Repository{&testRepo}
 
 	defer testServer.closeDB()
 	err := testServer.openDB()
@@ -52,10 +59,8 @@ func TestNewHook(t *testing.T) {
 		t.Error(err) // TODO: Flesh out message
 	}
 
-	err = testServer.NewHook(&testRepo, client)
+	err = testServer.NewHook(testRepos, client)
 	if err != nil {
 		t.Error(err) // TODO: Flesh out message
 	}
-	// server.Close()
-	// fmt.Println("END OF TEST")
 }
