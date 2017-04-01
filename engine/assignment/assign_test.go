@@ -1,7 +1,7 @@
 package assignment
 
 import (
-    "testing"
+	"testing"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"

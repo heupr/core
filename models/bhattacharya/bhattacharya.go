@@ -3,9 +3,10 @@ package bhattacharya
 import (
 	"coralreefci/engine/gateway/conflation"
 	"coralreefci/utils"
+	"go.uber.org/zap"
 	"os"
 	"sort"
-	"strconv"
+	//"strconv"
 	"strings"
 )
 
@@ -41,18 +42,19 @@ func (c *NBModel) Learn(input []conflation.ExpandedIssue) {
 	removeStopWords(adjusted...)
 	stemIssues(adjusted...)
 	c.assignees = distinctAssignees(adjusted)
-	utils.ModelSummary.Info("# Assignees: ", len(c.assignees))
+	utils.ModelLog.Info("Bhattacharya Learn", zap.Int("AssigneesCount", len(c.assignees)))
 	c.classifier = NewNBClassifierTfIdf(c.assignees...)
 	for i := 0; i < len(input); i++ {
 		c.classifier.Learn(strings.Split(adjusted[i].Body, " "), NBClass(adjusted[i].Assignees[0])) // NOTE: First position is a workaround
 	}
 	c.classifier.ConvertTermsFreqToTfIdf()
-
-	for _, class := range c.assignees {
-		utils.ModelDetails.Debug("Class: " + string(class))
-		wordcount := c.classifier.WordsByClass(NBClass(class))
-		utils.ModelDetails.Debug(wordcount)
-	}
+	//TODO: Fix later (logging related)
+	/*
+		for _, class := range c.assignees {
+			utils.ModelDetails.Debug("Class: " + string(class))
+			wordcount := c.classifier.WordsByClass(NBClass(class))
+			utils.ModelDetails.Debug(wordcount)
+		} */
 }
 
 func (c *NBModel) OnlineLearn(input []conflation.ExpandedIssue) {
@@ -82,11 +84,13 @@ func (c *NBModel) Predict(input conflation.ExpandedIssue) []string {
 		names = append(names, string(c.assignees[results[i].id]))
 	}
 
-	utils.ModelDetails.Debug("URL: ", *input.Issue.URL)
-	utils.ModelDetails.Debug("Predicted:")
-	for i := 0; i < len(names); i++ {
-		utils.ModelDetails.Debug("Class " + strconv.Itoa(i) + ": " + names[i] + ", Score: " + strconv.FormatFloat(results[i].score, 'f', -1, 64))
-	}
+	utils.ModelLog.Debug("", zap.String("URL", *input.Issue.URL))
+	utils.ModelLog.Debug("Predicted:")
+	//TODO: Fix logging
+	/*
+		for i := 0; i < len(names); i++ {
+			utils.ModelDetails.Debug("Class " + strconv.Itoa(i) + ": " + names[i] + ", Score: " + strconv.FormatFloat(results[i].score, 'f', -1, 64))
+		}*/
 	return names
 }
 

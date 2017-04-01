@@ -3,11 +3,12 @@ package models
 import (
 	"coralreefci/engine/gateway/conflation"
 	"coralreefci/utils"
+	"go.uber.org/zap"
 )
 
 // DOC: JohnFold gradually increases the training data by increments of 1/10th.
-func (m *Model) JohnFold(issues []conflation.ExpandedIssue) string {
-	utils.ModelSummary.Info("John Fold issues count: ", len(issues))
+func (m *Model) JohnFold(issues []conflation.ExpandedIssue) float64 {
+	utils.ModelLog.Info("John Fold", zap.Int("Issues#", len(issues)))
 	finalScore := 0.00
 	var score float64
 	var mat matrix
@@ -21,22 +22,25 @@ func (m *Model) JohnFold(issues []conflation.ExpandedIssue) string {
 		}
 		modelRecoveryFile := utils.Config.DataCachesPath + "/JFold" + ToString(i*10.0) + ".model"
 		m.GenerateRecoveryFile(modelRecoveryFile)
-		utils.ModelSummary.Info("Loop: " + ToString(i*10.0) + ", Accuracy: " + ToString(score))
+		utils.ModelLog.Info("John Fold", zap.Int("Loop#", (int)(i*10.0)), zap.Float64("Accuracy", score))
 		mat.classesEvaluation(distinct)
 		finalScore += score
 	}
-	return ToString(Round(finalScore / 9.00))
+	finalScore = Round(finalScore / 9.00)
+	utils.ModelLog.Info("John Fold", zap.Float64("Score", finalScore))
+	return finalScore
 }
 
 // DOC: TwoFold splits data in half - alternating training on each half.
 func (m *Model) TwoFold(issues []conflation.ExpandedIssue) string {
-	utils.ModelSummary.Info("Two Fold issues count: ", len(issues))
+	//TODO: Fix log
+	//utils.ModelSummary.Info("Two Fold issues count: ", len(issues))
 	split := int(0.50 * float64(len(issues)))
 	firstScore, firstMatrix, firstDistinct := m.Fold(issues[:split], issues[split:])
-	utils.ModelSummary.Info("First half, Accuracy: " + ToString(firstScore))
+	//utils.ModelSummary.Info("First half, Accuracy: " + ToString(firstScore))
 	firstMatrix.classesEvaluation(firstDistinct)
 	secondScore, secondMatrix, secondDistinct := m.Fold(issues[split:], issues[:split])
-	utils.ModelSummary.Info("Second half, Accuracy: " + ToString(secondScore))
+	//utils.ModelSummary.Info("Second half, Accuracy: " + ToString(secondScore))
 	secondMatrix.classesEvaluation(secondDistinct)
 	score := firstScore + secondScore
 	return ToString(Round(score / 2.00))
@@ -44,7 +48,8 @@ func (m *Model) TwoFold(issues []conflation.ExpandedIssue) string {
 
 // DOC: TenFold trains on a rolling 1/10th chunk of the input data.
 func (m *Model) TenFold(issues []conflation.ExpandedIssue) string {
-	utils.ModelSummary.Info("Ten Fold issues count: ", len(issues))
+	//TODO: Fix log
+	//utils.ModelSummary.Info("Ten Fold issues count: ", len(issues))
 	finalScore := 0.00
 	start := 0
 	for i := 0.10; i <= 1.00; i += 0.10 {
@@ -53,7 +58,7 @@ func (m *Model) TenFold(issues []conflation.ExpandedIssue) string {
 		remainder := []conflation.ExpandedIssue{}
 		remainder = append(issues[:start], issues[end:]...)
 		score, matrix, distinct := m.Fold(segment, remainder)
-		utils.ModelSummary.Info("Loop: " + ToString(i*10.0) + ", Accuracy: " + ToString(score))
+		//utils.ModelSummary.Info("Loop: " + ToString(i*10.0) + ", Accuracy: " + ToString(score))
 		matrix.classesEvaluation(distinct)
 		finalScore += score
 		start = end
@@ -75,9 +80,10 @@ func (m *Model) FoldImplementation(test []conflation.ExpandedIssue) (float64, ma
 
 	correct := 0
 	for i := 0; i < len(test); i++ {
-		utils.ModelSummary.Debug("Actual Assignee: ", *test[i].Issue.Assignees[0].Login)
+		//TODO: Fix log
+		//utils.ModelSummary.Debug("Actual Assignee: ", *test[i].Issue.Assignees[0].Login)
 		predictions := m.Predict(test[i])
-		utils.ModelSummary.Debug("Predicted: ", predictions)
+		//utils.ModelSummary.Debug("Predicted: ", predictions)
 		length := 5
 		if len(predictions) < 5 {
 			length = len(predictions)
@@ -96,7 +102,7 @@ func (m *Model) FoldImplementation(test []conflation.ExpandedIssue) (float64, ma
 
 	mat, dist, err := m.BuildMatrix(expected, predicted)
 	if err != nil {
-		utils.ModelSummary.Panic(err)
+		utils.ModelLog.Panic("", zap.Error(err))
 	}
 	return float64(correct) / float64(len(test)), mat, dist
 }

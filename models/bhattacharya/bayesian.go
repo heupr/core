@@ -75,7 +75,7 @@ func (d *classData) getWordsProb(words []string) (prob float64) {
 func classifierChecks(classes ...NBClass) {
 	n := len(classes)
 	if n < 2 {
-		utils.ModelSummary.Panic("Provide at least two classes.")
+		utils.ModelLog.Panic("Provide at least two classes.")
 	}
 
 	check := make(map[NBClass]bool, n)
@@ -83,7 +83,7 @@ func classifierChecks(classes ...NBClass) {
 		check[class] = true
 	}
 	if len(check) != n {
-		utils.ModelSummary.Panic("Model classes must be unique.")
+		utils.ModelLog.Panic("Model classes must be unique.")
 	}
 }
 
@@ -188,7 +188,7 @@ func (c *NBClassifier) Observe(word string, count int, which NBClass) {
 func (c *NBClassifier) Learn(document []string, which NBClass) {
 	if c.tfIdf {
 		if c.DidConvertTfIdf {
-			utils.ModelSummary.Panic("Cannot call ConvertTermsFreqToTfIdf more than once. Reset and relearn to reconvert.")
+			//utils.ModelSummary.Panic("Cannot call ConvertTermsFreqToTfIdf more than once. Reset and relearn to reconvert.")
 		}
 
 		// DOC: Term frequency: word count in document / document length.
@@ -265,7 +265,7 @@ func (c *NBClassifier) OnlineLearn(document []string, which NBClass) {
 
 func (c *NBClassifier) ConvertTermsFreqToTfIdf() {
 	if c.DidConvertTfIdf {
-		utils.ModelSummary.Panic("Cannot call ConvertTermsFreqToTfIdf more than once. Reset and relearn to reconvert.")
+		utils.ModelLog.Panic("Cannot call ConvertTermsFreqToTfIdf more than once. Reset and relearn to reconvert.")
 	}
 	for className, _ := range c.datas {
 		for wIndex, _ := range c.datas[className].FreqTfs {
@@ -285,7 +285,7 @@ func (c *NBClassifier) ConvertTermsFreqToTfIdf() {
 //      classify documents into classes.
 func (c *NBClassifier) LogScores(document []string) (scores []float64, inx int, strict bool) {
 	if c.tfIdf && !c.DidConvertTfIdf {
-		utils.ModelSummary.Panic("Using a TF-IDF classifier. Please call ConvertTermsFreqToTfIdf before calling LogScores.")
+		utils.ModelLog.Panic("Using a TF-IDF classifier. Please call ConvertTermsFreqToTfIdf before calling LogScores.")
 	}
 
 	n := len(c.Classes)
@@ -307,7 +307,7 @@ func (c *NBClassifier) LogScores(document []string) (scores []float64, inx int, 
 // DOC: Delivers actual probabilities.
 func (c *NBClassifier) ProbScores(doc []string) (scores []float64, inx int, strict bool) {
 	if c.tfIdf && !c.DidConvertTfIdf {
-		utils.ModelSummary.Panic("Using a TF-IDF classifier. Please call ConvertTermsFreqToTfIdf before calling ProbScores.")
+		utils.ModelLog.Panic("Using a TF-IDF classifier. Please call ConvertTermsFreqToTfIdf before calling ProbScores.")
 	}
 	n := len(c.Classes)
 	scores = make([]float64, n, n)
@@ -332,7 +332,7 @@ func (c *NBClassifier) ProbScores(doc []string) (scores []float64, inx int, stri
 
 func (c *NBClassifier) SafeProbScores(doc []string) (scores []float64, inx int, strict bool, err error) {
 	if c.tfIdf && !c.DidConvertTfIdf {
-		utils.ModelSummary.Panic("Using a TF-IDF classifier. Please call ConvertTermsFreqToTfIdf before calling SafeProbScores.")
+		utils.ModelLog.Panic("Using a TF-IDF classifier. Please call ConvertTermsFreqToTfIdf before calling SafeProbScores.")
 	}
 
 	n := len(c.Classes)
