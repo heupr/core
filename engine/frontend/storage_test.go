@@ -8,8 +8,8 @@ func Test_open(t *testing.T) {
 	testKey := "Leia"
 	testValue := "Princess of Alderaan"
 
-	defer testServer.closeDB()
-	err := testServer.openDB()
+	defer testServer.CloseDB()
+	err := testServer.OpenDB()
 	if err != nil {
 		t.Errorf("Error opening test database: ", err)
 	}
@@ -18,13 +18,13 @@ func Test_open(t *testing.T) {
 		t.Errorf("Error opening new database instance; %v", err)
 	}
 	t.Run("store", func(t *testing.T) {
-		err := testServer.Database.storeData(testBucket, testKey, testValue)
+		err := testServer.Database.store(testBucket, testKey, testValue)
 		if err != nil {
 			t.Error("Error in adding data to database file")
 		}
 	})
 	t.Run("retrieve", func(t *testing.T) {
-		value, err := testServer.Database.retrieveData(testBucket, testKey)
+		value, err := testServer.Database.retrieve(testBucket, testKey)
 		if err != nil {
 			t.Errorf(
 				"Error retrieving data from database",
@@ -32,8 +32,14 @@ func Test_open(t *testing.T) {
 			)
 		}
 	})
+	t.Run("bulk", func(t *testing.T) {
+		_, err := testServer.Database.retrieveBulk()
+		if err != nil {
+			t.Errorf("Error pulling all data from default database %v", err)
+		}
+	})
 	t.Run("delete", func(t *testing.T) {
-		err := testServer.Database.deleteData(testBucket)
+		err := testServer.Database.delete(testBucket)
 		if err != nil {
 			t.Errorf(
 				"Error deleting database entry",

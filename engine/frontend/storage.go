@@ -7,12 +7,13 @@ import (
 	"github.com/boltdb/bolt"
 )
 
+// DOC: Keys thus far are "hookID" and "token" in buckets named "repoID"
 type BoltDB struct {
 	db *bolt.DB
 }
 
 // https://medium.com/@deckarep/dancing-with-go-s-mutexes-92407ae927bf#.e9o9un5nx
-func (b *BoltDB) storeData(repoID int, key string, value interface{}) error {
+func (b *BoltDB) store(repoID int, key string, value interface{}) error {
 	idBytes := []byte(strconv.Itoa(repoID))
 	keyBytes := []byte(key)
 	valueBytes, err := func(input interface{}) ([]byte, error) {
@@ -47,7 +48,7 @@ func (b *BoltDB) storeData(repoID int, key string, value interface{}) error {
 	return nil
 }
 
-func (b *BoltDB) retrieveData(repoID int, key string) (interface{}, error) {
+func (b *BoltDB) retrieve(repoID int, key string) (interface{}, error) {
 	idBytes := []byte(strconv.Itoa(repoID))
 	keyBytes := []byte(key)
 	valueBytes := []byte{}
@@ -80,7 +81,24 @@ func (b *BoltDB) retrieveData(repoID int, key string) (interface{}, error) {
 	return result, nil
 }
 
-func (b *BoltDB) deleteData(repoID int) error {
+func (b *BoltDB) retrieveBulk(input ...string) ([][]byte, error) {
+	tokens := [][]byte{}
+	if err := b.db.Batch(func(tx *bolt.Tx) error {
+		if err := tx.ForEach(func(name []byte, b *bolt.Bucket) error {
+			bucket := tx.Bucket(name)
+			tokens = append(tokens, bucket.Get([]byte("token")))
+			return nil
+		}); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return tokens, nil
+}
+
+func (b *BoltDB) delete(repoID int) error {
 	idBytes := []byte(strconv.Itoa(repoID))
 
 	err := b.db.Update(func(tx *bolt.Tx) error {
