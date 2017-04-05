@@ -47,14 +47,12 @@ type Resources struct {
 
 func (h *HeuprServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("state") != oaState {
-		fmt.Println("FIRST ERROR")                             // TEMPORARY
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // TODO: Write specific redirect URL.
 		return
 	}
 
 	token, err := oaConfig.Exchange(oauth2.NoContext, r.FormValue("code"))
 	if err != nil {
-		fmt.Println("SECOND ERROR")                            // TEMPORARY
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // TODO: Write specific redirect URL
 		return
 	}
@@ -64,14 +62,12 @@ func (h *HeuprServer) githubCallbackHandler(w http.ResponseWriter, r *http.Reque
 
 	_, _, err = client.Users.Get("")
 	if err != nil {
-		fmt.Println("THIRD ERROR")                             // TEMPORARY
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // TODO: Write specific redirect URL
 		return
 	}
 
 	repos, err := listRepositories(client)
 	if err != nil {
-		fmt.Println("FOURTH ERROR")                            // TEMPORARY
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // TODO: Write specific redirect URL
 		return
 		// return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +79,6 @@ func (h *HeuprServer) githubCallbackHandler(w http.ResponseWriter, r *http.Reque
 	if r.Method == "GET" {
 		tmpl, err := template.New("options").Parse(options)
 		if err != nil {
-			fmt.Println("FIFTH ERROR")                             // TEMPORARY
 			http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // TODO: Write specific redirect URL
 			return
 		}
@@ -96,6 +91,10 @@ func (h *HeuprServer) githubCallbackHandler(w http.ResponseWriter, r *http.Reque
 		if err != nil {
 			fmt.Println(err)
 		}
+		// TODO: Call NewHook here.
+		// - pass in: results.Repos & client variables
+		// TODO: Call NewHeuprRepo here.
+		// - pass in: results.Repos & client variables
 	}
 	http.Redirect(w, r, "/setup_complete", http.StatusPermanentRedirect)
 }
