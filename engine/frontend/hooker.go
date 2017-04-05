@@ -1,8 +1,6 @@
 package frontend
 
 import (
-	// "net/http"
-
 	"github.com/google/go-github/github"
 
 	"coralreefci/engine/gateway"
@@ -14,41 +12,40 @@ import (
 
 const secretKey = "chalmun"
 
-func (h *HeuprServer) NewHook(repo *github.Repository, client *github.Client) error {
-	if check, err := h.hookExists(repo, client); check {
-		// handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//
-		// })
-		// TODO: Logic for handling an error here will be implemented; this
-		//       will take the form of an exit from the parent NewHook method
-		//       as well as a generation of an error/redirect page option to
-		//       the end user of the Heupr application.
-		// return handler, err
-		return err
-	}
-
-	name := *repo.Name
-	owner := *repo.Owner.Login
-	url := "http://00ad0ac7.ngrok.io/hook"
-
-	hook, _, err := client.Repositories.CreateHook(owner, name, &github.Hook{
-		Name:   github.String("web"),
-		Events: []string{"issues", "repository"},
-		Active: github.Bool(true),
-		Config: map[string]interface{}{
-			"url":          url,
-			"secret":       secretKey,
-			"content_type": "json",
-			"insecure_ssl": false,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	err = h.Database.storeData(*repo.ID, "hookID", *hook.ID)
-	if err != nil {
-		return err
+// TODO: Build so argument accepted is a slice (rather than a single value).
+func (h *HeuprServer) NewHook(repo []*github.Repository, client *github.Client) error {
+	for _, r := range repo {
+		if check, err := h.hookExists(r, client); check {
+			// handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+			// TODO: Logic for handling an error here will be implemented; this
+			//       will take the form of an exit from the parent NewHook method
+			//       as well as a generation of an error/redirect page option to
+			//       the end user of the Heupr application.
+			// return handler, err
+			// NOTE: Is this correct?
+			return err
+		}
+		name := *r.Name
+		owner := *r.Owner.Login
+		url := "http://00ad0ac7.ngrok.io/hook"
+		hook, _, err := client.Repositories.CreateHook(owner, name, &github.Hook{
+			Name:   github.String("web"),
+			Events: []string{"issues", "repository"},
+			Active: github.Bool(true),
+			Config: map[string]interface{}{
+				"url":          url,
+				"secret":       secretKey,
+				"content_type": "json",
+				"insecure_ssl": false,
+			},
+		})
+		if err != nil {
+			return err
+		}
+		err = h.Database.store(*r.ID, "hookID", *hook.ID)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -61,7 +58,7 @@ func (h *HeuprServer) hookExists(repo *github.Repository, client *github.Client)
 	if repo.Owner.Login != nil {
 		owner = *repo.Owner.Login
 	}
-	hookID, err := h.Database.retrieveData(*repo.ID, "hookID")
+	hookID, err := h.Database.retrieve(*repo.ID, "hookID")
 	if err != nil {
 		return false, err
 	}
@@ -77,7 +74,7 @@ func (h *HeuprServer) hookExists(repo *github.Repository, client *github.Client)
 func (h *HeuprServer) AddModel(repo *github.Repository, client *github.Client) error {
 	name := *repo.Name
 	owner := *repo.Owner.Login
-	repoId := *repo.ID
+	repoID := *repo.ID
 	//TODO: The comments field is not cached when using CachedGateway and will
 	//      need to be fixed eventually.
 	newGateway := gateway.Gateway{Client: client}
@@ -136,6 +133,8 @@ func (h *HeuprServer) AddModel(repo *github.Repository, client *github.Client) e
 	}
 	model := models.Model{Algorithm: &bhattacharya.NBModel{}}
 	model.Algorithm.Learn(trainingSet)
-	h.Models[repoId] = model
+	// TODO: Note that this logic is not complete; the "0" needs to be replaced
+	//       with a dynamic means of allocating the model value.
+	h.Repos[repoID].Hive.Models = append(h.Repos[repoID].Hive.Models, &HeuprModel{Model: &model})
 	return nil
 }

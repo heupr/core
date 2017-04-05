@@ -53,8 +53,8 @@ func TestNewHook(t *testing.T) {
 	}
 	testRepos := []*github.Repository{&testRepo}
 
-	defer testServer.closeDB()
-	err := testServer.openDB()
+	defer testServer.CloseDB()
+	err := testServer.OpenDB()
 	if err != nil {
 		t.Error(err) // TODO: Flesh out message
 	}
