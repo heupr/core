@@ -5,16 +5,13 @@ import (
 	"net/http"
 
 	"github.com/boltdb/bolt"
-	// "github.com/google/go-github/github"
-	// "golang.org/x/oauth2"
 
 	"coralreefci/engine/gateway/conflation"
-	"coralreefci/models"
 )
 
 type HeuprServer struct {
 	Server    http.Server
-	Models    map[int]models.Model
+	Repos     map[int]*HeuprRepo
 	Conflator conflation.Conflator
 	Database  BoltDB
 }
@@ -29,19 +26,6 @@ func (h *HeuprServer) routes() *http.ServeMux {
 	return mux
 }
 
-func (h *HeuprServer) openDB() error {
-	boltDB, err := bolt.Open("storage.db", 0644, nil)
-	if err != nil {
-		return err
-	}
-	h.Database = BoltDB{db: boltDB}
-	return nil
-}
-
-func (h *HeuprServer) closeDB() {
-	h.Database.db.Close()
-}
-
 func (h *HeuprServer) Start() {
 	h.Server = http.Server{Addr: "127.0.0.1:8080", Handler: h.routes()}
 	// TODO: Add in logging and remove print statement.
@@ -52,5 +36,19 @@ func (h *HeuprServer) Start() {
 }
 
 func (h *HeuprServer) Stop() {
-	//TODO: Closing the server down is a needed operation that will be added.
+	// TODO: Closing the server down is a needed operation that will be added.
+	// NOTE: Does the server need to be a pointer?
+}
+
+func (h *HeuprServer) OpenDB() error {
+	boltDB, err := bolt.Open("storage.db", 0644, nil)
+	if err != nil {
+		return err
+	}
+	h.Database = BoltDB{db: boltDB}
+	return nil
+}
+
+func (h *HeuprServer) CloseDB() {
+	h.Database.db.Close()
 }
