@@ -7,7 +7,7 @@ import (
 	"coralreefci/engine/gateway/conflation"
 	"coralreefci/models"
 	"coralreefci/models/bhattacharya"
-	"coralreefci/utils"
+	// "coralreefci/utils"
 )
 
 const secretKey = "chalmun"
@@ -80,11 +80,11 @@ func (h *HeuprServer) AddModel(repo *github.Repository, client *github.Client) e
 	newGateway := gateway.Gateway{Client: client}
 	githubIssues, err := newGateway.GetIssues(owner, name)
 	if err != nil {
-		utils.Log.Error("Cannot get Issues from Gateway. ", err)
+		// utils.Log.Error("Cannot get Issues from Gateway. ", err)
 	}
 	githubPulls, err := newGateway.GetPullRequests(owner, name)
 	if err != nil {
-		utils.Log.Error("Cannot get PullRequests from Gateway. ", err)
+		// utils.Log.Error("Cannot get PullRequests from Gateway. ", err)
 	}
 
 	context := &conflation.Context{}
