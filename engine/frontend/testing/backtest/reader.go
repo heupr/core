@@ -16,7 +16,7 @@ type Event struct {
 
 // TODO: Change input to be a command line argument.
 // TODO: Provide error handling logic for incorrect paths.
-func (r *ReplayServer) WalkArchive(dir string) error {
+func (b *BacktestServer) WalkArchive(dir string) error {
 	err := filepath.Walk(dir, func(fp string, fi os.FileInfo, err error) error {
 		if !fi.IsDir() {
 			f, err := os.Open(fp)
@@ -41,7 +41,7 @@ func (r *ReplayServer) WalkArchive(dir string) error {
 				// TODO: Possibly implement pull request events as well.
 				case "IssuesEvent":
 					buf := bytes.NewBufferString(string(e.Payload))
-					r.HTTPPost(buf)
+					b.HTTPPost(buf)
 				}
 			}
 		}

@@ -10,12 +10,12 @@ import (
 )
 
 func TestWalkArchive(t *testing.T) {
-	tr := ReplayServer{}
+	bs := BacktestServer{}
 	testDir, err := ioutil.TempDir(os.TempDir(), "tatooine")
 	if err != nil {
 		t.Errorf("Error generating test folder: %v", err)
 	}
-	err = tr.WalkArchive(testDir)
+	err = bs.WalkArchive(testDir)
 	if err != nil {
 		t.Errorf("Error handling empty directory: %v", err)
 	}
@@ -25,7 +25,7 @@ func TestWalkArchive(t *testing.T) {
 		t.Errorf("Error writing text test file: %v", err)
 	}
 	textFile.Write([]byte("Watto's Junkshop"))
-	err = tr.WalkArchive(testDir)
+	err = bs.WalkArchive(testDir)
 	if err != nil {
 	}
 	os.Remove(textFile.Name())
@@ -44,7 +44,7 @@ func TestWalkArchive(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error closing gzip writer: %v", err)
 	}
-	err = tr.WalkArchive(testDir)
+	err = bs.WalkArchive(testDir)
 	if err != nil {
 		t.Errorf("Error handling JSON gzip file: %v", err)
 	}
