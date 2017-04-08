@@ -39,10 +39,21 @@ func (h *HeuprServer) NewHeuprRepo(repos []*github.Repository, client *github.Cl
 			Repo:   repo,
 			Client: client,
 		}
-		// TODO: Call GetIssues here w/ repo ID argument.
 	}
 }
 
+// TODO: This method will place the desired model(s) for a given repository ID
+//       into the respective field e.g.:
+//       (h.Hive.Models = append(h.Hive.Models, exampleModel))
+//       Additionally, this method will need to be able to properly call in the
+//       necessary logic for defining how each model(s) is trained (although it
+//       is quite likely that they will all train on all available information
+//       which will be filtered down by the conflation scenarios).
+func (h *HeuprServer) initModels(id int) {
+
+}
+
+/*
 // TODO: This method will need to change substantially in the switch to gob.
 func (h *HeuprServer) InitHeuprRepos(path ...string) {
 	defer h.CloseDB()
@@ -65,6 +76,7 @@ func (h *HeuprServer) InitHeuprRepos(path ...string) {
 	// - open the provided file
 	// - boot up from those specifications
 }
+*/
 
 func (h *HeuprServer) GetIssues(id int) []*github.Issue {
 	// NOTE: Check to make sure these are the correct options.
@@ -80,10 +92,24 @@ func (h *HeuprServer) GetIssues(id int) []*github.Issue {
 	repo := *h.Repos[id].Repo.Name
 	issues, _, err := h.Repos[id].Client.Issues.ListByRepo(owner, repo, opts)
 	if err != nil {
-        // fmt.Println("TEMPORARY")
-		// break // TEMPORARY
+		fmt.Println("Error") // TEMPORARY
 	}
 	return issues
+}
+
+func (h *HeuprServer) GetPulls(id int) []*github.PullRequest {
+	opts := &github.PullRequestListOptions{
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+	}
+	owner := *h.Repos[id].Repo.Owner.Login
+	repo := *h.Repos[id].Repo.Name
+	pulls, _, err := h.Repos[id].Client.PullRequests.List(owner, repo, opts)
+	if err != nil {
+		fmt.Println("Error") // TEMPORARY
+	}
+	return pulls
 }
 
 // TODO:
