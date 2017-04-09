@@ -95,6 +95,7 @@ func (h *HeuprServer) githubCallbackHandler(w http.ResponseWriter, r *http.Reque
 		// - pass in: results.Repos & client variables
 		// TODO: Call NewHeuprRepo here.
 		// - pass in: results.Repos & client variables
+        // TODO: Call AddModel here.
 	}
 	http.Redirect(w, r, "/setup_complete", http.StatusPermanentRedirect)
 }
