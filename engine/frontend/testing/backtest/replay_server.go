@@ -11,9 +11,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	// "reflect"
 	"os"
 	"path/filepath"
-	// "time"
 
 	"github.com/google/go-github/github"
 
@@ -21,29 +21,23 @@ import (
 	// "coralreefci/models"
 )
 
-// [X] COMPLETED
 const (
 	secretKey = "chalmun"
 	localPath = "http://localhost:8080/"
 )
 
-// [X] COMPLETED
 var modelList = []*frontend.HeuprModel{}
 
-// [X] COMPLETED
 type Event struct {
 	Type    string          `json:"type"`
 	Payload json.RawMessage `json:"payload"`
 }
 
-// [X] COMPLETED
 type BacktestServer struct {
 	frontend.HeuprServer
 	Archive []Event
 }
 
-// [ ] COMPLETED
-// - [ ] unit test
 func (b *BacktestServer) loadArchive() {
 	args := os.Args
 	for _, arg := range args[1:] {
@@ -65,8 +59,6 @@ func (b *BacktestServer) loadArchive() {
 	}
 }
 
-// [ ] COMPLETED
-// - [ ] unit test
 func (b *BacktestServer) parseFile(filename string) error {
 	f, err := os.Open(filename)
 	if err != nil {
@@ -91,8 +83,6 @@ func (b *BacktestServer) parseFile(filename string) error {
 	return nil
 }
 
-// [ ] COMPLETED
-// - [ ] unit test
 func (b *BacktestServer) loadRepos() {
 	// TODO: parsing some input (likely a file w/ JSON content)
 	// - defines the desired repos to run (specific GitHub Repositories)
@@ -112,28 +102,24 @@ func (b *BacktestServer) loadRepos() {
 	}
 }
 
-// [ ] COMPLETED
-// - [ ] unit test
 func (b *BacktestServer) backtestHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: Review to see if there is anything else that needs to be done to
-	//       the individual objects prior to being written to the
-	//       ResponseWriter.
-	half := len(b.Archive) / 2
-	for _, v := range b.Archive[:half] {
-		fmt.Fprint(w, v)
+	jsonRepo := r.FormValue("repository")
+	repo := github.Repository{}
+	if err := json.Unmarshal([]byte(jsonRepo), &repo); err != nil {
+		fmt.Println("Error unmarshalling JSON into repo")
 	}
+
+	// TODO: There still needs to be logic in what is pulled out of the Archive
+	//       and how best to return it to the writer (likely via fmt.Fprint).
+	//       The archive has potential to be relatively large and looping
+	//       through it could be expensive particularly if this handler is
+	//       being hit for every repo in a given backtest run.
 }
 
-// [ ] COMPLETED
-// - [ ] complete source code
-// - [ ] unit test
 func (b *BacktestServer) backtestPredict(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// [ ] COMPLETED
-// - [ ] parse payload for repo ID
-// - [ ] unit test
 // TODO: ngrok url is now located here and in hooker.go (lets fix that with an
 //       env variable. Fortunately ngrok is written in Golang (so that helps))
 // TODO: Per Gor Replay File Add Missing HTTP Headers (File in Slack Channel - requests_0.gor)
@@ -144,8 +130,6 @@ func (b *BacktestServer) HTTPPost(payload *bytes.Buffer) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	// TODO: Parse payload to get given repo ID int
-	// plStr := payload.String()
 	req.Header.Set("X-Github-Event", "issues")
 	req.Header.Set("X-GitHub-Delivery", "placeholder")
 	req.Header.Set("content-type", "application/json")
@@ -154,8 +138,10 @@ func (b *BacktestServer) HTTPPost(payload *bytes.Buffer) {
 	sig := "sha1=" + hex.EncodeToString(mac.Sum(nil))
 	req.Header.Set("X-Hub-Signature", sig)
 
-	id := 1
-	// TODO: Pass repo ID into id
-	// TODO: Check to make sure Do() is having the right values passed in
+	repo := github.Repository{}
+	if err := json.Unmarshal(payload.Bytes(), &repo); err != nil {
+		fmt.Println("Error unmarshalling JSON into repo")
+	}
+	id := *repo.ID
 	b.Repos[id].Client.Do(req, payload)
 }
