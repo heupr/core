@@ -1,4 +1,4 @@
-package backtest
+package replay
 
 import (
 	"bytes"
@@ -17,7 +17,7 @@ import (
 
 	"github.com/google/go-github/github"
 
-	"coralreefci/engine/frontend"
+	"coralreefci/engine/onboarder"
 	// "coralreefci/models"
 )
 
@@ -26,7 +26,7 @@ const (
 	localPath = "http://localhost:8080/"
 )
 
-var modelList = []*frontend.HeuprModel{}
+var modelList = []*onboarder.ArchModel{}
 
 type Event struct {
 	Type    string          `json:"type"`
@@ -34,7 +34,7 @@ type Event struct {
 }
 
 type BacktestServer struct {
-	frontend.HeuprServer
+	onboarder.RepoServer
 	Archive []Event
 }
 
@@ -94,9 +94,9 @@ func (b *BacktestServer) loadRepos() {
 	client.UploadURL = u
 
 	for i := 0; i < len(repos); i++ {
-		b.Repos[i] = &frontend.HeuprRepo{
+		b.Repos[i] = &onboarder.ArchRepo{
 			Repo:   &repos[i],
-			Hive:   &frontend.HeuprHive{Models: modelList},
+			Hive:   &onboarder.ArchHive{Models: modelList},
 			Client: client,
 		}
 	}
