@@ -1,7 +1,6 @@
-package frontend
+package onboarder
 
 import (
-	// "coralreefci/engine/gateway/conflation"
 	"coralreefci/models"
 
 	"github.com/google/go-github/github"
@@ -33,7 +32,7 @@ type HeuprRepo struct {
 	Client *github.Client
 }
 
-func (h *HeuprServer) NewHeuprRepo(repos []*github.Repository, client *github.Client) {
+func (h *RepoServer) NewHeuprRepo(repos []*github.Repository, client *github.Client) {
 	for _, repo := range repos {
 		h.Repos[*repo.ID] = &HeuprRepo{
 			Repo:   repo,
@@ -49,13 +48,13 @@ func (h *HeuprServer) NewHeuprRepo(repos []*github.Repository, client *github.Cl
 //       necessary logic for defining how each model(s) is trained (although it
 //       is quite likely that they will all train on all available information
 //       which will be filtered down by the conflation scenarios).
-func (h *HeuprServer) initModels(id int) {
+func (h *RepoServer) initModels(id int) {
 
 }
 
 /*
 // TODO: This method will need to change substantially in the switch to gob.
-func (h *HeuprServer) InitHeuprRepos(path ...string) {
+func (h *RepoServer) InitHeuprRepos(path ...string) {
 	defer h.CloseDB()
 	h.OpenDB()
 	if path == nil {
@@ -77,64 +76,6 @@ func (h *HeuprServer) InitHeuprRepos(path ...string) {
 	// - boot up from those specifications
 }
 */
-
-func (h *HeuprServer) GetIssues(id int) ([]*github.Issue, error) {
-	// NOTE: Check to make sure these are the correct options.
-	// NOTE: This same method exists in the CachedGateway assets (but it may
-	//       likely change in the event that code is abandoned).
-	opts := &github.IssueListByRepoOptions{
-		// State: "closed",
-		ListOptions: github.ListOptions{
-			PerPage: 100,
-		},
-	}
-	owner := *h.Repos[id].Repo.Owner.Login
-	repo := *h.Repos[id].Repo.Name
-
-	allIssues := []*github.Issue{}
-	for {
-		issues, resp, err := h.Repos[id].Client.Issues.ListByRepo(owner, repo, opts)
-		if err != nil {
-			return nil, err
-		}
-		allIssues = append(allIssues, issues...)
-
-		// TODO: This boolean needs to be changed as it determines whether or
-		//       not the method is being called as part of a unit test.
-		if resp.NextPage == 0 || true {
-			break
-		} else {
-			opts.ListOptions.Page = resp.NextPage
-		}
-	}
-	return allIssues, nil
-}
-
-func (h *HeuprServer) GetPulls(id int) ([]*github.PullRequest, error) {
-	opts := &github.PullRequestListOptions{
-		ListOptions: github.ListOptions{
-			PerPage: 100,
-		},
-	}
-	owner := *h.Repos[id].Repo.Owner.Login
-	repo := *h.Repos[id].Repo.Name
-
-	allPulls := []*github.PullRequest{}
-	for {
-		pulls, resp, err := h.Repos[id].Client.PullRequests.List(owner, repo, opts)
-		if err != nil {
-			return nil, err
-		}
-		allPulls = append(allPulls, pulls...)
-
-		if resp.NextPage == 0 || true {
-			break
-		} else {
-			opts.ListOptions.Page = resp.NextPage
-		}
-	}
-	return allPulls, nil
-}
 
 // TODO:
 // Below are several potential helper methods for the HeuprRepo:

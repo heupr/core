@@ -1,4 +1,4 @@
-package frontend
+package onboarder
 
 import (
 	"fmt"
@@ -45,7 +45,7 @@ type Resources struct {
 	Repos []*github.Repository
 }
 
-func (h *HeuprServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
+func (h *RepoServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("state") != oaState {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // TODO: Write specific redirect URL.
 		return
@@ -91,6 +91,7 @@ func (h *HeuprServer) githubCallbackHandler(w http.ResponseWriter, r *http.Reque
 		if err != nil {
 			fmt.Println(err)
 		}
+        // TODO: Store token value.
 		// TODO: Call NewHook here.
 		// - pass in: results.Repos & client variables
 		// TODO: Call NewHeuprRepo here.

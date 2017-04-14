@@ -1,9 +1,8 @@
-package frontend
+package onboarder
 
 import (
 	"net/http"
 
-	// "github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 	ghoa "golang.org/x/oauth2/github"
 )

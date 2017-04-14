@@ -1,4 +1,4 @@
-package frontend
+package onboarder
 
 import (
 	"github.com/google/go-github/github"
@@ -6,7 +6,7 @@ import (
 
 const secretKey = "chalmun"
 
-func (h *HeuprServer) NewHook(repo []*github.Repository, client *github.Client) error {
+func (h *RepoServer) NewHook(repo []*github.Repository, client *github.Client) error {
 	for _, r := range repo {
 		if check, err := h.hookExists(r, client); check {
 			// handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -43,7 +43,7 @@ func (h *HeuprServer) NewHook(repo []*github.Repository, client *github.Client) 
 	return nil
 }
 
-func (h *HeuprServer) hookExists(repo *github.Repository, client *github.Client) (bool, error) {
+func (h *RepoServer) hookExists(repo *github.Repository, client *github.Client) (bool, error) {
 	name, owner := "", ""
 	if repo.Name != nil {
 		name = *repo.Name

@@ -1,4 +1,4 @@
-package frontend
+package onboarder
 
 import (
 	"github.com/google/go-github/github"
@@ -9,7 +9,7 @@ import (
 	"coralreefci/models/bhattacharya"
 )
 
-func (h *HeuprServer) AddModel(repo *github.Repository, client *github.Client) error {
+func (h *RepoServer) AddModel(repo *github.Repository, client *github.Client) error {
 	name := *repo.Name
 	owner := *repo.Owner.Login
 	repoID := *repo.ID

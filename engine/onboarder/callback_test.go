@@ -1,4 +1,4 @@
-package frontend
+package onboarder
 
 /*
 import (
@@ -70,7 +70,7 @@ func Test_githubCallbackHandle(t *testing.T) {
     req.Form = url.Values{}
     req.Form.Set("state", oaState)
     req.Form.Set("code", "exchange-code")
-	h := HeuprServer{}
+	h := RepoServer{}
 	handler := http.HandlerFunc(h.githubCallbackHandle)
 	handler.ServeHTTP(rec, req)
 	if status := rec.Code; status != http.StatusPermanentRedirect {
@@ -125,7 +125,7 @@ func Test_githubCallbackHandle(t *testing.T) {
 
 /*
 func Test_githubCallbackHandle(t *testing.T) {
-	h := HeuprServer{}
+	h := RepoServer{}
 
     oaConfig = &oauth2.Config{
     	ClientID:     "",
@@ -161,7 +161,7 @@ func Test_githubCallbackHandle(t *testing.T) {
 
 /*
 func Test_githubCallbackHandle(t *testing.T) {
-	h := HeuprServer{}
+	h := RepoServer{}
 
 	oaConfig = &oauth2.Config{
 		ClientID:     "",
@@ -196,7 +196,7 @@ func Test_githubCallbackHandle(t *testing.T) {
 
 /*
 func Test_githubCallbackHandle(t *testing.T) {
-    h := HeuprServer{}
+    h := RepoServer{}
     oaConfig = &oauth2.Config{
 		ClientID:     "CLIENT_ID",
 		ClientSecret: "",
@@ -225,7 +225,7 @@ func Test_githubCallbackHandle(t *testing.T) {
 
 /*
 func Test_githubCallbackHandle(t *testing.T) {
-    h := HeuprServer{}
+    h := RepoServer{}
 
     ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.String() != "/token" {
@@ -326,7 +326,7 @@ func Test_githubCallbackHandle(t *testing.T) {
 	// 	},
     // }
 
-    h := HeuprServer{}
+    h := RepoServer{}
 
     // outputURL := oaConfig.AuthCodeURL(oaState, oauth2.AccessTypeOffline)
 
@@ -352,7 +352,7 @@ func Test_githubCallbackHandle(t *testing.T) {
 
 /*
 func Test_githubCallbackHandle(t *testing.T) {
-    h := HeuprServer{}
+    h := RepoServer{}
     req, err := http.NewRequest("POST", "/handler-check", nil)
 	if err != nil {
 		t.Errorf("Failure generating test request: %v", err)

@@ -1,9 +1,9 @@
-package frontend
+package onboarder
 
 import "testing"
 
 func Test_open(t *testing.T) {
-	testServer := HeuprServer{}
+	testServer := RepoServer{}
 	testBucket := 2187
 	testKey := "Leia"
 	testValue := "Princess of Alderaan"

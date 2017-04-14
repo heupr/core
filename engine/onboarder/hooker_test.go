@@ -1,4 +1,4 @@
-package frontend
+package onboarder
 
 import (
 	"encoding/json"
@@ -35,7 +35,7 @@ func TestNewHook(t *testing.T) {
 		},
 	}
 
-	testServer := HeuprServer{Repos: mods}
+	testServer := RepoServer{Repos: mods}
 	mux.HandleFunc("/repos/nihilus/hunger/hooks", func(w http.ResponseWriter, r *http.Request) {
 		v := new(github.Hook)
 		json.NewDecoder(r.Body).Decode(v)

@@ -1,4 +1,4 @@
-package frontend
+package onboarder
 
 import "github.com/google/go-github/github"
 
