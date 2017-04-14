@@ -16,38 +16,38 @@ type RepoServer struct {
 	Database  BoltDB
 }
 
-func (h *RepoServer) routes() *http.ServeMux {
+func (rs *RepoServer) routes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", mainHandler)
 	mux.HandleFunc("/login", githubLoginHandler)
-	mux.HandleFunc("/github_oauth_cb", h.githubCallbackHandler)
+	mux.HandleFunc("/github_oauth_cb", rs.githubCallbackHandler)
 	mux.HandleFunc("/setup_complete", completeHandle)
 	return mux
 }
 
-func (h *RepoServer) Start() {
-	h.Server = http.Server{Addr: "127.0.0.1:8080", Handler: h.routes()}
+func (rs *RepoServer) Start() {
+	rs.Server = http.Server{Addr: "127.0.0.1:8080", Handler: rs.routes()}
 	// TODO: Add in logging and remove print statement.
-	err := h.Server.ListenAndServe()
+	err := rs.Server.ListenAndServe()
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func (h *RepoServer) Stop() {
+func (rs *RepoServer) Stop() {
 	// TODO: Closing the server down is a needed operation that will be added.
 	// NOTE: Does the server need to be a pointer?
 }
 
-func (h *RepoServer) OpenDB() error {
+func (rs *RepoServer) OpenDB() error {
 	boltDB, err := bolt.Open("storage.db", 0644, nil)
 	if err != nil {
 		return err
 	}
-	h.Database = BoltDB{db: boltDB}
+	rs.Database = BoltDB{db: boltDB}
 	return nil
 }
 
-func (h *RepoServer) CloseDB() {
-	h.Database.db.Close()
+func (rs *RepoServer) CloseDB() {
+	rs.Database.db.Close()
 }

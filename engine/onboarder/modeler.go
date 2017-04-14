@@ -9,7 +9,7 @@ import (
 	"coralreefci/models/bhattacharya"
 )
 
-func (h *RepoServer) AddModel(repo *github.Repository, client *github.Client) error {
+func (rs *RepoServer) AddModel(repo *github.Repository, client *github.Client) error {
 	name := *repo.Name
 	owner := *repo.Owner.Login
 	repoID := *repo.ID
@@ -69,9 +69,10 @@ func (h *RepoServer) AddModel(repo *github.Repository, client *github.Client) er
 			}
 		}
 	}
-	// TODO: This could potentially be a parameter passed into the method.
+	// TODO: This will likely become a read from the MemSQL database which will
+	//       hold the desired state of each model as a table.
 	model := models.Model{Algorithm: &bhattacharya.NBModel{}}
 	model.Algorithm.Learn(trainingSet)
-	h.Repos[repoID].Hive.Models = append(h.Repos[repoID].Hive.Models, &ArchModel{Model: &model})
+	rs.Repos[repoID].Hive.Models = append(rs.Repos[repoID].Hive.Models, &ArchModel{Model: &model})
 	return nil
 }

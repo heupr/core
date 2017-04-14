@@ -32,7 +32,7 @@ const setup = `
         Heupr
     </title>
     <body>
-        <p>Congratulations! Setup is complete!</p>
+        <p>Awesome! Setup is complete!</p>
         <p>Issue assignments will go out in a few minutes through GitHub</p>
         <p>Return to the <a href="/">main page</a></p>
     </body>
@@ -42,18 +42,20 @@ const setup = `
 var decoder = schema.NewDecoder()
 
 type Resources struct {
-	Repos []*github.Repository
+	repos []*github.Repository
 }
 
-func (h *RepoServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
+// TODO: Check to see that all of the specific redirects should in fact be
+//       pointing towards "/" instead of some other URL + handler.
+func (rs *RepoServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("state") != oaState {
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // TODO: Write specific redirect URL.
+		http.Redirect(w, r, "/", http.StatusForbidden)
 		return
 	}
 
 	token, err := oaConfig.Exchange(oauth2.NoContext, r.FormValue("code"))
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // TODO: Write specific redirect URL
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -62,13 +64,13 @@ func (h *RepoServer) githubCallbackHandler(w http.ResponseWriter, r *http.Reques
 
 	_, _, err = client.Users.Get("")
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // TODO: Write specific redirect URL
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	repos, err := listRepositories(client)
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // TODO: Write specific redirect URL
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 		// return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//     // TODO: Check that this is the correct error status to use.
@@ -79,7 +81,7 @@ func (h *RepoServer) githubCallbackHandler(w http.ResponseWriter, r *http.Reques
 	if r.Method == "GET" {
 		tmpl, err := template.New("options").Parse(options)
 		if err != nil {
-			http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // TODO: Write specific redirect URL
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		resources := Resources{repos}
@@ -91,12 +93,16 @@ func (h *RepoServer) githubCallbackHandler(w http.ResponseWriter, r *http.Reques
 		if err != nil {
 			fmt.Println(err)
 		}
-        // TODO: Store token value.
-		// TODO: Call NewHook here.
-		// - pass in: results.Repos & client variables
-		// TODO: Call NewHeuprRepo here.
-		// - pass in: results.Repos & client variables
-		// TODO: Call AddModel here.
+		for i := 0; i < len(results.repos); i++ {
+			repo := results.repos[i]
+			if err := rs.NewHook(repo, client); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			rs.NewArchRepo(repo, client)
+			// TODO: Call AddModel here.
+			rs.Database.store(*repo.ID, "token", token)
+		}
 	}
 	http.Redirect(w, r, "/setup_complete", http.StatusPermanentRedirect)
 }

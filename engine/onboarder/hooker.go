@@ -4,54 +4,43 @@ import (
 	"github.com/google/go-github/github"
 )
 
-const secretKey = "chalmun"
+const secretKey = "figrin-dan-and-the-modal-nodes"
 
-func (h *RepoServer) NewHook(repo []*github.Repository, client *github.Client) error {
-	for _, r := range repo {
-		if check, err := h.hookExists(r, client); check {
-			// handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-			// TODO: Logic for handling an error here will be implemented; this
-			//       will take the form of an exit from the parent NewHook method
-			//       as well as a generation of an error/redirect page option to
-			//       the end user of the Heupr application.
-			// return handler, err
-			// NOTE: Is this correct?
-			return err
-		}
-		name := *r.Name
-		owner := *r.Owner.Login
-		url := "http://00ad0ac7.ngrok.io/hook"
-		hook, _, err := client.Repositories.CreateHook(owner, name, &github.Hook{
-			Name:   github.String("web"),
-			Events: []string{"issues", "repository"},
-			Active: github.Bool(true),
-			Config: map[string]interface{}{
-				"url":          url,
-				"secret":       secretKey,
-				"content_type": "json",
-				"insecure_ssl": false,
-			},
-		})
-		if err != nil {
-			return err
-		}
-		err = h.Database.store(*r.ID, "hookID", *hook.ID)
-		if err != nil {
-			return err
-		}
+func (rs *RepoServer) NewHook(repo *github.Repository, client *github.Client) error {
+	if check, err := rs.hookExists(repo, client); check {
+		return err
+	}
+	name := *repo.Name
+	owner := *repo.Owner.Login
+	// TODO: This URL will change to a config parameter.
+	url := "http://00ad0ac7.ngrok.io/hook"
+	hook, _, err := client.Repositories.CreateHook(owner, name, &github.Hook{
+		Name:   github.String("web"),
+		Events: []string{"issues", "repository"},
+		Active: github.Bool(true),
+		Config: map[string]interface{}{
+			"url":          url,
+			"secret":       secretKey,
+			"content_type": "json",
+			"insecure_ssl": false,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if err = rs.Database.store(*repo.ID, "hookID", *hook.ID); err != nil {
+		return err
 	}
 	return nil
 }
 
-func (h *RepoServer) hookExists(repo *github.Repository, client *github.Client) (bool, error) {
+func (rs *RepoServer) hookExists(repo *github.Repository, client *github.Client) (bool, error) {
 	name, owner := "", ""
-	if repo.Name != nil {
+	if repo.Name != nil && repo.Owner.Login != nil {
 		name = *repo.Name
-	}
-	if repo.Owner.Login != nil {
 		owner = *repo.Owner.Login
 	}
-	hookID, err := h.Database.retrieve(*repo.ID, "hookID")
+	hookID, err := rs.Database.retrieve(*repo.ID, "hookID")
 	if err != nil {
 		return false, err
 	}

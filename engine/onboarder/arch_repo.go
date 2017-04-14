@@ -32,12 +32,10 @@ type ArchRepo struct {
 	Client *github.Client
 }
 
-func (h *RepoServer) NewArchRepo(repos []*github.Repository, client *github.Client) {
-	for _, repo := range repos {
-		h.Repos[*repo.ID] = &ArchRepo{
-			Repo:   repo,
-			Client: client,
-		}
+func (rs *RepoServer) NewArchRepo(repo *github.Repository, client *github.Client) {
+	rs.Repos[*repo.ID] = &ArchRepo{
+		Repo:   repo,
+		Client: client,
 	}
 }
 
@@ -48,13 +46,13 @@ func (h *RepoServer) NewArchRepo(repos []*github.Repository, client *github.Clie
 //       necessary logic for defining how each model(s) is trained (although it
 //       is quite likely that they will all train on all available information
 //       which will be filtered down by the conflation scenarios).
-func (h *RepoServer) initModels(id int) {
+func (rs *RepoServer) initModels(id int) {
 
 }
 
 /*
 // TODO: This method will need to change substantially in the switch to gob.
-func (h *RepoServer) InitArchRepos(path ...string) {
+func (rs *RepoServer) InitArchRepos(path ...string) {
 	defer h.CloseDB()
 	h.OpenDB()
 	if path == nil {
