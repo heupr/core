@@ -72,10 +72,6 @@ func (rs *RepoServer) githubCallbackHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-		// return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//     // TODO: Check that this is the correct error status to use.
-		//     http.Error(w, err.Error(), http.StatusInternalServerError)
-		// })
 	}
 
 	if r.Method == "GET" {
