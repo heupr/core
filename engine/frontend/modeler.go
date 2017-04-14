@@ -69,6 +69,7 @@ func (h *HeuprServer) AddModel(repo *github.Repository, client *github.Client) e
 			}
 		}
 	}
+	// TODO: This could potentially be a parameter passed into the method.
 	model := models.Model{Algorithm: &bhattacharya.NBModel{}}
 	model.Algorithm.Learn(trainingSet)
 	h.Repos[repoID].Hive.Models = append(h.Repos[repoID].Hive.Models, &HeuprModel{Model: &model})
