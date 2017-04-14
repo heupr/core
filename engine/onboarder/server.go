@@ -11,7 +11,7 @@ import (
 
 type RepoServer struct {
 	Server    http.Server
-	Repos     map[int]*HeuprRepo
+	Repos     map[int]*ArchRepo
 	Conflator conflation.Conflator
 	Database  BoltDB
 }
@@ -22,7 +22,6 @@ func (h *RepoServer) routes() *http.ServeMux {
 	mux.HandleFunc("/login", githubLoginHandler)
 	mux.HandleFunc("/github_oauth_cb", h.githubCallbackHandler)
 	mux.HandleFunc("/setup_complete", completeHandle)
-	// mux.Handle("/hook", collectorHandler())
 	return mux
 }
 

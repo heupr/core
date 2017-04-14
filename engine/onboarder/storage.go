@@ -7,12 +7,11 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-// DOC: Keys thus far are "hookID" and "token" in buckets named "repoID"
+// DOC: Keys thus far are "hookID" and "token" in buckets named "repoID".
 type BoltDB struct {
 	db *bolt.DB
 }
 
-// https://medium.com/@deckarep/dancing-with-go-s-mutexes-92407ae927bf#.e9o9un5nx
 func (b *BoltDB) store(repoID int, key string, value interface{}) error {
 	idBytes := []byte(strconv.Itoa(repoID))
 	keyBytes := []byte(key)
@@ -23,7 +22,7 @@ func (b *BoltDB) store(repoID int, key string, value interface{}) error {
 		case string:
 			return []byte(i), nil
 		default:
-			return nil, fmt.Errorf("Invalid input type %v\nAccepted types: int, string", i)
+			return nil, fmt.Errorf("Invalid input type %v; accepted types: int, string", i)
 		}
 	}(value)
 	if err != nil {
@@ -98,6 +97,7 @@ func (b *BoltDB) retrieveBulk(input ...string) ([][]byte, error) {
 	return tokens, nil
 }
 
+// DOC: For when users remove their repos from the Heupr service.
 func (b *BoltDB) delete(repoID int) error {
 	idBytes := []byte(strconv.Itoa(repoID))
 

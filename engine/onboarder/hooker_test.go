@@ -24,10 +24,10 @@ func TestNewHook(t *testing.T) {
 	client.BaseURL = url
 	client.UploadURL = url
 
-	mods := make(map[int]*HeuprRepo)
-	mods[0] = &HeuprRepo{
-		Hive: &HeuprHive{
-			Models: []*HeuprModel{&HeuprModel{
+	mods := make(map[int]*ArchRepo)
+	mods[0] = &ArchRepo{
+		Hive: &ArchHive{
+			Models: []*ArchModel{&ArchModel{
 				Model: &models.Model{
 					Algorithm: &bhattacharya.NBModel{},
 				}},

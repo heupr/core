@@ -6,7 +6,7 @@ import (
 	"github.com/google/go-github/github"
 )
 
-type HeuprModel struct {
+type ArchModel struct {
 	Model *models.Model
 	// Benchmark        Benchmark // TODO: Struct to build
 	// Scenarios        []conflation.Scenario
@@ -17,24 +17,24 @@ type HeuprModel struct {
 	//                                       Conflation Scenarios, etc.)
 }
 
-type HeuprHive struct {
-	Models []*HeuprModel
-	// PilotModels        []HeuprModel
+type ArchHive struct {
+	Models []*ArchModel
+	// PilotModels        []ArchModel
 	// ModelBlender       ModelBlender // TODO: Struct to build
 	// TossingGraph       TossingGraphAlgorithm // TODO: Struct to build
 	// StrategyParams     StrategyParams // TODO: Struct to build
 	// AggregateBenchmark Benchmark
 }
 
-type HeuprRepo struct {
+type ArchRepo struct {
 	Repo   *github.Repository
-	Hive   *HeuprHive
+	Hive   *ArchHive
 	Client *github.Client
 }
 
-func (h *RepoServer) NewHeuprRepo(repos []*github.Repository, client *github.Client) {
+func (h *RepoServer) NewArchRepo(repos []*github.Repository, client *github.Client) {
 	for _, repo := range repos {
-		h.Repos[*repo.ID] = &HeuprRepo{
+		h.Repos[*repo.ID] = &ArchRepo{
 			Repo:   repo,
 			Client: client,
 		}
@@ -54,7 +54,7 @@ func (h *RepoServer) initModels(id int) {
 
 /*
 // TODO: This method will need to change substantially in the switch to gob.
-func (h *RepoServer) InitHeuprRepos(path ...string) {
+func (h *RepoServer) InitArchRepos(path ...string) {
 	defer h.CloseDB()
 	h.OpenDB()
 	if path == nil {
@@ -78,7 +78,7 @@ func (h *RepoServer) InitHeuprRepos(path ...string) {
 */
 
 // TODO:
-// Below are several potential helper methods for the HeuprRepo:
+// Below are several potential helper methods for the ArchRepo:
 // BootstrapModel() - performs preliminary training / assignments / startup
 // GetModelBenchmark() TODO: Calculate AggregateBenchmark for this method
 // Assign(issue github.Issue) - assign newly raised issue to contributor
