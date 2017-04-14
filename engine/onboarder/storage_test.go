@@ -38,7 +38,7 @@ func Test_open(t *testing.T) {
 	t.Run("delete", func(t *testing.T) {
 		err := testServer.Database.delete(testBucket)
 		if err != nil {
-			t.Errorf("Error deleting database entry: %v", err,)
+			t.Errorf("Error deleting database entry: %v", err)
 		}
 	})
 }

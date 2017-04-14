@@ -100,7 +100,10 @@ func (rs *RepoServer) githubCallbackHandler(w http.ResponseWriter, r *http.Reque
 				return
 			}
 			rs.NewArchRepo(repo, client)
-			// TODO: Call AddModel here.
+			if err := rs.AddModel(repo, client); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 			rs.Database.store(*repo.ID, "token", token)
 		}
 	}
