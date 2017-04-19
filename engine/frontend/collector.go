@@ -1,5 +1,6 @@
 package frontend
 
+// NOTE: This code is out-dated and will be removed.
 import (
 	"fmt"
 	"net/http"
@@ -8,6 +9,9 @@ import (
 )
 
 var Workload = make(chan github.IssuesEvent, 100)
+
+// NOTE: This is temporary.
+var secretKey = "figrin-dan-and-the-modal-nodes"
 
 func collectorHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

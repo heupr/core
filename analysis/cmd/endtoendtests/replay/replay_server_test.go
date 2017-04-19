@@ -1,4 +1,4 @@
-package backtest
+package replay
 
 import (
 	"compress/gzip"
@@ -147,19 +147,19 @@ func validateGithubEvent(r *http.Request) error {
 }
 
 // Open/Non Trivial Problem:
-// TODO: #4 (?) Inside the HeuprServer when calling Predict on the parsed
+// TODO: #4 (?) Inside the RepoServer when calling Predict on the parsed
 // payloads/replayed issues we don't want that to hit GitHub... We want the
 // calls to Predict to hit our Replay Server. This will allow us to keep score
 // on prediction accuracy.
 // Items:
-// The Github client in the HeuprServer will need to be plug & play
+// The Github client in the RepoServer will need to be plug & play
 // The Replay Server will need it's own predict handler that Heupr calls into.
 
 // Open/Non Trivial Problem:
-// TODO: #5 (?) Inside the HeuprServer when calling GetIssues/GetPulls during
+// TODO: #5 (?) Inside the RepoServer when calling GetIssues/GetPulls during
 // the initial model bootstrap we don't want that to hit github.... We want the
 // calls to hit our Replay Server or the CachedGateway.
 // Items:
-// The Github client in the HeuprServer will need to be plug & play
+// The Github client in the RepoServer will need to be plug & play
 // I Personally need to think more about this one
 */
