@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-github/github"
 )
+
 var secretKey = "test"
 var Workload = make(chan github.IssuesEvent, 100)
 

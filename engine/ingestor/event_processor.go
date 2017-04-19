@@ -1,11 +1,11 @@
 package ingestor
 
 import (
-  "net/http"
+	"net/http"
 )
 
 type EventProcessor struct {
-  db Database
+	db Database
 }
 
 func (h *EventProcessor) routes() *http.ServeMux {
