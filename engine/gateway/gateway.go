@@ -18,7 +18,7 @@ func (c *Gateway) GetPullRequests(org string, project string) ([]*github.PullReq
 	}
 	pulls := []*github.PullRequest{}
 	for {
-		pullRequests, resp, err := c.Client.PullRequests.List(org, project, pullsOpt)
+		pullRequests, resp, err := c.Client.PullRequests.List(nil, org, project, pullsOpt)
 		if err != nil {
 			return nil, err
 		}
@@ -43,7 +43,7 @@ func (c *Gateway) GetIssues(org string, project string) ([]*github.Issue, error)
 	}
 	filteredIssues := []*github.Issue{}
 	for {
-		issues, resp, err := c.Client.Issues.ListByRepo(org, project, issuesOpt)
+		issues, resp, err := c.Client.Issues.ListByRepo(nil, org, project, issuesOpt)
 		if err != nil {
 			return nil, err
 		}
