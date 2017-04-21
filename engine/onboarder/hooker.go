@@ -1,6 +1,8 @@
 package onboarder
 
 import (
+	"context"
+
 	"github.com/google/go-github/github"
 )
 
@@ -14,7 +16,7 @@ func (rs *RepoServer) NewHook(repo *github.Repository, client *github.Client) er
 	owner := *repo.Owner.Login
 	// TODO: This URL will change to a config parameter.
 	url := "http://00ad0ac7.ngrok.io/hook"
-	hook, _, err := client.Repositories.CreateHook(owner, name, &github.Hook{
+	hook, _, err := client.Repositories.CreateHook(context.Background(), owner, name, &github.Hook{
 		Name:   github.String("web"),
 		Events: []string{"issues", "repository"},
 		Active: github.Bool(true),
@@ -28,7 +30,7 @@ func (rs *RepoServer) NewHook(repo *github.Repository, client *github.Client) er
 	if err != nil {
 		return err
 	}
-	if err = rs.Database.store(*repo.ID, "hookID", *hook.ID); err != nil {
+	if err = rs.BoltDatabase.store(*repo.ID, "hookID", *hook.ID); err != nil {
 		return err
 	}
 	return nil
@@ -40,12 +42,12 @@ func (rs *RepoServer) hookExists(repo *github.Repository, client *github.Client)
 		name = *repo.Name
 		owner = *repo.Owner.Login
 	}
-	hookID, err := rs.Database.retrieve(*repo.ID, "hookID")
+	hookID, err := rs.BoltDatabase.retrieve(*repo.ID, "hookID")
 	if err != nil {
 		return false, err
 	}
 
-	_, _, err = client.Repositories.GetHook(owner, name, hookID.(int))
+	_, _, err = client.Repositories.GetHook(context.Background(), owner, name, hookID.(int))
 	if err != nil {
 		return false, err
 	}

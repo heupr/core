@@ -4,6 +4,7 @@ import (
 	"coralreefci/engine/gateway"
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
+	"runtime"
 	"testing"
 )
 
@@ -16,10 +17,22 @@ func TestInsert(t *testing.T) {
 	githubIssues, _ := newGateway.GetIssues("dotnet", "corefx")
 	githubPulls, _ := newGateway.GetPullRequests("dotnet", "corefx")
 
-	db := Database{}
+	bufferPool := NewPool()
+	db := Database{BufferPool: bufferPool}
 	db.Open()
 
-	db.BulkInsertIssues(githubIssues, 555)
-	db.BulkInsertPullRequests(githubPulls, 555)
-	db.EnableRepo(555)
+	repo := &github.Repository{ID: github.Int(26295345), Organization: &github.Organization{Name: github.String("dotnet")}, Name: github.String("coreclr")}
+	for i := 0; i < len(githubIssues); i++ {
+		githubIssues[i].Repository = repo
+	}
+
+	db.BulkInsertIssues(githubIssues)
+	runtime.GC()
+
+	db.BulkInsertPullRequests(githubPulls)
+	runtime.GC()
+
+	//db.InsertIssue(*githubIssues[0])
+	//db.InsertPullRequest(*githubPulls[0])
+	//db.EnableRepo(555)
 }

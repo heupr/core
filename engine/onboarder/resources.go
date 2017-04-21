@@ -1,6 +1,10 @@
 package onboarder
 
-import "github.com/google/go-github/github"
+import (
+	"context"
+
+	"github.com/google/go-github/github"
+)
 
 func listRepositories(client *github.Client) ([]*github.Repository, error) {
 	opts := &github.RepositoryListOptions{
@@ -11,7 +15,7 @@ func listRepositories(client *github.Client) ([]*github.Repository, error) {
 	}
 	allRepos := []*github.Repository{}
 	for {
-		repos, resp, err := client.Repositories.List("", opts)
+		repos, resp, err := client.Repositories.List(context.Background(), "", opts)
 		if err != nil {
 			return nil, err
 		}

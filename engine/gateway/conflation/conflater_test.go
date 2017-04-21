@@ -19,8 +19,8 @@ func TestConflater(t *testing.T) {
 	issueLogin := "C-3P0"
 	issueAssignee := github.User{Login: &issueLogin}
 	issueAssignees := []*github.User{&issueAssignee}
-	githubIssue := github.Issue{Number: &issueNumber, Title: &issueTitle, Body: &issueBody, Assignees: issueAssignees}
-	issues := []github.Issue{githubIssue}
+	githubIssue := &github.Issue{Number: &issueNumber, Title: &issueTitle, Body: &issueBody, Assignees: issueAssignees}
+	issues := []*github.Issue{githubIssue}
 
 	pullNumber := 1
 	pullBody := "Never tell me the odds!"
@@ -28,8 +28,8 @@ func TestConflater(t *testing.T) {
 	pullLogin := "Han"
 	pullAssignee := github.User{Name: &pullLogin}
 	issueURL := "https://asteroid-belt.hoth/"
-	githubPull := github.PullRequest{Number: &pullNumber, Title: &pullTitle, Body: &pullBody, IssueURL: &issueURL, User: &pullAssignee}
-	pulls := []github.PullRequest{githubPull}
+	githubPull := &github.PullRequest{Number: &pullNumber, Title: &pullTitle, Body: &pullBody, IssueURL: &issueURL, User: &pullAssignee}
+	pulls := []*github.PullRequest{githubPull}
 
 	conflator.Context.Issues = []ExpandedIssue{}
 	conflator.SetIssueRequests(issues)

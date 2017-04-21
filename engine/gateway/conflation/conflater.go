@@ -18,15 +18,15 @@ type Context struct {
 	Issues []ExpandedIssue
 }
 
-func (c *Conflator) SetPullRequests(pulls []github.PullRequest) {
+func (c *Conflator) SetPullRequests(pulls []*github.PullRequest) {
 	for i := 0; i < len(pulls); i++ {
-		c.Context.Issues = append(c.Context.Issues, ExpandedIssue{PullRequest: CRPullRequest{pulls[i], []int{}, []CRIssue{}}})
+		c.Context.Issues = append(c.Context.Issues, ExpandedIssue{PullRequest: CRPullRequest{*pulls[i], []int{}, []CRIssue{}}})
 	}
 }
 
-func (c *Conflator) SetIssueRequests(issues []github.Issue) {
+func (c *Conflator) SetIssueRequests(issues []*github.Issue) {
 	for i := 0; i < len(issues); i++ {
-		c.Context.Issues = append(c.Context.Issues, ExpandedIssue{Issue: CRIssue{issues[i], []int{}, []CRPullRequest{}}})
+		c.Context.Issues = append(c.Context.Issues, ExpandedIssue{Issue: CRIssue{*issues[i], []int{}, []CRPullRequest{}}})
 	}
 }
 

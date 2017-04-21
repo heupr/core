@@ -1,6 +1,7 @@
 package onboarder
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/go-github/github"
@@ -20,7 +21,7 @@ func Test_listRepositories(t *testing.T) {
 		names = append(names, *r[i].Name)
 	}
 
-	user, _, _ := client.Users.Get("")
+	user, _, _ := client.Users.Get(context.Background(), "")
 
 	if e != nil {
 		t.Error(

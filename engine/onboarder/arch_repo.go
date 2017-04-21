@@ -1,13 +1,15 @@
 package onboarder
 
 import (
+	"coralreefci/engine/gateway/conflation"
 	"coralreefci/models"
 
 	"github.com/google/go-github/github"
 )
 
 type ArchModel struct {
-	Model *models.Model
+	Model     *models.Model
+	Conflator *conflation.Conflator
 	// Benchmark        Benchmark // TODO: Struct to build
 	// Scenarios        []conflation.Scenario
 	// PilotScenarios   []conflation.Scenario
@@ -17,10 +19,13 @@ type ArchModel struct {
 	//                                       Conflation Scenarios, etc.)
 }
 
-type ArchHive struct {
+type Blender struct {
 	Models []*ArchModel
-	// PilotModels        []ArchModel
-	// ModelBlender       ModelBlender // TODO: Struct to build
+	// PilotModels []*ArchModel
+}
+
+type ArchHive struct {
+	Blender *Blender
 	// TossingGraph       TossingGraphAlgorithm // TODO: Struct to build
 	// StrategyParams     StrategyParams // TODO: Struct to build
 	// AggregateBenchmark Benchmark
@@ -39,41 +44,7 @@ func (rs *RepoServer) NewArchRepo(repo *github.Repository, client *github.Client
 	}
 }
 
-// TODO: This method will place the desired model(s) for a given repository ID
-//       into the respective field e.g.:
-//       (h.Hive.Models = append(h.Hive.Models, exampleModel))
-//       Additionally, this method will need to be able to properly call in the
-//       necessary logic for defining how each model(s) is trained (although it
-//       is quite likely that they will all train on all available information
-//       which will be filtered down by the conflation scenarios).
-func (rs *RepoServer) initModels(id int) {
-
-}
-
-/*
-// TODO: This method will need to change substantially in the switch to gob.
-func (rs *RepoServer) InitArchRepos(path ...string) {
-	defer h.CloseDB()
-	h.OpenDB()
-	if path == nil {
-		// tokens, err := h.Database.retrieveBulk()
-		// if err != nil {
-        //
-		// }
-	} else {
-
-	}
-
-	// TODO:
-	// if string is nil
-	// - default to opening the storage.db file
-	// - load in info from file
-	// - boot up models / repos via that information
-	// else
-	// - open the provided file
-	// - boot up from those specifications
-}
-*/
+// TODO: Instantiate the Conflator struct on the ArchRepo.
 
 // TODO:
 // Below are several potential helper methods for the ArchRepo:
