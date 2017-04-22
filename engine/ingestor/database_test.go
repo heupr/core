@@ -14,9 +14,12 @@ func TestInsert(t *testing.T) {
 	newGateway := gateway.CachedGateway{Gateway: &gateway.Gateway{Client: client}, DiskCache: &gateway.DiskCache{}}
 
 	githubIssues, _ := newGateway.GetIssues("dotnet", "corefx")
+	githubPulls, _ := newGateway.GetPullRequests("dotnet", "corefx")
 
 	db := Database{}
 	db.Open()
 
-	db.BulkInsertIssues(githubIssues)
+	db.BulkInsertIssues(githubIssues, 555)
+	db.BulkInsertPullRequests(githubPulls, 555)
+	db.EnableRepo(555)
 }
