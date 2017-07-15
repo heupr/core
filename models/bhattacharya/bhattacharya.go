@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 	"os"
 	"sort"
-	//"strconv"
+	"strconv"
 	"strings"
 )
 
@@ -34,6 +34,10 @@ func (slice Results) Less(i, j int) bool {
 
 func (slice Results) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
+}
+
+func (c *NBModel) IsBootstrapped() bool {
+	return c.classifier != nil
 }
 
 func (c *NBModel) Learn(input []conflation.ExpandedIssue) {
@@ -84,13 +88,13 @@ func (c *NBModel) Predict(input conflation.ExpandedIssue) []string {
 		names = append(names, string(c.assignees[results[i].id]))
 	}
 
-	utils.ModelLog.Debug("", zap.String("URL", *input.Issue.URL))
-	utils.ModelLog.Debug("Predicted:")
-	//TODO: Fix logging
-	/*
-		for i := 0; i < len(names); i++ {
-			utils.ModelDetails.Debug("Class " + strconv.Itoa(i) + ": " + names[i] + ", Score: " + strconv.FormatFloat(results[i].score, 'f', -1, 64))
-		}*/
+	//TODO: Improve logging
+	utils.ModelLog.Info("\n")
+	utils.ModelLog.Info("", zap.String("Assignee", *input.Issue.Assignee.Login))
+	utils.ModelLog.Info("", zap.String("URL", *input.Issue.URL))
+	for i := 0; i < len(names); i++ {
+		utils.ModelLog.Info("", zap.String("Class", strconv.Itoa(i)+": "+names[i]+", Score: "+strconv.FormatFloat(results[i].score, 'f', -1, 64)))
+	}
 	return names
 }
 

@@ -2,18 +2,20 @@ package ingestor
 
 import (
 	"bytes"
+	"coralreefci/utils"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
+	"go.uber.org/zap"
 	"io"
 )
 
 type Event struct {
-	Type    string             `json:"type"`
-	Repo    github.Repository  `json:"repo"`
-	Payload github.IssuesEvent `json:"payload"`
+	Type    string            `json:"type"`
+	Repo    github.Repository `json:"repo"`
+	Action  string            `json:"action"`
+	Payload interface{}       `json:"payload"`
 }
 
 type Value interface{}
@@ -21,6 +23,19 @@ type Value interface{}
 type Database struct {
 	db         *sql.DB
 	BufferPool Pool
+}
+
+type EventType int
+
+const (
+	PullRequest EventType = iota
+	Issue
+	All
+)
+
+type EventQuery struct {
+	Type EventType
+	Repo string
 }
 
 func (d *Database) Open() {
@@ -35,6 +50,10 @@ func (d *Database) Close() {
 	d.db.Close()
 }
 
+func (d *Database) FlushBackTestTable() {
+	d.db.Exec("optimize table backtest_events flush")
+}
+
 func (d *Database) EnableRepo(repoId int) {
 	var buffer bytes.Buffer
 	archRepoInsert := "INSERT INTO arch_repos(repository_id, enabled) VALUES"
@@ -42,41 +61,73 @@ func (d *Database) EnableRepo(repoId int) {
 
 	buffer.WriteString(archRepoInsert)
 	buffer.WriteString(valuesFmt)
-	_, err := d.db.Exec(buffer.String(), repoId, true)
-	fmt.Println(err)
-}
-
-//TODO: Use LOAD DATA INFILE
-func (d *Database) BulkInsertBacktestEvents(events []Event) {
-	var buffer bytes.Buffer
-	eventsInsert := "INSERT INTO backtest_events(repo_id, repo_name, payload) VALUES"
-	eventsValuesFmt := "(?,?,?)"
-	numValues := 3
-
-	buffer.WriteString(eventsInsert)
-	delimeter := ""
-	values := make([]interface{}, len(events)*numValues)
-	for i := 0; i < len(events); i++ {
-		buffer.WriteString(delimeter)
-		buffer.WriteString(eventsValuesFmt)
-		offset := i * numValues
-
-		values[offset+0] = events[i].Repo.ID
-		values[offset+1] = events[i].Repo.Name
-		payload, _ := json.Marshal(events[i])
-		values[offset+2] = stripCtlAndExtFromBytes(payload)
-		delimeter = ","
-	}
-	_, err := d.db.Exec(buffer.String(), values...)
+	result, err := d.db.Exec(buffer.String(), repoId, true)
 	if err != nil {
-		fmt.Println(err)
+		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+	} else {
+		rows, _ := result.RowsAffected()
+		utils.AppLog.Info("Database Insert Success", zap.Int64("Rows", rows))
 	}
 }
 
-func (d *Database) ReadBacktestEvents(repo string) ([]Event, error) {
+func (d *Database) BulkInsertBacktestEvents(events []*Event) {
+	buffer := d.BufferPool.Get()
+	for i := 0; i < len(events); i++ {
+		buffer.AppendInt(int64(*events[i].Repo.ID))
+		buffer.AppendByte('~')
+		buffer.AppendString(*events[i].Repo.Name)
+		buffer.AppendByte('~')
+		if events[i].Action == "closed" {
+			buffer.AppendInt(1)
+		} else {
+			buffer.AppendInt(0)
+		}
+		buffer.AppendByte('~')
+		if events[i].Type == "PullRequestEvent" {
+			buffer.AppendInt(1)
+		} else {
+			buffer.AppendInt(0)
+		}
+		buffer.AppendByte('~')
+		payload, _ := json.Marshal(events[i])
+		_, _ = buffer.Write(escapeBytesBackslash(stripCtlAndExtFromBytes(payload)))
+		buffer.AppendByte('\n')
+	}
+
+	sqlBuffer := bytes.NewBuffer(buffer.Bytes())
+	buffer.Reset()
+	buffer.Free()
+
+	mysql.RegisterReaderHandler("data", func() io.Reader {
+		return sqlBuffer
+	})
+	defer mysql.DeregisterReaderHandler("data")
+	result, err := d.db.Exec("LOAD DATA LOCAL INFILE 'Reader::data' INTO TABLE backtest_events FIELDS TERMINATED BY '~' LINES TERMINATED BY '\n' (repo_id,repo_name,is_closed,is_pull,payload)")
+	if err != nil {
+		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+	} else {
+		rows, _ := result.RowsAffected()
+		utils.AppLog.Info("Database Insert Success", zap.Int64("Rows", rows))
+	}
+	sqlBuffer.Reset()
+}
+
+func (d *Database) ReadBacktestEvents(params EventQuery) ([]Event, error) {
 	events := []Event{}
 	var payload []byte
-	results, err := d.db.Query("select payload from backtest_events where repo_name=?", repo)
+	var results *sql.Rows
+	var err error
+	switch t := params.Type; t {
+	case PullRequest:
+		results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_pull=? and is_closed=?", params.Repo, 0, 0)
+		//TODO: results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_pull=? and is_closed=?", params.Repo, 1, 1)
+	case Issue:
+		results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_pull=? and is_closed=?", params.Repo, 1, 0)
+		//TODO: results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_pull=? and is_closed=?", params.Repo, 0, 1)
+	default:
+		results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_closed=?", params.Repo, 0)
+		//TODO: results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_closed=?", params.Repo, 1)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +138,41 @@ func (d *Database) ReadBacktestEvents(repo string) ([]Event, error) {
 		if err != nil {
 			return nil, err
 		}
-		json.Unmarshal(payload, &event)
+		decoder := json.NewDecoder(bytes.NewReader(payload))
+		decoder.UseNumber()
+		if err := decoder.Decode(&event); err != nil {
+			return nil, err
+		}
+		events = append(events, event)
+	}
+	err = results.Err()
+	if err != nil {
+		return nil, err
+	}
+	return events, nil
+}
+
+func (d *Database) ReadPullRequestTest() ([]github.PullRequest, error) {
+	events := []github.PullRequest{}
+	var payload []byte
+	var results *sql.Rows
+	var err error
+	results, err = d.db.Query("select payload from github_events where is_pull=1")
+	if err != nil {
+		return nil, err
+	}
+	defer results.Close()
+	for results.Next() {
+		var event github.PullRequest
+		err := results.Scan(&payload)
+		if err != nil {
+			return nil, err
+		}
+		decoder := json.NewDecoder(bytes.NewReader(payload))
+		decoder.UseNumber()
+		if err := decoder.Decode(&event); err != nil {
+			return nil, err
+		}
 		events = append(events, event)
 	}
 	err = results.Err()
@@ -99,7 +184,7 @@ func (d *Database) ReadBacktestEvents(repo string) ([]Event, error) {
 
 func (d *Database) InsertIssue(issue github.Issue) {
 	var buffer bytes.Buffer
-	eventsInsert := "INSERT INTO github_events(repo_id,issues_id,number,payload,is_pr,is_closed) VALUES"
+	eventsInsert := "INSERT INTO github_events(repo_id,issues_id,number,payload,is_pull,is_closed) VALUES"
 	eventsValuesFmt := "(?,?,?,?,0,?)"
 	numValues := 5
 
@@ -116,9 +201,12 @@ func (d *Database) InsertIssue(issue github.Issue) {
 	} else {
 		values[4] = true
 	}
-	_, err := d.db.Exec(buffer.String(), values...)
+	result, err := d.db.Exec(buffer.String(), values...)
 	if err != nil {
-		fmt.Println(err)
+		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+	} else {
+		rows, _ := result.RowsAffected()
+		utils.AppLog.Debug("Database Insert Success", zap.Int64("Rows", rows))
 	}
 }
 
@@ -138,9 +226,9 @@ func (d *Database) BulkInsertIssues(issues []*github.Issue) {
 		buffer.AppendInt(0)
 		buffer.AppendByte('~')
 		if issues[i].ClosedAt == nil {
-			buffer.AppendInt(1)
-		} else {
 			buffer.AppendInt(0)
+		} else {
+			buffer.AppendInt(1)
 		}
 		buffer.AppendByte('\n')
 	}
@@ -153,30 +241,41 @@ func (d *Database) BulkInsertIssues(issues []*github.Issue) {
 		return sqlBuffer
 	})
 	defer mysql.DeregisterReaderHandler("data")
-	_, err := d.db.Exec("LOAD DATA LOCAL INFILE 'Reader::data' INTO TABLE github_events FIELDS TERMINATED BY '~' LINES TERMINATED BY '\n' (repo_id,issues_id,number,payload,is_pr,is_closed)")
+	result, err := d.db.Exec("LOAD DATA LOCAL INFILE 'Reader::data' INTO TABLE github_events FIELDS TERMINATED BY '~' LINES TERMINATED BY '\n' (repo_id,issues_id,number,payload,is_pull,is_closed)")
 	if err != nil {
-		fmt.Println(err)
+		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+	} else {
+		rows, _ := result.RowsAffected()
+		utils.AppLog.Info("Database Insert Success", zap.Int64("Rows", rows))
 	}
 }
 
 func (d *Database) InsertPullRequest(pull github.PullRequest) {
 	var buffer bytes.Buffer
-	eventsInsert := "INSERT INTO github_events(payload,is_pr,is_closed) VALUES"
-	eventsValuesFmt := "(?,1,?)"
-	numValues := 2
+	eventsInsert := "INSERT INTO github_events(repo_id,issues_id,number,payload,is_pull,is_closed) VALUES"
+	eventsValuesFmt := "(?,?,?,?,1,?)"
+	numValues := 5
 
 	buffer.WriteString(eventsInsert)
 	buffer.WriteString(eventsValuesFmt)
 	values := make([]interface{}, numValues)
+	values[0] = pull.Base.Repo.ID
+	values[1] = pull.ID
+	values[2] = pull.Number
 	payload, _ := json.Marshal(pull)
-	values[0] = stripCtlAndExtFromBytes(payload)
+	values[3] = stripCtlAndExtFromBytes(payload)
 	if pull.ClosedAt == nil {
-		values[1] = false
+		values[4] = false
 	} else {
-		values[1] = true
+		values[4] = true
 	}
-	_, err := d.db.Exec(buffer.String(), values...)
-	fmt.Println(err)
+	result, err := d.db.Exec(buffer.String(), values...)
+	if err != nil {
+		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+	} else {
+		rows, _ := result.RowsAffected()
+		utils.AppLog.Debug("Database Insert Success", zap.Int64("Rows", rows))
+	}
 }
 
 func (d *Database) BulkInsertPullRequests(pulls []*github.PullRequest) {
@@ -195,9 +294,9 @@ func (d *Database) BulkInsertPullRequests(pulls []*github.PullRequest) {
 		buffer.AppendInt(1)
 		buffer.AppendByte('~')
 		if pulls[i].ClosedAt == nil {
-			buffer.AppendInt(1)
-		} else {
 			buffer.AppendInt(0)
+		} else {
+			buffer.AppendInt(1)
 		}
 		buffer.AppendByte('\n')
 	}
@@ -210,9 +309,12 @@ func (d *Database) BulkInsertPullRequests(pulls []*github.PullRequest) {
 		return sqlBuffer
 	})
 	defer mysql.DeregisterReaderHandler("data")
-	_, err := d.db.Exec("LOAD DATA LOCAL INFILE 'Reader::data' INTO TABLE github_events FIELDS TERMINATED BY '~' LINES TERMINATED BY '\n' (repo_id,issues_id,number,payload,is_pr,is_closed)")
+	result, err := d.db.Exec("LOAD DATA LOCAL INFILE 'Reader::data' INTO TABLE github_events FIELDS TERMINATED BY '~' LINES TERMINATED BY '\n' (repo_id,issues_id,number,payload,is_pull,is_closed)")
 	if err != nil {
-		fmt.Println(err)
+		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+	} else {
+		rows, _ := result.RowsAffected()
+		utils.AppLog.Info("Database Insert Success", zap.Int64("Rows", rows))
 	}
 }
 
@@ -226,7 +328,9 @@ func stripCtlAndExtFromBytes(str []byte) []byte {
 			bl++
 		}
 	}
-	return b[:bl]
+	//return b[:bl]
+	str = b[:bl] //PERF
+	return str
 }
 
 func escapeString(sql string) string {
@@ -308,5 +412,7 @@ func escapeBytesBackslash(v []byte) []byte {
 			pos++
 		}
 	}
-	return buf[:pos]
+	//return buf[:pos]
+	v = buf[:pos] //PERF
+	return v
 }

@@ -1,22 +1,24 @@
 package ingestor
 
 import (
+	"coralreefci/utils"
 	"github.com/google/go-github/github"
+	"go.uber.org/zap"
 )
 
 type Worker struct {
 	ID    int
 	Db    Database
-	Work  chan github.IssuesEvent
-	Queue chan chan github.IssuesEvent
+	Work  chan interface{}
+	Queue chan chan interface{}
 	Quit  chan bool
 }
 
-func NewWorker(id int, queue chan chan github.IssuesEvent) Worker {
+func NewWorker(id int, queue chan chan interface{}) Worker {
 	return Worker{
 		ID:    id,
 		Db:    Database{},
-		Work:  make(chan github.IssuesEvent),
+		Work:  make(chan interface{}),
 		Queue: queue,
 		Quit:  make(chan bool),
 	}
@@ -29,9 +31,17 @@ func (w *Worker) Start() {
 		for {
 			w.Queue <- w.Work
 			select {
-			case issuesEvent := <-w.Work:
-				issuesEvent.Issue.Repository = issuesEvent.Repo
-				w.Db.InsertIssue(*issuesEvent.Issue)
+			case event := <-w.Work:
+				switch v := event.(type) {
+				case github.IssuesEvent:
+					v.Issue.Repository = v.Repo
+					w.Db.InsertIssue(*v.Issue)
+				case github.PullRequestEvent:
+					//v.PullRequest.Base.Repo = v.Repo //TODO: Confirm
+					w.Db.InsertPullRequest(*v.PullRequest)
+				default:
+					utils.AppLog.Error("Unknown", zap.Any("GithubEvent", v))
+				}
 			case <-w.Quit:
 				return
 			}

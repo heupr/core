@@ -6,6 +6,19 @@ import (
 	"go.uber.org/zap"
 )
 
+func (m *Model) TrainFold(train []conflation.ExpandedIssue, test []conflation.ExpandedIssue) float64 {
+	utils.ModelLog.Info("Train Fold", zap.Int("Issues#", len(test)))
+	var score float64
+	var mat matrix
+	var distinct []string
+
+	score, mat, distinct = m.Fold(train, test)
+	utils.ModelLog.Info("Train Fold", zap.Float64("Accuracy", score))
+	mat.classesEvaluation(distinct)
+	utils.ModelLog.Info("Train Fold", zap.Float64("Score", score))
+	return score
+}
+
 // DOC: JohnFold gradually increases the training data by increments of 1/10th.
 func (m *Model) JohnFold(issues []conflation.ExpandedIssue) float64 {
 	utils.ModelLog.Info("John Fold", zap.Int("Issues#", len(issues)))
@@ -13,17 +26,20 @@ func (m *Model) JohnFold(issues []conflation.ExpandedIssue) float64 {
 	var score float64
 	var mat matrix
 	var distinct []string
-	for i := 0.10; i < 0.90; i += 0.10 {
+	for i := 0.1; i < 0.9; i += 0.1 {
 		split := int(Round(i * float64(len(issues))))
-		if i < 0.80 {
+		if i < 0.8 {
 			score, mat, distinct = m.Fold(issues[:split], issues[split:])
 		} else {
 			score, mat, distinct = m.OnlineFold(issues[:split], issues[split:])
 		}
 		modelRecoveryFile := utils.Config.DataCachesPath + "/JFold" + ToString(i*10.0) + ".model"
 		m.GenerateRecoveryFile(modelRecoveryFile)
-		utils.ModelLog.Info("John Fold", zap.Int("Loop#", (int)(i*10.0)), zap.Float64("Accuracy", score))
-		mat.classesEvaluation(distinct)
+		utils.ModelLog.Info("John Fold", zap.Int("Loop#", (int)(Round(i)*10.0)), zap.Float64("Accuracy", score))
+		distinct = distinct
+		//TODO: Temporary
+		mat.classesEvaluation([]string{"bartonjs"})
+		//mat.classesEvaluation(distinct)
 		finalScore += score
 	}
 	finalScore = Round(finalScore / 9.00)
@@ -85,17 +101,28 @@ func (m *Model) FoldImplementation(test []conflation.ExpandedIssue) (float64, ma
 		predictions := m.Predict(test[i])
 		//utils.ModelSummary.Debug("Predicted: ", predictions)
 		length := 5
-		if len(predictions) < 5 {
+		if len(predictions) < length {
 			length = len(predictions)
 		}
 		for j := 0; j < length; j++ {
-			if predictions[j] == *test[i].Issue.Assignees[0].Login {
-				predicted = append(predicted, predictions[j])
-				correct++
-				break
+			if test[i].Issue.Assignees != nil {
+				if predictions[j] == *test[i].Issue.Assignees[0].Login {
+					predicted = append(predicted, predictions[j])
+					correct++
+					break
+				} else {
+					predicted = append(predicted, predictions[0])
+					break
+				}
 			} else {
-				predicted = append(predicted, predictions[0])
-				break
+				if predictions[j] == *test[i].PullRequest.User.Login {
+					predicted = append(predicted, predictions[j])
+					correct++
+					break
+				} else {
+					predicted = append(predicted, predictions[0])
+					break
+				}
 			}
 		}
 	}

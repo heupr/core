@@ -1,16 +1,12 @@
 package ingestor
 
-import (
-	"github.com/google/go-github/github"
-)
-
-var Workers chan chan github.IssuesEvent
+var Workers chan chan interface{}
 
 type Dispatcher struct {
 }
 
 func (d *Dispatcher) Start(count int) {
-	Workers = make(chan chan github.IssuesEvent, count)
+	Workers = make(chan chan interface{}, count)
 	for i := 0; i < count; i++ {
 		worker := NewWorker(i+1, Workers)
 		worker.Start()

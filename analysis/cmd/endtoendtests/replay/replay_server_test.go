@@ -1,17 +1,18 @@
 package replay
 
 import (
-	"bytes"
-	"coralreefci/engine/gateway"
+	//	"bytes"
 	"coralreefci/engine/ingestor"
-	"encoding/json"
+	//	"encoding/json"
 	"fmt"
 	"github.com/google/go-github/github"
-	"github.com/pkg/profile"
+	//	"github.com/pkg/profile"
+	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"testing"
-	//"runtime"
+	"time"
 )
 
 var bs BacktestServer
@@ -19,17 +20,19 @@ var db ingestor.Database
 var ingestorServer ingestor.IngestorServer
 
 func setup() {
-	//runtime.GOMAXPROCS(runtime.NumCPU())
-	db = ingestor.Database{}
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	bufferPool := ingestor.NewPool()
+	db = ingestor.Database{BufferPool: bufferPool}
 	db.Open()
-
-	bs = BacktestServer{DB: &db}
+	bs := BacktestServer{DB: &db}
 	go bs.Start()
 
 	dispatcher := ingestor.Dispatcher{}
 	dispatcher.Start(5)
 	ingestorServer = ingestor.IngestorServer{}
 	go ingestorServer.Start()
+
+	time.Sleep(5 * time.Second)
 }
 
 func TestMain(m *testing.M) {
@@ -44,6 +47,7 @@ func TestMain(m *testing.M) {
 	os.Exit(retCode)
 }
 
+/*
 func Test_GetIssues(t *testing.T) {
 	client := github.NewClient(nil)
 	url, _ := url.Parse(localPath)
@@ -52,12 +56,14 @@ func Test_GetIssues(t *testing.T) {
 	newGateway := gateway.Gateway{Client: client}
 	githubIssues, _ := newGateway.GetIssues("dotnet", "corefx")
 	fmt.Println(githubIssues[0])
-}
+} */
 
+/*
 func Test_Replay(t *testing.T) {
 	org := "dotnet"
 	repo := "corefx"
 	events, _ := db.ReadBacktestEvents(org + "/" + repo)
+	defer profile.Start().Stop()
 	for i := 0; i < len(events); i++ {
 		events[i].Payload.Repo = &events[i].Repo
 		payload, _ := json.Marshal(events[i].Payload)
@@ -78,6 +84,88 @@ func Test_Replay2(t *testing.T) {
 	}
 	fmt.Println("#Events Replayed:", len(events))
 }
+
+func Test_Replay3(t *testing.T) {
+	org := "Khan"
+	repo := "khan-i18n"
+	events, _ := db.ReadBacktestEvents(org + "/" + repo)
+	defer profile.Start().Stop()
+	for i := 0; i < len(events); i++ {
+		events[i].Payload.Repo = &events[i].Repo
+		payload, _ := json.Marshal(events[i].Payload)
+		bs.HTTPPost(bytes.NewBuffer(payload))
+	}
+	fmt.Println("#Events Replayed:", len(events))
+}*/
+
+/*
+func Test_Replay4(t *testing.T) {
+	org := "paramiko"
+	repo := "paramiko"
+	events, _ := db.ReadBacktestEvents(org + "/" + repo)
+	for i := 0; i < len(events); i++ {
+		payload, _ := json.Marshal(events[i].Payload)
+		bs.HTTPPost(bytes.NewBuffer(payload), "pull_request")
+	}
+  fmt.Println("#Events Replayed:", len(events))
+}*/
+
+/*
+func Test_Replay5(t *testing.T) {
+	var event string
+	org := "rust-lang"
+	repo := "rust"
+	queryParams := ingestor.EventQuery{Repo: org + "/" + repo}
+	events, err := db.ReadBacktestEvents(queryParams)
+	fmt.Println(err)
+	for i := 0; i < len(events); i++ {
+		m := events[i].Payload.(map[string]interface{})
+		m["repository"] = &events[i].Repo // Workaround
+		payload, _ := json.Marshal(m)
+		if events[i].Type == "PullRequestEvent" {
+			event = "pull_request"
+		} else {
+			event = "issues"
+		}
+		bs.HTTPPost(bytes.NewBuffer(payload), event)
+	}
+	fmt.Println("#Events Replayed:", len(events))
+}*/
+
+func Test_Backtest1(t *testing.T) {
+	httpClient := http.Client{}
+	client := github.NewClient(nil)
+	url, _ := url.Parse(localPath)
+	client.BaseURL = url
+	client.UploadURL = url
+
+	repoInitializer := ingestor.RepoInitializer{}
+	repo := ingestor.AuthenticatedRepo{Repo: &github.Repository{ID: github.Int(724712), Organization: &github.Organization{Name: github.String("rust-lang")}, Name: github.String("rust")}, Client: client}
+	repoInitializer.AddRepo(repo)
+
+	u := "stream"
+	req, err := client.NewRequest("POST", u, nil)
+	httpClient.Do(req)
+	fmt.Println(err)
+
+	time.Sleep(15 * time.Second)
+
+	//fmt.Println(len(bs.WebhookEvents))
+	//bs.StreamWebhookEvents()
+}
+
+/*
+func Test_ReplayFastExperimental(t *testing.T) {
+	org := "wagn"
+	repo := "wagn"
+	events, err := db.ReadBacktestEventsFast(org + "/" + repo)
+	fmt.Println(err)
+	for i := 0; i < len(events); i++ {
+		//payload, _ := json.Marshal(events[i].Payload)
+		bs.HTTPPost(bytes.NewBuffer(events[i].Payload), "pull_request")
+	}
+  fmt.Println("#Events Replayed:", len(events))
+} */
 
 /*
 func Test_WebhookDupe(t *testing.T) {

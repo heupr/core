@@ -13,7 +13,7 @@ should be treated as such.
 Code hosted on **GitHub** is the primary code base for the project. Updates
 from the repository will be posted into the #github channel in **Slack**.  
 
-Please see the [**Resources**](https://paper.dropbox.com/folder/show/Resources-e.iX7ZavGxujPFwhjOZcQrZyUA7J53cEHBMVaKLE8pXZDiAjjAQ5)
+Please see the [**Resources**](https://paper.dropbox.com/folder/show/Resources-e.iX7ZavGxujPFwhjOZcQsjuFoMPVY8u8o5nzcrZOsfaBM2g7qTw)
 folder on **Dropbox Paper** for guidelines and development references.  
 
 ## License

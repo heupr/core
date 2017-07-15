@@ -1,0 +1,6 @@
+# Ignore storage file until a more robust solution can be implemented
+# This is primarily due to the hassle involved in deleting the changes to the
+# file following a unit test run with 'go test'
+hooker_test.db
+storage.db
+storage_test.db

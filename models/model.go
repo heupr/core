@@ -7,11 +7,16 @@ type Model struct {
 }
 
 type Algorithm interface {
+	IsBootstrapped() bool
 	Learn(input []conflation.ExpandedIssue)
 	OnlineLearn(input []conflation.ExpandedIssue)
 	Predict(input conflation.ExpandedIssue) []string
 	GenerateRecoveryFile(path string) error
 	RecoverModelFromFile(path string) error
+}
+
+func (m *Model) IsBootstrapped() bool {
+	return m.Algorithm.IsBootstrapped()
 }
 
 func (m *Model) Learn(input []conflation.ExpandedIssue) {

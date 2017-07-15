@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	//"runtime/debug"
+	"strings"
 )
 
 type TestContext struct {
@@ -22,7 +23,7 @@ type BackTestRunner struct {
 	Context TestContext
 }
 
-func (t *BackTestRunner) Run() {
+func (t *BackTestRunner) Run(repo string) {
 
 	defer func() {
 		//utils.Log.Error("Panic Recovered: ", recover(), bytes.NewBuffer(debug.Stack()).String())
@@ -31,14 +32,14 @@ func (t *BackTestRunner) Run() {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "23fc398670a80700b19b1ae1587825a16aa8ce57"})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 	client := github.NewClient(tc)
-
 	newGateway := gateway.CachedGateway{Gateway: &gateway.Gateway{Client: client}, DiskCache: &gateway.DiskCache{}}
 
-	githubIssues, err := newGateway.GetIssues("dotnet", "corefx")
+	r := strings.Split(repo, "/")
+	githubIssues, err := newGateway.GetIssues(r[0], r[1])
 	if err != nil {
 		utils.AppLog.Error("Cannot get Issues from Github Gateway.", zap.Error(err))
 	}
-	githubPulls, err := newGateway.GetPullRequests("dotnet", "corefx")
+	githubPulls, err := newGateway.GetPullRequests(r[0], r[1])
 	if err != nil {
 		utils.AppLog.Error("Cannot get PullRequests from Github Gateway.", zap.Error(err))
 	}
@@ -46,29 +47,14 @@ func (t *BackTestRunner) Run() {
 	context := &conf.Context{}
 
 	scenarios := []conf.Scenario{&conf.Scenario3{}}
-	//scenarios := []conf.Scenario{&conf.ScenarioAND{Scenarios: []conf.Scenario{&conf.Scenario3{}}}}
 
 	conflationAlgorithms := []conf.ConflationAlgorithm{&conf.ComboAlgorithm{Context: context}}
 	normalizer := conf.Normalizer{Context: context}
 	conflator := conf.Conflator{Scenarios: scenarios, ConflationAlgorithms: conflationAlgorithms, Normalizer: normalizer, Context: context}
 
-	issuesCopy := make([]github.Issue, len(githubIssues))
-	pullsCopy := make([]github.PullRequest, len(githubPulls))
-
-	// TODO: Evaluate this particular snippet of code as it has potential
-	//       performance optimization capabilities related to the hardware
-	//       level. This may ultimately live in the actual gateway.go file to
-	//	     improve the actual download operations.
-	for i := 0; i < len(issuesCopy); i++ {
-		issuesCopy[i] = *githubIssues[i]
-	}
-	for i := 0; i < len(pullsCopy); i++ {
-		pullsCopy[i] = *githubPulls[i]
-	}
-
 	conflator.Context.Issues = []conf.ExpandedIssue{}
-	conflator.SetIssueRequests(issuesCopy)
-	conflator.SetPullRequests(pullsCopy)
+	conflator.SetIssueRequests(githubIssues)
+	conflator.SetPullRequests(githubPulls)
 	conflator.Conflate()
 
 	trainingSet := []conf.ExpandedIssue{}
@@ -76,7 +62,7 @@ func (t *BackTestRunner) Run() {
 	for i := 0; i < len(conflator.Context.Issues); i++ {
 		expandedIssue := conflator.Context.Issues[i]
 		if expandedIssue.Conflate {
-			if expandedIssue.Issue.Assignee == nil {
+			if expandedIssue.Issue.Assignees == nil {
 				continue
 			} else {
 				trainingSet = append(trainingSet, conflator.Context.Issues[i])
@@ -88,13 +74,21 @@ func (t *BackTestRunner) Run() {
 	processedTrainingSet := []conf.ExpandedIssue{}
 
 	excludeAssignees := From(trainingSet).Where(func(exclude interface{}) bool {
-		assignee := *exclude.(conf.ExpandedIssue).Issue.Assignee.Login
-		return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b" && assignee != "stephentoub"
+		if exclude.(conf.ExpandedIssue).Issue.Assignee != nil {
+			assignee := *exclude.(conf.ExpandedIssue).Issue.Assignee.Login
+			return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b" && assignee != "stephentoub"
+		} else {
+			return true
+		}
 	})
 
 	groupby := excludeAssignees.GroupBy(
 		func(r interface{}) interface{} {
-			return *r.(conf.ExpandedIssue).Issue.Assignee.ID
+			if r.(conf.ExpandedIssue).Issue.Assignee != nil {
+				return *r.(conf.ExpandedIssue).Issue.Assignee.ID
+			} else {
+				return *r.(conf.ExpandedIssue).PullRequest.User.ID
+			}
 		}, func(r interface{}) interface{} {
 			return r.(conf.ExpandedIssue)
 		})
@@ -112,7 +106,11 @@ func (t *BackTestRunner) Run() {
 	orderby.SelectMany(func(orderby interface{}) Query {
 		return From(orderby.(Group).Group).OrderBy(
 			func(where interface{}) interface{} {
-				return *where.(conf.ExpandedIssue).Issue.ID
+				if where.(conf.ExpandedIssue).Issue.ID != nil {
+					return *where.(conf.ExpandedIssue).Issue.ID
+				} else {
+					return *where.(conf.ExpandedIssue).PullRequest.ID
+				}
 			}).Query
 	}).ToSlice(&processedTrainingSet)
 
@@ -131,4 +129,7 @@ func (t *BackTestRunner) Run() {
 
 	scoreJohn := t.Context.Model.JohnFold(processedTrainingSet)
 	fmt.Println("John Fold:", scoreJohn)
+
+	//scoreTrain := t.Context.Model.TrainFold(processedTrainingSet, testIssues)
+	//fmt.Println("Train Fold:", scoreTrain)
 }

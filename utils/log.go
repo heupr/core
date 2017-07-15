@@ -31,6 +31,7 @@ func CreateModelLogger() {
 func CreateLogger(logPath string) *zap.Logger {
 	logConfig := zap.NewProductionConfig()
 	logConfig.OutputPaths = []string{logPath}
+	logConfig.Sampling = nil
 	logger, err := logConfig.Build()
 	if err != nil {
 		log.Fatal(err)
