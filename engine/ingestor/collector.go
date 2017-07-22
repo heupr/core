@@ -1,10 +1,12 @@
 package ingestor
 
 import (
-	"coralreefci/utils"
+	"net/http"
+
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
-	"net/http"
+
+	"coralreefci/utils"
 )
 
 var secretKey = "test"
@@ -19,12 +21,12 @@ func collectorHandler() http.Handler {
 		}
 		payload, err := github.ValidatePayload(r, []byte(secretKey))
 		if err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			utils.AppLog.Error("could not validate secret: ", zap.Error(err))
 			return
 		}
 		event, err := github.ParseWebHook(github.WebHookType(r), payload)
 		if err != nil {
-			utils.AppLog.Error("Could not parse webhook", zap.Error(err))
+			utils.AppLog.Error("could not parse webhook", zap.Error(err))
 			return
 		}
 		switch v := event.(type) {

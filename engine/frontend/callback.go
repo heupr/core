@@ -103,7 +103,8 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			// TODO: Build logic to send all repo IDs simultaneously via the POST request.
 			resp, err := http.PostForm("/activate-repos", url.Values{
 				"state": {BackendSecret},
-				"repos": {string(*repo.ID)},
+				"repos": {string(*repo.ID), string(*repo.Name), string(*repo.Owner.Login)},
+				"token": {string(tokenByte)},
 			})
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)

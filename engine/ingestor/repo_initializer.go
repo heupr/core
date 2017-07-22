@@ -4,8 +4,6 @@ import (
 	"coralreefci/engine/gateway"
 )
 
-const localPath = "http://localhost:8000/"
-
 type RepoInitializer struct {
 	repos map[int]bool
 }

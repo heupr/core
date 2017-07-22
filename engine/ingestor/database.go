@@ -2,13 +2,15 @@ package ingestor
 
 import (
 	"bytes"
-	"coralreefci/utils"
 	"database/sql"
 	"encoding/json"
+	"io"
+
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
-	"io"
+
+	"coralreefci/utils"
 )
 
 type Event struct {
