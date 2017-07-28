@@ -8,19 +8,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/google/go-github/github"
+	"github.com/gorilla/mux"
 	gzip "github.com/klauspost/pgzip"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	// "reflect"
 	"os"
 	"path/filepath"
-
-	"github.com/gorilla/mux"
-	//"coralreefci/engine/onboarder"
-	// "coralreefci/models"
-	"github.com/google/go-github/github"
 	"runtime/debug"
 	"time"
 )
@@ -33,11 +29,10 @@ const (
 var webhooksplit float32 = 0.5
 
 type BacktestServer struct {
-	client    http.Client
-	gitClient *github.Client
-	DB        *ingestor.Database
-	server    http.Server
-	//onboarder.RepoServer
+	client          http.Client
+	gitClient       *github.Client
+	DB              *ingestor.Database
+	server          http.Server
 	repoInitializer ingestor.RepoInitializer
 	events          []*ingestor.Event
 	WebhookEvents   []*ingestor.Event
