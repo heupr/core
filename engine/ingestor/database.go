@@ -119,14 +119,11 @@ func (d *Database) ReadBacktestEvents(params EventQuery) ([]Event, error) {
 	var err error
 	switch t := params.Type; t {
 	case PullRequest:
-		results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_pull=? and is_closed=?", params.Repo, 0, 0)
-		//TODO: results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_pull=? and is_closed=?", params.Repo, 1, 1)
+		results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_pull=? and is_closed=?", params.Repo, 0, 1)
 	case Issue:
-		results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_pull=? and is_closed=?", params.Repo, 1, 0)
-		//TODO: results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_pull=? and is_closed=?", params.Repo, 0, 1)
+		results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_pull=? and is_closed=?", params.Repo, 1, 1)
 	default:
-		results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_closed=?", params.Repo, 0)
-		//TODO: results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_closed=?", params.Repo, 1)
+		results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_closed=?", params.Repo, 1)
 	}
 	if err != nil {
 		return nil, err

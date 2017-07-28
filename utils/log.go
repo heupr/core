@@ -13,22 +13,12 @@ var initOnceLog sync.Once
 
 func init() {
 	initOnceLog.Do(func() {
-		CreateAppLogger()
-		CreateModelLogger()
+		AppLog = IntializeLog(Config.AppLogPath)
+		ModelLog = IntializeLog(Config.ModelLogPath)
 	})
 }
 
-func CreateAppLogger() {
-	logPath := Config.LogPath
-	AppLog = CreateLogger(logPath)
-}
-
-func CreateModelLogger() {
-	logPath := Config.ModelSummaryPath
-	ModelLog = CreateLogger(logPath)
-}
-
-func CreateLogger(logPath string) *zap.Logger {
+func IntializeLog(logPath string) *zap.Logger {
 	logConfig := zap.NewProductionConfig()
 	logConfig.OutputPaths = []string{logPath}
 	logConfig.Sampling = nil

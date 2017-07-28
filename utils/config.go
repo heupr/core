@@ -1,9 +1,10 @@
 package utils
 
 import (
-	"encoding/json"
+	"fmt"
+	"github.com/fsnotify/fsnotify"
 	strftime "github.com/lestrrat/go-strftime"
-	"log"
+	"github.com/spf13/viper"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,60 +13,42 @@ import (
 )
 
 type Configuration struct {
-	LogPath          string
-	ModelSummaryPath string
-	ModelDetailsPath string
-	DataCachesPath   string
-	SlackUser        string
-	SlackChannel     string
-	SlackHook        string
+	AppLogPath     string
+	ModelLogPath   string
+	DataCachesPath string
 }
 
-var initOnceConfig sync.Once
+var initOnceCnf sync.Once
+
 var Config Configuration
 
 func init() {
-	initOnceConfig.Do(func() {
-		Config = loadConfig()
+	initOnceCnf.Do(func() {
+		viper.SetConfigName("config")                                                       // name of the config file
+		viper.AddConfigPath(".")                                                            // look for config in the working directory
+		viper.AddConfigPath("$GOPATH/src/coralreefci/analysis/cmd/backtests/bhattacharya/") // optionally look here
+
+		err := viper.ReadInConfig() // Find and read the config file
+		if err != nil {             // Handle errors reading the config file
+			panic(fmt.Errorf("Fatal error config file: %s \n", err))
+		}
+
+		viper.Unmarshal(&Config)
+		Config.AppLogPath = replaceEnvVariable(fmtTimestamp(Config.AppLogPath))
+		Config.ModelLogPath = replaceEnvVariable(fmtTimestamp(Config.ModelLogPath))
+		Config.DataCachesPath = replaceEnvVariable(fmtTimestamp(Config.DataCachesPath))
+
+		viper.WatchConfig()
+		viper.OnConfigChange(func(e fsnotify.Event) {
+			var cnf Configuration
+			viper.Unmarshal(&cnf)
+			Config = cnf
+			fmt.Println("Config file changed:", e.Name)
+		})
 	})
 }
 
-func loadConfig() Configuration {
-	file, err := os.Open("./config.json")
-	defer file.Close()
-	if err != nil {
-		if configEnvPath := os.Getenv(ConfigEnv); configEnvPath != "" {
-			file, err = os.Open(configEnvPath)
-			if err != nil {
-				log.Fatal("config error:", err)
-			}
-		} else {
-			gitConfigPath := "$GOPATH/src/coralreefci/analysis/cmd/backtests/bhattacharya/config.json"
-			gitConfigPath = expand(gitConfigPath)
-			file, err = os.Open(gitConfigPath)
-			if err != nil {
-				log.Fatal("config error:", err)
-			}
-		}
-	}
-	decoder := json.NewDecoder(file)
-	configuration := Configuration{}
-	err = decoder.Decode(&configuration)
-	if err != nil {
-		log.Fatal("config error:", err)
-	}
-	configuration.expandRelativePaths()
-	return configuration
-}
-
-func (c *Configuration) expandRelativePaths() {
-	c.LogPath = timestamp(expand(c.LogPath))
-	c.ModelSummaryPath = timestamp(expand(c.ModelSummaryPath))
-	c.ModelDetailsPath = timestamp(expand(c.ModelDetailsPath))
-	c.DataCachesPath = expand(c.DataCachesPath)
-}
-
-func expand(path string) string {
+func replaceEnvVariable(path string) string {
 	if strings.HasPrefix(path, "$GOPATH") {
 		goPath := os.Getenv("GOPATH")
 		return filepath.Join(goPath, path[7:])
@@ -74,10 +57,10 @@ func expand(path string) string {
 	}
 }
 
-func timestamp(path string) string {
+func fmtTimestamp(path string) string {
 	f, err := strftime.New(path)
 	if err != nil {
-		log.Fatal("config error:", err)
+		panic(fmt.Errorf("config error:", err))
 	}
 	return f.FormatString(time.Now())
 }
