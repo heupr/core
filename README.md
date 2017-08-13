@@ -13,7 +13,7 @@ should be treated as such.
 Code hosted on **GitHub** is the primary code base for the project. Updates
 from the repository will be posted into the #github channel in **Slack**.  
 
-Please see the [**Resources**](https://paper.dropbox.com/folder/show/Resources-e.iX7ZavGxujPFwhjOZcQsjuFoMPVY8u8o5nzcrZOsfaBM2g7qTw)
+Please see the [**Heupr**](https://paper.dropbox.com/folder/show/Heupr-e.iX7ZavGxujPFwhjOZcQrZyUA7J53Q5J9ZNO9Vs282Ly5kW9CiL)
 folder on **Dropbox Paper** for guidelines and development references.  
 
 ## License
@@ -26,7 +26,7 @@ by those permissions.
 ## Team
 
 **John Forstmeier**  
-*Project Lead*   
+*Co-creator*   
 
 **Mike Taylor**  
-*Technical Lead*  
+*Co-creator*  

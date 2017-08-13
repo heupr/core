@@ -6,7 +6,7 @@ import (
 	"github.com/google/go-github/github"
 )
 
-var issueID = 0
+var keyID = 0
 
 const ISSUE_QUERY = `SELECT id, repo_id, is_pull, payload FROM github_events WHERE id > ?`
 
@@ -18,7 +18,7 @@ type RepoData struct {
 }
 
 func (m *MemSQL) Read() (map[int]*RepoData, error) {
-	results, err := m.db.Query(ISSUE_QUERY, issueID)
+	results, err := m.db.Query(ISSUE_QUERY, keyID)
 	if err != nil {
 		return nil, err
 	}
