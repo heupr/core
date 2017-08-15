@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/go-github/github"
+	"github.com/pkg/errors"
 )
 
 func listRepositories(client *github.Client) ([]*github.Repository, error) {
@@ -17,7 +18,7 @@ func listRepositories(client *github.Client) ([]*github.Repository, error) {
 	for {
 		repos, resp, err := client.Repositories.List(context.Background(), "", opts)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "authenticating user repos")
 		}
 		allRepos = append(allRepos, repos...)
 		if resp.NextPage == 0 {

@@ -7,7 +7,7 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-// DOC: Buckets thus far are "hook" and "token" with keys named "repoID".
+// Buckets thus far are "hook" and "token" with keys named "repoID".
 type BoltDB struct {
 	DB *bolt.DB
 }

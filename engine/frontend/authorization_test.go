@@ -20,6 +20,7 @@ func Test_mainHandler(t *testing.T) {
 	}
 }
 */
+
 func Test_githubLoginHandler(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/handler-test", nil)

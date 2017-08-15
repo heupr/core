@@ -24,7 +24,7 @@ func (fs *FrontendServer) routes() *http.ServeMux {
 }
 
 func (fs *FrontendServer) Start() {
-	fs.Server = http.Server{Addr: "127.0.0.1:8080", Handler: fs.routes()}
+	fs.Server = http.Server{Addr: "127.0.0.1:80", Handler: fs.routes()}
 	if err := fs.Server.ListenAndServe(); err != nil {
 		utils.AppLog.Error("frontend server failed to start", zap.Error(err))
 		panic(err)

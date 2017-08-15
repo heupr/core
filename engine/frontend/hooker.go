@@ -6,17 +6,14 @@ import (
 	"strconv"
 
 	"github.com/google/go-github/github"
-	"go.uber.org/zap"
-
-	"coralreefci/utils"
+	"github.com/pkg/errors"
 )
 
 const secretKey = "figrin-dan-and-the-modal-nodes"
 
 func (fs *FrontendServer) NewHook(repo *github.Repository, client *github.Client) error {
 	if check, err := fs.hookExists(repo, client); check {
-		utils.AppLog.Error("previously added hook: ", zap.Error(err))
-		return err
+		return errors.Wrap(err, "hook exists")
 	}
 	name := *repo.Name
 	owner := *repo.Owner.Login
@@ -33,12 +30,10 @@ func (fs *FrontendServer) NewHook(repo *github.Repository, client *github.Client
 		},
 	})
 	if err != nil {
-		utils.AppLog.Error("error adding new hook to repo: ", zap.Error(err))
-		return err
+		return errors.Wrap(err, "adding new hook to repo")
 	}
 	if err = fs.Database.Store("hook", *repo.ID, []byte(strconv.Itoa(*hook.ID))); err != nil {
-		utils.AppLog.Error("error storing hook info: ", zap.Error(err))
-		return err
+		return errors.Wrap(err, "error storing hook info")
 	}
 	return nil
 }
@@ -51,19 +46,16 @@ func (fs *FrontendServer) hookExists(repo *github.Repository, client *github.Cli
 	}
 	hook, err := fs.Database.Retrieve("hook", *repo.ID)
 	if err != nil {
-		utils.AppLog.Error("error retrieving hook info: ", zap.Error(err))
-		return false, err
+		return false, errors.Wrap(err, "error retrieving hook info")
 	}
 
 	hookID, err := strconv.Atoi(string(hook))
 	if err != nil {
-		utils.AppLog.Error("failed string conversion: ", zap.Error(err))
-		return false, err
+		return false, errors.Wrap(err, "failed hook string conversion")
 	}
 	_, _, err = client.Repositories.GetHook(context.Background(), owner, name, hookID)
 	if err != nil {
-		utils.AppLog.Error("error getting GitHub hook info: ", zap.Error(err))
-		return false, err
+		return false, errors.Wrap(err, "error getting GitHub hook info")
 	}
 	return true, fmt.Errorf("hook previously established for repo %v", name)
 }
