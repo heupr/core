@@ -95,6 +95,10 @@ func (bs *BackendServer) Start() {
 			bs.NewModel(key)
 		}
 	}
+
+    // Keeping this channel to implement graceful shutdowns if needed.
+	wiggin := make(chan bool)
+	bs.Timer(wiggin)
 }
 
 func (bs *BackendServer) OpenSQL() {
@@ -105,17 +109,25 @@ func (bs *BackendServer) CloseSQL() {
 	bs.Database.Close()
 }
 
-func (bs *BackendServer) Timer() {
-	ticker := time.NewTicker(time.Second * 5)
-	go func() {
-		for range ticker.C {
+// Periodically conducts pulldowns from the MemSQL database for processing.
+func (bs *BackendServer) Timer(ender chan bool) {
+	ticker := time.NewTicker(time.Second * 30)
+	defer close(ender)
+
+	bs.Dispatcher(10)
+
+	for {
+		select {
+		case <-ticker.C:
 			data, err := bs.Database.Read()
 			if err != nil {
-				utils.AppLog.Error("backend timer method: ", zap.Error(err))
-				panic(err)
+				utils.AppLog.Error("backend timer: ", zap.Error(err))
 			}
-			bs.Dispatcher(10)
 			Collector(data)
+		case <-ender:
+			ticker.Stop()
+			close(ender)
+			return
 		}
-	}()
+	}
 }
