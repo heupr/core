@@ -32,12 +32,15 @@ func convertIssue(expandedIssue conflation.ExpandedIssue) Issue {
 	} else {
 		issue.Body = *expandedIssue.Issue.Body
 	}
-	if expandedIssue.Issue.Assignees == nil {
-		issue.Assignees = append(issue.Assignees, "no issue assignee")
-	} else {
+
+	if expandedIssue.Issue.Assignees != nil {
 		for j := 0; j < len(expandedIssue.Issue.Assignees); j++ {
 			issue.Assignees = append(issue.Assignees, *expandedIssue.Issue.Assignees[j].Login)
 		}
+	} else if expandedIssue.Issue.Assignee != nil {
+		issue.Assignees = append(issue.Assignees, *expandedIssue.Issue.Assignee.Login)
+	} else {
+		issue.Assignees = append(issue.Assignees, "no issue assignee")
 	}
 	return issue
 }

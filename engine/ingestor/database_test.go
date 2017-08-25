@@ -2,6 +2,7 @@ package ingestor
 
 import (
 	"coralreefci/engine/gateway"
+	"fmt"
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 	"runtime"
@@ -28,6 +29,9 @@ func TestInsert(t *testing.T) {
 
 	db.BulkInsertIssues(githubIssues)
 	runtime.GC()
+
+	issues, _ := db.ReadIssuesTest()
+	fmt.Println(issues[0].Repository)
 
 	db.BulkInsertPullRequests(githubPulls)
 	runtime.GC()

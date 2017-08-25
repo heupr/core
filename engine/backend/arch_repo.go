@@ -1,16 +1,17 @@
 package backend
 
 import (
-	"fmt"
-
-	"github.com/google/go-github/github"
-	"golang.org/x/oauth2"
-
+	"context"
 	"coralreefci/engine/gateway/conflation"
 	"coralreefci/models"
+	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
+	"strings"
+	"sync"
 )
 
 type ArchModel struct {
+	sync.Mutex
 	Model *models.Model
 }
 
@@ -24,6 +25,7 @@ type ArchHive struct {
 }
 
 type ArchRepo struct {
+	sync.Mutex
 	Hive   *ArchHive
 	Client *github.Client
 }
@@ -70,16 +72,27 @@ func (bs *BackendServer) NewClient(repoID int, token *oauth2.Token) {
 }
 
 func (a *ArchRepo) TriageOpenIssues() {
+	if !a.Hive.Blender.AllModelsBootstrapped() {
+		//TODO: Add Logging
+		return
+	}
 	openIssues := a.Hive.Blender.GetOpenIssues()
-	for i := 0; i < len(a.Hive.Blender.Conflator.Context.Issues); i++ {
+	for i := 0; i < len(openIssues); i++ {
 		assignees := a.Hive.Blender.Predict(openIssues[i])
-		fmt.Println(assignees)
 		openIssues[i].Issue.Triaged = true
-		//TODO: plug assignees into Github API
+		var name string
+		if openIssues[i].Issue.Repository.FullName != nil {
+			name = *openIssues[i].Issue.Repository.FullName
+		} else {
+			name = *openIssues[i].Issue.Repository.Name
+		}
+		r := strings.Split(name, "/")
+		number := *openIssues[i].Issue.Number
+		//HACK! (temp code)
+		a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, assignees) //[]string{assignees[0]})
 	}
 }
 
-//TODO: Fix rudimentary implementation. Ok for MVP
 func (b *Blender) Predict(issue conflation.ExpandedIssue) []string {
 	var assignees []string
 	for i := 0; i < len(b.Models); i++ {
@@ -92,7 +105,7 @@ func (b *Blender) GetOpenIssues() []conflation.ExpandedIssue {
 	openIssues := []conflation.ExpandedIssue{}
 	issues := b.Conflator.Context.Issues
 	for i := 0; i < len(issues); i++ {
-		if issues[i].Issue.ClosedAt == nil && !issues[i].Issue.Triaged {
+		if issues[i].PullRequest.Number == nil && issues[i].Issue.ClosedAt == nil && !issues[i].Issue.Triaged {
 			openIssues = append(openIssues, issues[i])
 		}
 	}
@@ -103,7 +116,7 @@ func (b *Blender) GetClosedIssues() []conflation.ExpandedIssue {
 	closedIssues := []conflation.ExpandedIssue{}
 	issues := b.Conflator.Context.Issues
 	for i := 0; i < len(issues); i++ {
-		if issues[i].Issue.ClosedAt != nil {
+		if issues[i].Issue.ClosedAt != nil && issues[i].Conflate {
 			closedIssues = append(closedIssues, issues[i])
 		}
 	}
@@ -112,6 +125,10 @@ func (b *Blender) GetClosedIssues() []conflation.ExpandedIssue {
 
 func (b *Blender) TrainModels() {
 	closedIssues := b.GetClosedIssues()
+	if len(closedIssues) == 0 {
+		//TODO: Add Logging
+		return
+	}
 	for i := 0; i < len(b.Models); i++ {
 		if b.Models[i].Model.IsBootstrapped() {
 			b.Models[i].Model.OnlineLearn(closedIssues)
@@ -119,6 +136,15 @@ func (b *Blender) TrainModels() {
 			b.Models[i].Model.Learn(closedIssues)
 		}
 	}
+}
+
+func (b *Blender) AllModelsBootstrapped() bool {
+	for i := 0; i < len(b.Models); i++ {
+		if !b.Models[i].Model.IsBootstrapped() {
+			return false
+		}
+	}
+	return true
 }
 
 /*

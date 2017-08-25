@@ -1,12 +1,12 @@
 package backend
 
 import (
+	"bytes"
 	"encoding/json"
-
 	"github.com/google/go-github/github"
 )
 
-var keyID = 0
+var maxID = 0
 
 const ISSUE_QUERY = `SELECT id, repo_id, is_pull, payload FROM github_events WHERE id > ?`
 
@@ -18,23 +18,25 @@ type RepoData struct {
 }
 
 func (m *MemSQL) Read() (map[int]*RepoData, error) {
-	results, err := m.db.Query(ISSUE_QUERY, keyID)
+	results, err := m.db.Query(ISSUE_QUERY, maxID)
 	if err != nil {
 		return nil, err
 	}
 	defer results.Close()
 
 	repodata := make(map[int]*RepoData)
-
 	for results.Next() {
-		count := new(int)
+		id := new(int)
 		repo_id := new(int)
 		is_pull := new(bool)
-		payload := new(string)
-		if err := results.Scan(count, repo_id, is_pull, payload); err != nil {
+		var payload []byte
+		if err := results.Scan(id, repo_id, is_pull, &payload); err != nil {
 			return nil, err
 		}
 
+		if *id > maxID {
+			maxID = *id
+		}
 		if _, ok := repodata[*repo_id]; !ok {
 			repodata[*repo_id] = new(RepoData)
 			repodata[*repo_id].RepoID = *repo_id
@@ -44,20 +46,24 @@ func (m *MemSQL) Read() (map[int]*RepoData, error) {
 		}
 
 		if *is_pull {
-			pr := github.PullRequest{}
-			if err := json.Unmarshal([]byte(*payload), &pr); err != nil {
+			var pr github.PullRequest
+			decoder := json.NewDecoder(bytes.NewReader(payload))
+			decoder.UseNumber()
+			if err := decoder.Decode(&pr); err != nil {
 				return nil, err
 			}
 			repodata[*repo_id].Pulls = append(repodata[*repo_id].Pulls, &pr)
 		} else {
-			i := github.Issue{}
-			if err := json.Unmarshal([]byte(*payload), &i); err != nil {
+			var issue github.Issue
+			decoder := json.NewDecoder(bytes.NewReader(payload))
+			decoder.UseNumber()
+			if err := decoder.Decode(&issue); err != nil {
 				return nil, err
 			}
-			if i.ClosedAt == nil {
-				repodata[*repo_id].Open = append(repodata[*repo_id].Open, &i)
+			if issue.ClosedAt == nil {
+				repodata[*repo_id].Open = append(repodata[*repo_id].Open, &issue)
 			} else {
-				repodata[*repo_id].Closed = append(repodata[*repo_id].Closed, &i)
+				repodata[*repo_id].Closed = append(repodata[*repo_id].Closed, &issue)
 			}
 		}
 	}
