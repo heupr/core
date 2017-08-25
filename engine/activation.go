@@ -13,7 +13,7 @@ import (
 var (
 	destinationBase  = "http://127.0.0.1"
 	destinationPorts = []string{":8020", ":8030"}
-	destinationEnd   = "/activate-repos-ingestor"
+	destinationEnd   = "/activate-ingestor-backend"
 )
 
 type ActivationServer struct {
@@ -27,12 +27,12 @@ func (as *ActivationServer) activationServerHandler(w http.ResponseWriter, r *ht
 		http.Error(w, "failed validating frontend-backend secret", http.StatusForbidden)
 		return
 	}
-	repoID := r.FormValue("repos")
+	repoInfo := r.FormValue("repos")
 	token := r.FormValue("token")
 	for i := range destinationPorts {
 		resp, err := http.PostForm(destinationBase+destinationPorts[i]+destinationEnd, url.Values{
 			"state": {secret},
-			"repos": {repoID},
+			"repos": {repoInfo},
 			"token": {token},
 		})
 		if err != nil {
@@ -47,7 +47,7 @@ func (as *ActivationServer) activationServerHandler(w http.ResponseWriter, r *ht
 
 func (as *ActivationServer) Start() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/activate", as.activationServerHandler)
+	mux.HandleFunc("/activate-service", as.activationServerHandler)
 
 	as.Server = http.Server{
 		Addr:    "127.0.0.1:8010",

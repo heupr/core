@@ -31,8 +31,8 @@ func (bs *BackendServer) activateHandler(w http.ResponseWriter, r *http.Request)
 		utils.AppLog.Error("failed validating frontend-backend secret")
 		return
 	}
-	repoIDString := r.FormValue("repos")
-	repoID, err := strconv.Atoi(repoIDString)
+	repoInfo := r.FormValue("repos")
+	repoID, err := strconv.Atoi(string(repoInfo[0]))
 	if err != nil {
 		utils.AppLog.Error("converting repo ID: ", zap.Error(err))
 	}
@@ -51,7 +51,7 @@ func (bs *BackendServer) activateHandler(w http.ResponseWriter, r *http.Request)
 
 func (bs *BackendServer) Start() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/activate-repos-ingestor", bs.activateHandler)
+	mux.HandleFunc("/activate-ingestor-backend", bs.activateHandler)
 	bs.Server = http.Server{
 		Addr:    "127.0.0.1:8020",
 		Handler: mux,
@@ -96,7 +96,7 @@ func (bs *BackendServer) Start() {
 		}
 	}
 
-    // Keeping this channel to implement graceful shutdowns if needed.
+	// Keeping this channel to implement graceful shutdowns if needed.
 	wiggin := make(chan bool)
 	bs.Timer(wiggin)
 }
