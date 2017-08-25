@@ -13,11 +13,14 @@ import (
 	gzip "github.com/klauspost/pgzip"
 	"io"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"strconv"
+	"sync"
 	"time"
 )
 
@@ -28,6 +31,24 @@ const (
 
 var webhooksplit float32 = 0.5
 
+type Score struct {
+	correct int
+	total   int
+}
+
+func (s *Score) Accuracy() float64 {
+	return Round(float64(s.correct) / float64(s.total))
+}
+
+func Round(input float64) float64 {
+	rounded := math.Floor((input*10000.0)+0.5) / 10000.0
+	return rounded
+}
+
+func ToString(number float64) string {
+	return strconv.FormatFloat(number, 'f', 4, 64)
+}
+
 type BacktestServer struct {
 	client          http.Client
 	gitClient       *github.Client
@@ -36,18 +57,29 @@ type BacktestServer struct {
 	repoInitializer ingestor.RepoInitializer
 	events          []*ingestor.Event
 	WebhookEvents   []*ingestor.Event
+	issueAssignees  map[string][]string
+	scoreboard      AssigneesAccuracy //map[string]*Score
 	eventsCount     int
+}
+
+type AssigneesAccuracy struct {
+	sync.Mutex
+	Scores map[string]*Score
 }
 
 func (b *BacktestServer) routes() *mux.Router {
 	gorilla := mux.NewRouter()
 	gorilla.HandleFunc("/repos/{org}/{repo}/issues", b.getIssues)
 	gorilla.HandleFunc("/repos/{org}/{repo}/pulls", b.getPulls)
+	gorilla.HandleFunc("/repos/{org}/{repo}/issues/{number}/assignees", b.backtestPredict)
 	gorilla.HandleFunc("/stream", b.streamWebhooks)
 	return gorilla
 }
 
 func (b *BacktestServer) Start() {
+	b.issueAssignees = make(map[string][]string)
+	//b.scoreboard = AssigneesAccuracy{}
+	b.scoreboard.Scores = make(map[string]*Score)
 	b.gitClient = github.NewClient(nil)
 	url, _ := url.Parse(localPath)
 	b.gitClient.BaseURL = url
@@ -72,7 +104,7 @@ func (b *BacktestServer) AddRepo(id int, org string, name string) {
 	url, _ := url.Parse(localPath)
 	client.BaseURL = url
 	client.UploadURL = url
-	repo := ingestor.AuthenticatedRepo{Repo: &github.Repository{ID: github.Int(id), Organization: &github.Organization{Name: github.String(org)}, Name: github.String(name)}, Client: client}
+	repo := ingestor.AuthenticatedRepo{Repo: &github.Repository{ID: github.Int(id), Organization: &github.Organization{Name: github.String(org)}, Name: github.String(name), FullName: github.String(org + "/" + name)}, Client: client}
 	b.repoInitializer.AddRepo(repo)
 }
 
@@ -199,8 +231,46 @@ func (b *BacktestServer) backtestHandler(w http.ResponseWriter, r *http.Request)
 	//       being hit for every repo in a given backtest run.
 }*/
 
-func (b *BacktestServer) backtestPredict(w http.ResponseWriter, r *http.Request) {
+func (b *BacktestServer) PredictionAccuracy() {
+	for repo, score := range b.scoreboard.Scores {
+		fmt.Println("RepoId:", repo, "Accuracy:", ToString(score.Accuracy()), " correct:", score.correct, " total:", score.total)
+	}
+}
 
+func (b *BacktestServer) backtestPredict(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	org := vars["org"]
+	repo := vars["repo"]
+	number := vars["number"]
+	var predicted struct {
+		Assignees []string `json:"assignees,omitempty"`
+	}
+	json.NewDecoder(r.Body).Decode(&predicted)
+
+	b.scoreboard.Lock()
+	score := b.scoreboard.Scores[org+repo]
+	b.scoreboard.Unlock()
+	if score == nil {
+		score = &Score{}
+	}
+	score.total++
+	actualAssignees := b.issueAssignees[org+repo+number]
+	assigneesLength := len(actualAssignees)
+	if assigneesLength >= 5 {
+		assigneesLength = 5
+	}
+
+	for i := 0; i < assigneesLength; i++ {
+		for j := 0; j < len(predicted.Assignees); j++ {
+			if actualAssignees[i] == predicted.Assignees[j] {
+				score.correct++
+				break
+			}
+		}
+	}
+	b.scoreboard.Lock()
+	b.scoreboard.Scores[org+repo] = score
+	b.scoreboard.Unlock()
 }
 
 //TODO Refactor
@@ -208,9 +278,11 @@ func (b *BacktestServer) getIssues(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	org := vars["org"]
 	repo := vars["repo"]
+	fmt.Println(org + "/" + repo)
 	queryParams := ingestor.EventQuery{Type: ingestor.Issue, Repo: org + "/" + repo}
 	events, _ := b.DB.ReadBacktestEvents(queryParams)
 	issues := make([]interface{}, int(float32(len(events))*webhooksplit))
+	fmt.Println("len events", len(events))
 	if webhooksplit == 1 {
 		for i := 0; i < len(events); i++ {
 			m := events[i].Payload.(map[string]interface{})
@@ -221,10 +293,29 @@ func (b *BacktestServer) getIssues(w http.ResponseWriter, r *http.Request) {
 		for i := 0; i < int(float32(len(events))*webhooksplit); i++ {
 			m := events[i].Payload.(map[string]interface{})
 			issue := m["issue"]
+			number := m["issue"].(map[string]interface{})["number"].(json.Number).String()
+			assignees := m["issue"].(map[string]interface{})["assignees"]
+			assignee := m["issue"].(map[string]interface{})["assignee"]
+			if assignees != nil {
+				b.issueAssignees[org+repo+number] = []string{assignee.(map[string]interface{})["login"].(string)}
+			} else if assignee != nil {
+				b.issueAssignees[org+repo+number] = []string{assignee.(map[string]interface{})["login"].(string)}
+			}
 			issues[i] = issue
 		}
 		for i := int(float32(len(events)) * webhooksplit); i < len(events); i++ {
+			m := events[i].Payload.(map[string]interface{})
 			event := events[i]
+			number := m["issue"].(map[string]interface{})["number"].(json.Number).String()
+			assignees := m["issue"].(map[string]interface{})["assignees"]
+			assignee := m["issue"].(map[string]interface{})["assignee"]
+			if assignees != nil {
+				b.issueAssignees[org+repo+number] = []string{assignee.(map[string]interface{})["login"].(string)}
+				m["issue"].(map[string]interface{})["assignees"] = nil
+			} else if assignee != nil {
+				b.issueAssignees[org+repo+number] = []string{assignee.(map[string]interface{})["login"].(string)}
+				m["issue"].(map[string]interface{})["assignee"] = nil
+			}
 			b.WebhookEvents = append(b.WebhookEvents, &event)
 		}
 	}
@@ -272,7 +363,7 @@ func (b *BacktestServer) streamWebhooks(w http.ResponseWriter, r *http.Request) 
 			event = "issues"
 			m["action"] = "opened"
 			m["issue"].(map[string]interface{})["state"] = "open"
-			//m["issue"].(map[string]interface{})["closed_at"] = nil
+			m["issue"].(map[string]interface{})["closed_at"] = nil //TODO: confirm this is needed
 		}
 		payload, _ := json.Marshal(m)
 		b.HTTPPost(bytes.NewBuffer(payload), event)
@@ -289,7 +380,7 @@ func (b *BacktestServer) StreamWebhookEvents() {
 }
 
 func (b *BacktestServer) HTTPPost(payload *bytes.Buffer, event string) {
-	req, err := http.NewRequest("POST", "http://localhost:8080/hook", payload)
+	req, err := http.NewRequest("POST", "http://localhost:8030/hook", payload)
 	if err != nil {
 		fmt.Println(err)
 	}

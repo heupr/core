@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"io"
 
+	"coralreefci/utils"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
-
-	"coralreefci/utils"
+	"strings"
 )
 
 type Event struct {
@@ -121,9 +121,9 @@ func (d *Database) ReadBacktestEvents(params EventQuery) ([]Event, error) {
 	var err error
 	switch t := params.Type; t {
 	case PullRequest:
-		results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_pull=? and is_closed=?", params.Repo, 0, 1)
-	case Issue:
 		results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_pull=? and is_closed=?", params.Repo, 1, 1)
+	case Issue:
+		results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_pull=? and is_closed=?", params.Repo, 0, 1)
 	default:
 		results, err = d.db.Query("select payload from backtest_events where repo_name=? and is_closed=?", params.Repo, 1)
 	}
@@ -133,6 +133,69 @@ func (d *Database) ReadBacktestEvents(params EventQuery) ([]Event, error) {
 	defer results.Close()
 	for results.Next() {
 		var event Event
+		err := results.Scan(&payload)
+		if err != nil {
+			return nil, err
+		}
+		decoder := json.NewDecoder(bytes.NewReader(payload))
+		decoder.UseNumber()
+		if err := decoder.Decode(&event); err != nil {
+			return nil, err
+		}
+		events = append(events, event)
+	}
+	err = results.Err()
+	if err != nil {
+		return nil, err
+	}
+	return events, nil
+}
+
+func (d *Database) ReadBacktestRepos() ([]github.Repository, error) {
+	repos := []github.Repository{}
+
+	results, err := d.db.Query(
+		`select T.repo_name, T.repo_id
+ 														from
+														(
+															select count(*) cnt, repo_name, repo_id from backtest_events where is_pull = 0 and is_closed = 1 and repo_name != 'chrsmith/google-api-java-client'
+															group by repo_name
+														) T
+														order by T.cnt desc LIMIT 15`)
+	if err != nil {
+		return nil, err
+	}
+	defer results.Close()
+
+	for results.Next() {
+		repo_name := new(string)
+		repo_id := new(int)
+		if err := results.Scan(repo_name, repo_id); err != nil {
+			return nil, err
+		}
+		r := strings.Split(*repo_name, "/")
+		repos = append(repos, github.Repository{ID: repo_id, Name: github.String(r[1]), Organization: &github.Organization{Name: github.String(r[0])}})
+	}
+
+	err = results.Err()
+	if err != nil {
+		return nil, err
+	}
+	return repos, nil
+}
+
+func (d *Database) ReadIssuesTest() ([]github.Issue, error) {
+	events := []github.Issue{}
+	var payload []byte
+	var results *sql.Rows
+	var err error
+	results, err = d.db.Query("select payload from github_events where is_pull=0")
+	if err != nil {
+		return nil, err
+	}
+	defer results.Close()
+	for results.Next() {
+		var event github.Issue
 		err := results.Scan(&payload)
 		if err != nil {
 			return nil, err

@@ -46,23 +46,45 @@ func main() {
 		client.BaseURL = url
 		client.UploadURL = url
 
+		repos, err := db.ReadBacktestRepos()
+		if err != nil {
+			panic(err)
+		}
 		backendServer.Repos = new(backend.ActiveRepos)
 		backendServer.Repos.Actives = make(map[int]*backend.ArchRepo)
-		backendServer.Repos.Actives[26295345] = new(backend.ArchRepo)
-		backendServer.Repos.Actives[26295345].Hive = new(backend.ArchHive)
-		backendServer.Repos.Actives[26295345].Hive.Blender = new(backend.Blender)
-		backendServer.NewModel(26295345)
-		backendServer.Repos.Actives[26295345].Client = client
+
+		for i := 0; i < len(repos); i++ {
+			repo := repos[i]
+			backendServer.Repos.Actives[*repo.ID] = new(backend.ArchRepo)
+			backendServer.Repos.Actives[*repo.ID].Hive = new(backend.ArchHive)
+			backendServer.Repos.Actives[*repo.ID].Hive.Blender = new(backend.Blender)
+			backendServer.NewModel(*repo.ID)
+			backendServer.Repos.Actives[*repo.ID].Client = client
+		}
+
 		go backendServer.Start()
 
-		bs.AddRepo(26295345, "dotnet", "corefx")
-		bs.AddRepo(724712, "rust-lang", "rust")
-		bs.StreamWebhookEvents()
-		time.Sleep(15 * time.Second)
+		for i := 0; i < len(repos); i++ {
+			repo := repos[i]
+			bs.AddRepo(*repo.ID, *repo.Organization.Name, *repo.Name)
+		}
 
 		backendServer.OpenSQL()
 		backendServer.Timer()
 
-		time.Sleep(15 * time.Second)
+		//time.Sleep(5 * time.Second)
+
+		bs.StreamWebhookEvents()
+
+		//time.Sleep(15 * time.Second)
+
+		//backendServer.OpenSQL()
+		//backendServer.Timer()
+
+		time.Sleep(60 * time.Second)
+
+		bs.PredictionAccuracy()
+
+		time.Sleep(180 * time.Second)
 	}
 }

@@ -106,16 +106,16 @@ func (bs *BackendServer) CloseSQL() {
 }
 
 func (bs *BackendServer) Timer() {
-	ticker := time.NewTicker(time.Second * 5)
+	bs.Dispatcher(10)
 	go func() {
-		for range ticker.C {
+		for {
 			data, err := bs.Database.Read()
 			if err != nil {
 				utils.AppLog.Error("backend timer method: ", zap.Error(err))
 				panic(err)
 			}
-			bs.Dispatcher(10)
 			Collector(data)
+			time.Sleep(1 * time.Second)
 		}
 	}()
 }

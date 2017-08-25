@@ -46,7 +46,11 @@ func (c *NBModel) Learn(input []conflation.ExpandedIssue) {
 	removeStopWords(adjusted...)
 	stemIssues(adjusted...)
 	c.assignees = distinctAssignees(adjusted)
-	utils.ModelLog.Info("Bhattacharya Learn", zap.Int("AssigneesCount", len(c.assignees)))
+	if len(c.assignees) < 2 {
+		//TODO: Add logging
+		return
+	}
+	utils.ModelLog.Info("Bhattacharya Learn", zap.Int("AssigneesCount", len(c.assignees))) //, zap.String("Repository", repo))
 	c.classifier = NewNBClassifierTfIdf(c.assignees...)
 	for i := 0; i < len(input); i++ {
 		c.classifier.Learn(strings.Split(adjusted[i].Body, " "), NBClass(adjusted[i].Assignees[0])) // NOTE: First position is a workaround
@@ -90,8 +94,12 @@ func (c *NBModel) Predict(input conflation.ExpandedIssue) []string {
 
 	//TODO: Improve logging
 	utils.ModelLog.Info("\n")
-	utils.ModelLog.Info("", zap.String("Assignee", *input.Issue.Assignee.Login))
-	utils.ModelLog.Info("", zap.String("URL", *input.Issue.URL))
+	if input.Issue.Assignee != nil { //TODO: confirm why this is nil when processing a webhook
+		utils.ModelLog.Info("", zap.String("Assignee", *input.Issue.Assignee.Login))
+	}
+	if input.Issue.URL != nil { //TODO: confirm why this is nil when processing a webhook
+		utils.ModelLog.Info("", zap.String("URL", *input.Issue.URL))
+	}
 	for i := 0; i < len(names); i++ {
 		utils.ModelLog.Info("", zap.String("Class", strconv.Itoa(i)+": "+names[i]+", Score: "+strconv.FormatFloat(results[i].score, 'f', -1, 64)))
 	}

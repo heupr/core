@@ -1,9 +1,8 @@
 package backend
 
 import (
-	"go.uber.org/zap"
-
 	"coralreefci/utils"
+	"go.uber.org/zap"
 )
 
 type Worker struct {
@@ -30,27 +29,41 @@ func (w *Worker) Start() {
 			w.Queue <- w.Work
 			select {
 			case repodata := <-w.Work:
-				w.Repos.Lock()
-
-				if w.Repos.Actives[repodata.RepoID] != nil {
-					utils.AppLog.Error("repo not initialized before worker start, repo ID: ", zap.Int("repoID", repodata.RepoID))
+				if w.Repos.Actives[repodata.RepoID] == nil {
+					utils.AppLog.Error("repo not initialized before worker start", zap.Int("RepoID", repodata.RepoID))
+					continue
 				}
 
+				w.Repos.RLock()
+				repo := w.Repos.Actives[repodata.RepoID]
+				w.Repos.RUnlock()
+
+				repo.Lock()
 				if len(repodata.Open) != 0 {
-					w.Repos.Actives[repodata.RepoID].Hive.Blender.Conflator.SetIssueRequests(repodata.Open)
+					repo.Hive.Blender.Conflator.SetIssueRequests(repodata.Open)
+					issues := repo.Hive.Blender.Conflator.Context.Issues
+					utils.AppLog.Info("Events", zap.Int("Open", len(repodata.Open)), zap.Int("Total", len(issues)), zap.Int("RepoID", repodata.RepoID))
 				}
 				if len(repodata.Closed) != 0 {
-					w.Repos.Actives[repodata.RepoID].Hive.Blender.Conflator.SetIssueRequests(repodata.Closed)
+					repo.Hive.Blender.Conflator.SetIssueRequests(repodata.Closed)
+					issues := repo.Hive.Blender.Conflator.Context.Issues
+					utils.AppLog.Info("Events", zap.Int("Closed", len(repodata.Closed)), zap.Int("Total", len(issues)), zap.Int("RepoID", repodata.RepoID))
 				}
 				if len(repodata.Pulls) != 0 {
-					w.Repos.Actives[repodata.RepoID].Hive.Blender.Conflator.SetPullRequests(repodata.Pulls)
+					repo.Hive.Blender.Conflator.SetPullRequests(repodata.Pulls)
+					issues := repo.Hive.Blender.Conflator.Context.Issues
+					utils.AppLog.Info("Events", zap.Int("Pulls", len(repodata.Pulls)), zap.Int("Total", len(issues)), zap.Int("RepoID", repodata.RepoID))
 				}
-				w.Repos.Actives[repodata.RepoID].Hive.Blender.Conflator.Conflate()
+				utils.AppLog.Info("Conflator.Conflate() ", zap.Int("RepoID", repodata.RepoID))
+				repo.Hive.Blender.Conflator.Conflate()
 
-				w.Repos.Actives[repodata.RepoID].Hive.Blender.TrainModels()
-				w.Repos.Actives[repodata.RepoID].TriageOpenIssues()
+				utils.AppLog.Info("Blender.TrainModels() ", zap.Int("RepoID", repodata.RepoID))
+				repo.Hive.Blender.TrainModels()
 
-				w.Repos.Unlock()
+				utils.AppLog.Info("TriageOpenIssues() - Begin ", zap.Int("RepoID", repodata.RepoID))
+				repo.TriageOpenIssues()
+				utils.AppLog.Info("TriageOpenIssues() - Complete ", zap.Int("RepoID", repodata.RepoID))
+				repo.Unlock()
 				continue
 			case <-w.Quit:
 				return
