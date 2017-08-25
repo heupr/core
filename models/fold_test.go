@@ -1,8 +1,8 @@
 package models
 
 import (
-	"coralreefci/engine/gateway/conflation"
-	"coralreefci/models/bhattacharya"
+	"core/pipeline/gateway/conflation"
+	"core/models/bhattacharya"
 	"github.com/google/go-github/github"
 	"strconv"
 	"testing"

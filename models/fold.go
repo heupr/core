@@ -1,8 +1,8 @@
 package models
 
 import (
-	"coralreefci/engine/gateway/conflation"
-	"coralreefci/utils"
+	"core/pipeline/gateway/conflation"
+	"core/utils"
 	"go.uber.org/zap"
 )
 

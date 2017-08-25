@@ -1,0 +1,3 @@
+applogpath: $GOPATH/src/core/data/backtests/application-%Y%m%d%H%M.log
+modellogpath: $GOPATH/src/core/data/backtests/model-%Y%m%d%H%M.log
+datacachespath: $GOPATH/src/core/data/caches

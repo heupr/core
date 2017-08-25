@@ -1,7 +1,7 @@
 package bhattacharya
 
 import (
-	"coralreefci/utils"
+	"core/utils"
 	"encoding/gob"
 	"errors"
 	"io"

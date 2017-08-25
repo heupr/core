@@ -1,7 +1,7 @@
 package bhattacharya
 
 import (
-	"coralreefci/engine/gateway/conflation"
+	"core/pipeline/gateway/conflation"
 	"github.com/google/go-github/github"
 	"time"
 )

@@ -1,6 +1,6 @@
 package models
 
-import "coralreefci/engine/gateway/conflation"
+import "core/pipeline/gateway/conflation"
 
 type Model struct {
 	Algorithm Algorithm

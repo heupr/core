@@ -2,14 +2,15 @@ package utils
 
 import (
 	"fmt"
+    "os"
+    "path/filepath"
+    "strings"
+    "sync"
+    "time"
+
 	"github.com/fsnotify/fsnotify"
 	strftime "github.com/lestrrat/go-strftime"
 	"github.com/spf13/viper"
-	"os"
-	"path/filepath"
-	"strings"
-	"sync"
-	"time"
 )
 
 type Configuration struct {
@@ -26,7 +27,7 @@ func init() {
 	initOnceCnf.Do(func() {
 		viper.SetConfigName("config")                                                       // name of the config file
 		viper.AddConfigPath(".")                                                            // look for config in the working directory
-		viper.AddConfigPath("$GOPATH/src/coralreefci/analysis/cmd/backtests/bhattacharya/") // optionally look here
+		viper.AddConfigPath("$GOPATH/src/core/tests/cmd/backtests/bhattacharya/") // optionally look here
 
 		err := viper.ReadInConfig() // Find and read the config file
 		if err != nil {             // Handle errors reading the config file
