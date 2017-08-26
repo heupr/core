@@ -5,8 +5,8 @@
 All **back-end logic** powering the Heupr&trade; project is stored in
 this directory. Each model is separated into a unique directory which is titled
 the name of the given model. In addition to necessary code assets, these
-directories will contain the necessary READMEs, documentation, and resource
-references regarding the project.  
+directories will contain the necessary documentation and resource references
+regarding the project.  
 
 **Global assets** that are common across all / most models are stored in
 separate files / directories  within the `models/` directory. Several of the
