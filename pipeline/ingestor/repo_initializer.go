@@ -12,17 +12,17 @@ func (r *RepoInitializer) LoadRepos() {
 
 }
 
-func (r *RepoInitializer) AddRepo(repo AuthenticatedRepo) {
+func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
 	bufferPool := NewPool()
 	db := Database{BufferPool: bufferPool}
 	db.Open()
-	newGateway := gateway.Gateway{Client: repo.Client}
-	githubIssues, _ := newGateway.GetIssues(*repo.Repo.Organization.Name, *repo.Repo.Name)
-	//We have to add the Repo on the Issue Body (Bug in github api?)
+	newGateway := gateway.Gateway{Client: authRepo.Client}
+	githubIssues, _ := newGateway.GetIssues(*authRepo.Repo.Organization.Name, *authRepo.Repo.Name)
+	// The Repo struct needs to be added to the Issue struct body - possibly a bug in the GitHub API.
 	for i := 0; i < len(githubIssues); i++ {
-		githubIssues[i].Repository = repo.Repo
+		githubIssues[i].Repository = authRepo.Repo
 	}
-	githubPulls, _ := newGateway.GetPullRequests(*repo.Repo.Organization.Name, *repo.Repo.Name)
+	githubPulls, _ := newGateway.GetPullRequests(*authRepo.Repo.Organization.Name, *authRepo.Repo.Name)
 	db.BulkInsertIssues(githubIssues)
 	db.BulkInsertPullRequests(githubPulls)
 }
