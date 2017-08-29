@@ -19,9 +19,9 @@ type IngestorServer struct {
 }
 
 // This is a global variable for unit testing and stubbing out the client URLs.
-var makeClient = func(token oauth2.Token) github.Client {
+var makeClient = func(token oauth2.Token) *github.Client {
 	source := oauth2.StaticTokenSource(&token)
-	githubClient := *github.NewClient(oauth2.NewClient(oauth2.NoContext, source))
+	githubClient := github.NewClient(oauth2.NewClient(oauth2.NoContext, source))
 	return githubClient
 }
 
@@ -70,7 +70,7 @@ func (i *IngestorServer) activateHandler(w http.ResponseWriter, r *http.Request)
 	if r.FormValue("state") != frontend.BackendSecret {
 		errMsg := "failed validating frontend-backend secret"
 		utils.AppLog.Error(errMsg)
-		http.Error(w, errMsg, 401)
+		http.Error(w, errMsg, http.StatusUnauthorized)
 		return
 	}
 	repoInfo := r.FormValue("repos")
@@ -80,15 +80,15 @@ func (i *IngestorServer) activateHandler(w http.ResponseWriter, r *http.Request)
 
 	client := makeClient(oauth2.Token{AccessToken: tokenString})
 
-	issues, pulls, repo, err := fetchGitHub(owner, repoName, client)
+	issues, pulls, repo, err := fetchGitHub(owner, repoName, *client)
 	if err != nil {
 		utils.AppLog.Error("ingestor github pulldown:", zap.Error(err))
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	authRepo := AuthenticatedRepo{
 		Repo:   repo,
-		Client: &client,
+		Client: client,
 	}
 	i.RepoInitializer = RepoInitializer{}
 	i.RepoInitializer.AddRepo(authRepo)
