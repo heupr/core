@@ -2,14 +2,15 @@ package ingestor
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 
 	"core/pipeline/frontend"
-	"core/pipeline/gateway"
 	"core/utils"
 )
 
@@ -26,47 +27,6 @@ var makeClient = func(token oauth2.Token) *github.Client {
 	return githubClient
 }
 
-// var fetchGitHub = func(owner, name string, client github.Client) ([]*github.Issue, []*github.PullRequest, *github.Repository, error) {
-// 	issues := []*github.Issue{}
-// 	pulls := []*github.PullRequest{}
-//
-// 	isssueOpts := github.IssueListByRepoOptions{ListOptions: github.ListOptions{PerPage: 100}}
-// 	pullsOpts := github.PullRequestListOptions{ListOptions: github.ListOptions{PerPage: 100}}
-//
-// 	for {
-// 		gotIssues, resp, err := client.Issues.ListByRepo(context.Background(), owner, name, &isssueOpts)
-// 		if err != nil {
-// 			return nil, nil, nil, err
-// 		}
-// 		issues = append(issues, gotIssues...)
-// 		if resp.NextPage == 0 {
-// 			break
-// 		} else {
-// 			isssueOpts.ListOptions.Page = resp.NextPage
-// 		}
-// 	}
-//
-// 	for {
-// 		gotPulls, resp, err := client.PullRequests.List(context.Background(), owner, name, &pullsOpts)
-// 		if err != nil {
-// 			return nil, nil, nil, err
-// 		}
-// 		pulls = append(pulls, gotPulls...)
-// 		if resp.NextPage == 0 {
-// 			break
-// 		} else {
-// 			pullsOpts.ListOptions.Page = resp.NextPage
-// 		}
-// 	}
-//
-// 	repo, _, err := client.Repositories.Get(context.Background(), owner, name)
-// 	if err != nil {
-// 		return nil, nil, nil, err
-// 	}
-//
-// 	return issues, pulls, repo, nil
-// }
-
 func (i *IngestorServer) activateHandler(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("state") != frontend.BackendSecret {
 		errMsg := "failed validating frontend-backend secret"
@@ -75,42 +35,23 @@ func (i *IngestorServer) activateHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	repoInfo := r.FormValue("repos")
-	owner := string(repoInfo[1])
-	repoName := string(repoInfo[2])
+	repoInfo = strings.Trim(repoInfo, "{")
+	repoInfo = strings.Trim(repoInfo, "}")
+	repoSlice := strings.Split(repoInfo, ", ")
+	owner := string(repoSlice[1])
+	name := string(repoSlice[2])
 	tokenString := r.FormValue("token")
 
 	client := makeClient(oauth2.Token{AccessToken: tokenString})
 
-	gateway := gateway.Gateway{
-		Client:      client,
-		UnitTesting: false,
-	}
-
-	issues, err := gateway.GetIssues(owner, repoName)
-	if err != nil {
-		utils.AppLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	pulls, err := gateway.GetPullRequests(owner, repoName)
-	if err != nil {
-		utils.AppLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	// NOTE: This may ultimately be refactored out into a helper
 	// method/function. Also see the similar code in the Restart method.
-	repo, _, err := client.Repositories.Get(context.Background(), owner, repoName)
+	repo, _, err := client.Repositories.Get(context.Background(), owner, name)
 	if err != nil {
-		utils.AppLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err != nil {
+		fmt.Println("HERE") // TEMPORARY
 		utils.AppLog.Error("ingestor github pulldown:", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	authRepo := AuthenticatedRepo{
@@ -119,9 +60,6 @@ func (i *IngestorServer) activateHandler(w http.ResponseWriter, r *http.Request)
 	}
 	i.RepoInitializer = RepoInitializer{}
 	i.RepoInitializer.AddRepo(authRepo)
-
-	i.Database.BulkInsertIssues(issues)
-	i.Database.BulkInsertPullRequests(pulls)
 }
 
 func (i *IngestorServer) routes() *http.ServeMux {
