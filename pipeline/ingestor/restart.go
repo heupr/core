@@ -13,7 +13,6 @@ import (
 
 	"core/pipeline/frontend"
 	"core/utils"
-	"fmt"
 )
 
 const RESTART_QUERY = `
@@ -37,16 +36,6 @@ FROM (
 ) ghe
 WHERE repo_id = ?
 `
-
-func tokenizer(tokenByte []byte) (*github.Client, error) {
-	token := oauth2.Token{}
-	if err := json.Unmarshal(tokenByte, &token); err != nil {
-		utils.AppLog.Error("converting tokens; ", zap.Error(err))
-		return nil, err
-	}
-	client := makeClient(token)
-	return &client, nil
-}
 
 func (i *IngestorServer) Restart() error {
 	bufferPool := NewPool()
@@ -73,10 +62,12 @@ func (i *IngestorServer) Restart() error {
 	}
 
 	for key := range tokens {
-		client, err := tokenizer(tokens[key])
-		if err != nil {
+		token := oauth2.Token{}
+		if err := json.Unmarshal(tokens[key], &token); err != nil {
+			utils.AppLog.Error("converting tokens; ", zap.Error(err))
 			return err
 		}
+		client := NewClient(token)
 
 		repoID, err := strconv.Atoi(string(repos[key]))
 		if err != nil {
@@ -93,8 +84,8 @@ func (i *IngestorServer) Restart() error {
 		owner := repo.Owner.Login
 		name := repo.Name
 
-		iOldest, pOldest, iNewest, pNewest := new(int), new(int), new(int), new(int)
-		result := i.Database.db.QueryRow(RESTART_QUERY, repoID, repoID).Scan(&iOldest, &pOldest)
+		iOld, pOld, iNew, pNew := new(int), new(int), new(int), new(int)
+		result := i.Database.db.QueryRow(RESTART_QUERY, repoID, repoID).Scan(&iOld, &pOld)
 		switch {
 		case result == sql.ErrNoRows:
 			utils.AppLog.Error("no rows in restart query: ", zap.Error(result))
@@ -105,21 +96,20 @@ func (i *IngestorServer) Restart() error {
 			continue
 		}
 
-		fmt.Println(*iOldest)
-		if *iOldest == 0 && *pOldest == 0 {
+		if *iOld == 0 && *pOld == 0 {
 			authRepo := AuthenticatedRepo{
 				Repo:   repo,
 				Client: client,
 			}
-			fmt.Println("i.RepoInitializer.AddRepo(authRepo)")
 			i.RepoInitializer = RepoInitializer{}
 			i.RepoInitializer.AddRepo(authRepo)
+			return nil
 		}
-		if iOldest == nil {
-			iOldest = iNewest
+		if iOld == nil {
+			*iOld = 0
 		}
-		if pOldest == nil {
-			pOldest = pNewest
+		if pOld == nil {
+			*pOld = 0
 		}
 
 		issue, _, err := client.Issues.ListByRepo(context.Background(), *owner, *name, &github.IssueListByRepoOptions{
@@ -130,10 +120,10 @@ func (i *IngestorServer) Restart() error {
 		if err != nil {
 			utils.AppLog.Error("newest issue retrival; ", zap.Error(err))
 		} else {
-			iNewest = issue[0].Number
+			iNew = issue[0].Number
 		}
 
-		iDiff := *iNewest - *iOldest
+		iDiff := *iNew - *iOld
 		missingIssues := []*github.Issue{}
 		for iDiff > 1 {
 			opts := github.IssueListByRepoOptions{
@@ -169,12 +159,10 @@ func (i *IngestorServer) Restart() error {
 		}
 
 		if len(pull) > 0 {
-			pNewest = pull[0].Number
-		} else {
-
+			pNew = pull[0].Number
 		}
 
-		pDiff := *pNewest - *pOldest
+		pDiff := *pNew - *pOld
 		missingPulls := []*github.PullRequest{}
 		for pDiff > 1 {
 			opts := github.PullRequestListOptions{

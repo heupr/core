@@ -2,19 +2,19 @@ package main
 
 import (
 	//"bytes"
-    "fmt"
-    //"runtime/debug"
-    "strings"
+	"fmt"
+	//"runtime/debug"
+	"strings"
 
-    . "github.com/ahmetalpbalkan/go-linq"
+	. "github.com/ahmetalpbalkan/go-linq"
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 
-    "core/models"
-    "core/pipeline/gateway"
-    conf "core/pipeline/gateway/conflation"
-    "core/utils"
+	"core/models"
+	"core/pipeline/gateway"
+	conf "core/pipeline/gateway/conflation"
+	"core/utils"
 )
 
 type TestContext struct {

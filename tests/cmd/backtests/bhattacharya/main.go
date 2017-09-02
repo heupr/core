@@ -1,10 +1,10 @@
 package main
 
 import (
-	"core/tests/cmd/endtoendtests/replay"
-	"core/pipeline/ingestor"
 	"core/models"
 	"core/models/bhattacharya"
+	"core/pipeline/ingestor"
+	"core/tests/cmd/endtoendtests/replay"
 	"github.com/pkg/profile"
 )
 

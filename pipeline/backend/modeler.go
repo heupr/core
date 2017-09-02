@@ -1,9 +1,9 @@
 package backend
 
 import (
-	"core/pipeline/gateway/conflation"
 	"core/models"
 	"core/models/bhattacharya"
+	"core/pipeline/gateway/conflation"
 )
 
 func (bs *BackendServer) NewModel(repoID int) error {

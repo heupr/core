@@ -13,9 +13,9 @@ import (
 	"core/pipeline/frontend"
 )
 
-func Test_makeClient(t *testing.T) {
+func Test_NewClient(t *testing.T) {
 	// NOTE: I'd ultimately like this to be truly "table driven" but I can't
-	// think of a good way to assert the makeClient results.
+	// think of a good way to assert the NewClient results.
 	tests := []struct {
 		token  oauth2.Token
 		output interface{}
@@ -26,7 +26,7 @@ func Test_makeClient(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		c := makeClient(test.token)
+		c := NewClient(test.token)
 		if c == nil {
 			t.Errorf("failed to make client")
 		}
@@ -51,7 +51,7 @@ func Test_activateHandler(t *testing.T) {
 	server := httptest.NewServer(mux)
 	testURL, _ := url.Parse(server.URL)
 
-	makeClient = func(t oauth2.Token) *github.Client {
+	NewClient = func(t oauth2.Token) *github.Client {
 		c := github.NewClient(nil)
 		c.BaseURL = testURL
 		c.UploadURL = testURL

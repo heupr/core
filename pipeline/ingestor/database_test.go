@@ -31,7 +31,8 @@ func TestInsert(t *testing.T) {
 	runtime.GC()
 
 	issues, _ := db.ReadIssuesTest()
-	fmt.Println(issues[0].Repository)
+	// fmt.Println(issues[0].Repository) // TODO: This was generating a index out of range panic; fix.
+	fmt.Println(issues)
 
 	db.BulkInsertPullRequests(githubPulls)
 	runtime.GC()

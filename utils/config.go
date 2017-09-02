@@ -2,11 +2,11 @@ package utils
 
 import (
 	"fmt"
-    "os"
-    "path/filepath"
-    "strings"
-    "sync"
-    "time"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	strftime "github.com/lestrrat/go-strftime"
@@ -17,7 +17,7 @@ type Configuration struct {
 	AppLogPath     string
 	ModelLogPath   string
 	DataCachesPath string
-	BoltDBPath 		 string
+	BoltDBPath     string
 }
 
 var initOnceCnf sync.Once
@@ -26,8 +26,8 @@ var Config Configuration
 
 func init() {
 	initOnceCnf.Do(func() {
-		viper.SetConfigName("config")                                                       // name of the config file
-		viper.AddConfigPath(".")                                                            // look for config in the working directory
+		viper.SetConfigName("config")                                             // name of the config file
+		viper.AddConfigPath(".")                                                  // look for config in the working directory
 		viper.AddConfigPath("$GOPATH/src/core/tests/cmd/backtests/bhattacharya/") // optionally look here
 
 		err := viper.ReadInConfig() // Find and read the config file

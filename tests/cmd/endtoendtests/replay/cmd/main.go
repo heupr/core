@@ -1,9 +1,9 @@
 package main
 
 import (
-	"core/tests/cmd/endtoendtests/replay"
 	"core/pipeline/backend"
 	"core/pipeline/ingestor"
+	"core/tests/cmd/endtoendtests/replay"
 	"flag"
 	"fmt"
 	"github.com/google/go-github/github"

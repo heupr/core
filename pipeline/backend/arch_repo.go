@@ -2,14 +2,14 @@ package backend
 
 import (
 	"context"
-	"core/pipeline/gateway/conflation"
 	"core/models"
+	"core/pipeline/gateway/conflation"
+	"core/utils"
 	"github.com/google/go-github/github"
+	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	"strings"
 	"sync"
-	"core/utils"
-	"go.uber.org/zap"
 )
 
 type ArchModel struct {
@@ -31,6 +31,7 @@ type ArchRepo struct {
 	Hive   *ArchHive
 	Client *github.Client
 }
+
 func (bs *BackendServer) NewArchRepo(repoID int) {
 	bs.Repos.Lock()
 	defer bs.Repos.Unlock()
@@ -69,11 +70,11 @@ func (a *ArchRepo) TriageOpenIssues() {
 		}
 		r := strings.Split(name, "/")
 		number := *openIssues[i].Issue.Number
-		_,_,err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{assignees[0]})
+		_, _, err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{assignees[0]})
 		//fmt.Println(issue)
 		//utils.AppLog.Info("Issue Assigned", zap.String("Resp", fmt.Sprintf("%s",resp)), zap.String("Issue", fmt.Sprintf("%s",issue)))
 		//fmt.Println(err)
- 		if err != nil {
+		if err != nil {
 			utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
 		}
 	}

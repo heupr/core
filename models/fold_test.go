@@ -1,8 +1,8 @@
 package models
 
 import (
-	"core/pipeline/gateway/conflation"
 	"core/models/bhattacharya"
+	"core/pipeline/gateway/conflation"
 	"github.com/google/go-github/github"
 	"strconv"
 	"testing"

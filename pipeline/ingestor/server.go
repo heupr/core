@@ -2,7 +2,6 @@ package ingestor
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -21,7 +20,7 @@ type IngestorServer struct {
 }
 
 // This is a global variable for unit testing and stubbing out the client URLs.
-var makeClient = func(token oauth2.Token) *github.Client {
+var NewClient = func(token oauth2.Token) *github.Client {
 	source := oauth2.StaticTokenSource(&token)
 	githubClient := github.NewClient(oauth2.NewClient(oauth2.NoContext, source))
 	return githubClient
@@ -42,13 +41,12 @@ func (i *IngestorServer) activateHandler(w http.ResponseWriter, r *http.Request)
 	name := string(repoSlice[2])
 	tokenString := r.FormValue("token")
 
-	client := makeClient(oauth2.Token{AccessToken: tokenString})
+	client := NewClient(oauth2.Token{AccessToken: tokenString})
 
 	// NOTE: This may ultimately be refactored out into a helper
 	// method/function. Also see the similar code in the Restart method.
 	repo, _, err := client.Repositories.Get(context.Background(), owner, name)
 	if err != nil {
-		fmt.Println("HERE") // TEMPORARY
 		utils.AppLog.Error("ingestor github pulldown:", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -2,11 +2,13 @@ package ingestor
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/boltdb/bolt"
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
+	"golang.org/x/oauth2"
 
 	"core/pipeline/frontend"
 	"core/utils"
@@ -64,10 +66,12 @@ func (i *IngestorServer) continuityCheck(checker chan bool) ([]*github.Issue, []
 			utils.AppLog.Error("retrieve token continuity check; ", zap.Error(err))
 		}
 
-		client, err := tokenizer(t)
-		if err != nil {
+		token := oauth2.Token{}
+		if err := json.Unmarshal(t, &token); err != nil {
+			utils.AppLog.Error("converting tokens; ", zap.Error(err))
 			return nil, nil, err
 		}
+		client := NewClient(token)
 
 		repo, _, err := client.Repositories.GetByID(context.Background(), *repoID)
 		if err != nil {
@@ -98,6 +102,7 @@ func (i *IngestorServer) continuityCheck(checker chan bool) ([]*github.Issue, []
 	return issues, pulls, nil
 }
 
+// Periodically ensure that data contained in MemSQL is contiguous.
 func (i *IngestorServer) Continuity() {
 	checker := make(chan bool)
 

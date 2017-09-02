@@ -1,10 +1,10 @@
 package main
 
 import (
-	"core/pipeline/gateway"
-	conf "core/pipeline/gateway/conflation"
 	"core/models"
 	"core/models/bhattacharya"
+	"core/pipeline/gateway"
+	conf "core/pipeline/gateway/conflation"
 	"core/utils"
 	"flag"
 	. "github.com/ahmetalpbalkan/go-linq"
