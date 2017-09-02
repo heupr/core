@@ -10,7 +10,7 @@ import (
 )
 
 func TestInsert(t *testing.T) {
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "23fc398670a80700b19b1ae1587825a16aa8ce57"})
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "Enter A Token"})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 	client := github.NewClient(tc)
 	newGateway := gateway.CachedGateway{Gateway: &gateway.Gateway{Client: client}, DiskCache: &gateway.DiskCache{}}

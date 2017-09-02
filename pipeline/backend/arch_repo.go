@@ -8,6 +8,8 @@ import (
 	"golang.org/x/oauth2"
 	"strings"
 	"sync"
+	"core/utils"
+	"go.uber.org/zap"
 )
 
 type ArchModel struct {
@@ -29,35 +31,13 @@ type ArchRepo struct {
 	Hive   *ArchHive
 	Client *github.Client
 }
-
 func (bs *BackendServer) NewArchRepo(repoID int) {
 	bs.Repos.Lock()
 	defer bs.Repos.Unlock()
 
-	ctx := &conflation.Context{}
-	scn := []conflation.Scenario{&conflation.Scenario3{}}
-	algo := []conflation.ConflationAlgorithm{
-		&conflation.ComboAlgorithm{
-			Context: ctx,
-		},
-	}
-	norm := conflation.Normalizer{Context: ctx}
-	conf := conflation.Conflator{
-		Scenarios:            scn,
-		ConflationAlgorithms: algo,
-		Normalizer:           norm,
-		Context:              ctx,
-	}
-	model := ArchModel{}
-
-	bs.Repos.Actives[repoID] = &ArchRepo{
-		Hive: &ArchHive{
-			Blender: &Blender{
-				Models:    []*ArchModel{&model},
-				Conflator: &conf,
-			},
-		},
-	}
+	bs.Repos.Actives[repoID] = new(ArchRepo)
+	bs.Repos.Actives[repoID].Hive = new(ArchHive)
+	bs.Repos.Actives[repoID].Hive.Blender = new(Blender)
 }
 
 func (bs *BackendServer) NewClient(repoID int, token *oauth2.Token) {
@@ -74,6 +54,7 @@ func (bs *BackendServer) NewClient(repoID int, token *oauth2.Token) {
 func (a *ArchRepo) TriageOpenIssues() {
 	if !a.Hive.Blender.AllModelsBootstrapped() {
 		//TODO: Add Logging
+		utils.AppLog.Error("!AllModelsBootstrapped()")
 		return
 	}
 	openIssues := a.Hive.Blender.GetOpenIssues()
@@ -88,8 +69,13 @@ func (a *ArchRepo) TriageOpenIssues() {
 		}
 		r := strings.Split(name, "/")
 		number := *openIssues[i].Issue.Number
-		//HACK! (temp code)
-		a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, assignees) //[]string{assignees[0]})
+		_,_,err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{assignees[0]})
+		//fmt.Println(issue)
+		//utils.AppLog.Info("Issue Assigned", zap.String("Resp", fmt.Sprintf("%s",resp)), zap.String("Issue", fmt.Sprintf("%s",issue)))
+		//fmt.Println(err)
+ 		if err != nil {
+			utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
+		}
 	}
 }
 

@@ -52,6 +52,39 @@ type Resources struct {
 	Repos []*github.Repository
 }
 
+func (fs *FrontendServer) githubCallbackHandlerTest(w http.ResponseWriter, r *http.Request) {
+  testToken := &oauth2.Token{AccessToken: "Enter A Token"}
+	oaClient := oaConfig.Client(oauth2.NoContext, testToken)
+	client := github.NewClient(oaClient)
+	repo := github.Repository{ID: github.Int(81689981), Owner: &github.User{Login: github.String("heupr")}, Name: github.String("test")}
+
+	fs.OpenBolt()
+	defer fs.CloseBolt()
+	if err := fs.NewHook(&repo, client); err != nil {
+		utils.AppLog.Error("repo hook placement: ", zap.Error(err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	tokenByte, err := json.Marshal(testToken)
+	if err != nil {
+		utils.AppLog.Error("failure converting callback token: ", zap.Error(err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := fs.Database.Store("token", *repo.ID, tokenByte); err != nil {
+		utils.AppLog.Error("failure storing token in bolt: ", zap.Error(err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	 _, err = http.PostForm("/activate-service", url.Values{
+		"state": {BackendSecret},
+		"repos": {string(*repo.ID), string(*repo.Name), string(*repo.Owner.Login)},
+		"token": {string(tokenByte)},
+	})
+	//defer resp.Body.Close()
+}
+
 func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("state") != oaState {
 		utils.AppLog.Error("incorrect callback state value")

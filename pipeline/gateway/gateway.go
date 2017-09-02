@@ -13,7 +13,7 @@ type Gateway struct {
 
 func (c *Gateway) GetPullRequests(org string, project string) ([]*github.PullRequest, error) {
 	pullsOpt := &github.PullRequestListOptions{
-		State: "closed",
+		State: "all",
 		ListOptions: github.ListOptions{
 			PerPage: 100,
 		},
@@ -36,9 +36,8 @@ func (c *Gateway) GetPullRequests(org string, project string) ([]*github.PullReq
 }
 
 func (c *Gateway) GetIssues(org string, project string) ([]*github.Issue, error) {
-	// TODO: Handle opened/closed
 	issuesOpt := &github.IssueListByRepoOptions{
-		State: "closed",
+		State: "all",
 		ListOptions: github.ListOptions{
 			PerPage: 100,
 		},

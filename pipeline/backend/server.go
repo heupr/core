@@ -13,6 +13,7 @@ import (
 
 	"core/pipeline/frontend"
 	"core/utils"
+	"fmt"
 )
 
 type ActiveRepos struct {
@@ -50,43 +51,41 @@ func (bs *BackendServer) activateHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (bs *BackendServer) Start() {
+	fmt.Println("BackendServerStart")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/activate-ingestor-backend", bs.activateHandler)
 	bs.Server = http.Server{
 		Addr:    "127.0.0.1:8020",
 		Handler: mux,
 	}
-	bs.Server.ListenAndServe()
-
 	bs.OpenSQL()
 	defer bs.CloseSQL()
 
 	bs.Repos = &ActiveRepos{Actives: make(map[int]*ArchRepo)}
 
-	db, err := bolt.Open("storage.db", 0644, nil)
-	defer db.Close()
+	db, err := bolt.Open(utils.Config.BoltDBPath, 0644, nil)
 	boltDB := frontend.BoltDB{DB: db}
 
 	if err := boltDB.Initialize(); err != nil {
-		utils.AppLog.Error("frontend server: ", zap.Error(err))
+		utils.AppLog.Error("backend server: ", zap.Error(err))
 		panic(err)
 	}
 
-	keys, tokens, err := boltDB.RetrieveBulk("tokens")
+	keys, tokens, err := boltDB.RetrieveBulk("token")
 	if err != nil {
-		utils.AppLog.Error("frontend server: ", zap.Error(err))
+		utils.AppLog.Error("backend server: ", zap.Error(err))
 		panic(err)
 	}
 
 	for i := 0; i < len(keys); i++ {
 		key, err := strconv.Atoi(string(keys[i]))
 		if err != nil {
-			utils.AppLog.Error("frontend server: ", zap.Error(err))
+			utils.AppLog.Error("backend server: ", zap.Error(err))
 			panic(err)
 		}
 		token := oauth2.Token{}
 		if err := json.Unmarshal(tokens[i], &token); err != nil {
-			utils.AppLog.Error("frontend server: ", zap.Error(err))
+			utils.AppLog.Error("backend server: ", zap.Error(err))
 			panic(err)
 		}
 		if _, ok := bs.Repos.Actives[key]; !ok {
@@ -95,10 +94,11 @@ func (bs *BackendServer) Start() {
 			bs.NewModel(key)
 		}
 	}
-
-	// Keeping this channel to implement graceful shutdowns if needed.
-	wiggin := make(chan bool)
-	bs.Timer(wiggin)
+	db.Close()
+	fmt.Println("Timer")
+	bs.Timer()
+	fmt.Println("ListenAndServe")
+	bs.Server.ListenAndServe()
 }
 
 func (bs *BackendServer) OpenSQL() {
@@ -110,24 +110,17 @@ func (bs *BackendServer) CloseSQL() {
 }
 
 // Periodically conducts pulldowns from the MemSQL database for processing.
-func (bs *BackendServer) Timer(ender chan bool) {
-	ticker := time.NewTicker(time.Second * 30)
-	defer close(ender)
-
+func (bs *BackendServer) Timer() {
 	bs.Dispatcher(10)
-
-	for {
-		select {
-		case <-ticker.C:
+	go func() {
+		for {
 			data, err := bs.Database.Read()
 			if err != nil {
-				utils.AppLog.Error("backend timer: ", zap.Error(err))
+				utils.AppLog.Error("backend timer method: ", zap.Error(err))
+				panic(err)
 			}
 			Collector(data)
-		case <-ender:
-			ticker.Stop()
-			close(ender)
-			return
+			time.Sleep(1 * time.Second)
 		}
-	}
+	}()
 }

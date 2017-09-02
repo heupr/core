@@ -17,6 +17,7 @@ type Configuration struct {
 	AppLogPath     string
 	ModelLogPath   string
 	DataCachesPath string
+	BoltDBPath 		 string
 }
 
 var initOnceCnf sync.Once
@@ -38,6 +39,7 @@ func init() {
 		Config.AppLogPath = replaceEnvVariable(fmtTimestamp(Config.AppLogPath))
 		Config.ModelLogPath = replaceEnvVariable(fmtTimestamp(Config.ModelLogPath))
 		Config.DataCachesPath = replaceEnvVariable(fmtTimestamp(Config.DataCachesPath))
+		Config.BoltDBPath = replaceEnvVariable(Config.BoltDBPath)
 
 		viper.WatchConfig()
 		viper.OnConfigChange(func(e fsnotify.Event) {

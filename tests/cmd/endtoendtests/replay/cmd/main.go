@@ -70,8 +70,7 @@ func main() {
 		}
 
 		backendServer.OpenSQL()
-		var ender chan bool
-		backendServer.Timer(ender)
+		backendServer.Timer()
 
 		//time.Sleep(5 * time.Second)
 

@@ -19,11 +19,18 @@ func (fs *FrontendServer) routes() *http.ServeMux {
 	mux.Handle("/", mainHandler)
 	mux.HandleFunc("/login", githubLoginHandler)
 	mux.HandleFunc("/github_oauth_cb", fs.githubCallbackHandler)
+	mux.HandleFunc("/github_oauth_cb2", fs.githubCallbackHandlerTest)
 	mux.HandleFunc("/setup_complete", completeHandle)
 	return mux
 }
 
 func (fs *FrontendServer) Start() {
+	fs.OpenBolt()
+	if err := fs.Database.Initialize(); err != nil {
+		utils.AppLog.Error("frontend server: ", zap.Error(err))
+		panic(err)
+	}
+	fs.CloseBolt()
 	fs.Server = http.Server{Addr: "127.0.0.1:80", Handler: fs.routes()}
 	if err := fs.Server.ListenAndServe(); err != nil {
 		utils.AppLog.Error("frontend server failed to start", zap.Error(err))
@@ -36,7 +43,7 @@ func (fs *FrontendServer) Stop() {
 }
 
 func (fs *FrontendServer) OpenBolt() error {
-	boltDB, err := bolt.Open("storage.db", 0644, nil)
+	boltDB, err := bolt.Open(utils.Config.BoltDBPath, 0644, nil)
 	if err != nil {
 		utils.AppLog.Error("failed opening bolt", zap.Error(err))
 		return err

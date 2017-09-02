@@ -75,6 +75,7 @@ func (i *IngestorServer) Start() error {
 	i.Database.Open()
 
 	i.RepoInitializer = RepoInitializer{}
+	i.Restart()
 	i.Server = http.Server{Addr: "127.0.0.1:8030", Handler: i.routes()}
 	err := i.Server.ListenAndServe()
 	if err != nil {

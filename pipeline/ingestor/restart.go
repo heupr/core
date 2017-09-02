@@ -13,6 +13,7 @@ import (
 
 	"core/pipeline/frontend"
 	"core/utils"
+	"fmt"
 )
 
 const RESTART_QUERY = `
@@ -53,18 +54,22 @@ func (i *IngestorServer) Restart() error {
 	i.Database.Open()
 	defer i.Database.Close()
 
-	db, err := bolt.Open("frontend/storage.db", 0644, nil)
+	db, err := bolt.Open(utils.Config.BoltDBPath, 0644, nil)
 	if err != nil {
-		utils.AppLog.Error("failed opening bolt on ingestor restart; ", zap.Error(err))
+		utils.AppLog.Error("Failed opening bolt on ingestor restart;", zap.Error(err))
 		return err
 	}
 	defer db.Close()
 
 	boltDB := frontend.BoltDB{DB: db}
+	if err := boltDB.Initialize(); err != nil {
+		utils.AppLog.Error("Ingestor server", zap.Error(err))
+		panic(err)
+	}
 
 	repos, tokens, err := boltDB.RetrieveBulk("token")
 	if err != nil {
-		utils.AppLog.Error("retrieve bulk tokens on ingestor restart; ", zap.Error(err))
+		utils.AppLog.Error("Retrieve bulk tokens on ingestor restart;", zap.Error(err))
 	}
 
 	for key := range tokens {
@@ -75,13 +80,13 @@ func (i *IngestorServer) Restart() error {
 
 		repoID, err := strconv.Atoi(string(repos[key]))
 		if err != nil {
-			utils.AppLog.Error("repo id int conversion; ", zap.Error(err))
+			utils.AppLog.Error("Repo id int conversion;", zap.Error(err))
 			return err
 		}
 
 		repo, _, err := client.Repositories.GetByID(context.Background(), repoID)
 		if err != nil {
-			utils.AppLog.Error("ingestor restart get by id; ", zap.Error(err))
+			utils.AppLog.Error("Ingestor restart get by id;", zap.Error(err))
 			return err
 		}
 
@@ -100,11 +105,13 @@ func (i *IngestorServer) Restart() error {
 			continue
 		}
 
-		if iOldest == nil && pOldest == nil {
+		fmt.Println(*iOldest)
+		if *iOldest == 0 && *pOldest == 0 {
 			authRepo := AuthenticatedRepo{
 				Repo:   repo,
 				Client: client,
 			}
+			fmt.Println("i.RepoInitializer.AddRepo(authRepo)")
 			i.RepoInitializer = RepoInitializer{}
 			i.RepoInitializer.AddRepo(authRepo)
 		}
@@ -159,8 +166,12 @@ func (i *IngestorServer) Restart() error {
 		})
 		if err != nil {
 			utils.AppLog.Error("newest pull request retrival; ", zap.Error(err))
-		} else {
+		}
+
+		if len(pull) > 0 {
 			pNewest = pull[0].Number
+		} else {
+
 		}
 
 		pDiff := *pNewest - *pOldest
@@ -187,6 +198,10 @@ func (i *IngestorServer) Restart() error {
 			} else {
 				opts.ListOptions.Page = resp.NextPage
 			}
+		}
+
+		for j := 0; j < len(missingIssues); j++ {
+			missingIssues[j].Repository = repo
 		}
 		i.Database.BulkInsertIssues(missingIssues)
 		i.Database.BulkInsertPullRequests(missingPulls)
