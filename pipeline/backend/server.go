@@ -13,7 +13,6 @@ import (
 
 	"core/pipeline/frontend"
 	"core/utils"
-	"fmt"
 )
 
 type ActiveRepos struct {
@@ -51,7 +50,6 @@ func (bs *BackendServer) activateHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (bs *BackendServer) Start() {
-	fmt.Println("BackendServerStart")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/activate-ingestor-backend", bs.activateHandler)
 	bs.Server = http.Server{
@@ -95,9 +93,9 @@ func (bs *BackendServer) Start() {
 		}
 	}
 	db.Close()
-	fmt.Println("Timer")
-	bs.Timer()
-	fmt.Println("ListenAndServe")
+	// Keeping this channel to implement graceful shutdowns if needed.
+	wiggin := make(chan bool)
+	bs.Timer(wiggin)
 	bs.Server.ListenAndServe()
 }
 
@@ -110,17 +108,24 @@ func (bs *BackendServer) CloseSQL() {
 }
 
 // Periodically conducts pulldowns from the MemSQL database for processing.
-func (bs *BackendServer) Timer() {
+func (bs *BackendServer) Timer(ender chan bool) {
+	ticker := time.NewTicker(time.Second * 30)
+	defer close(ender)
+
 	bs.Dispatcher(10)
-	go func() {
-		for {
+
+	for {
+		select {
+		case <-ticker.C:
 			data, err := bs.Database.Read()
 			if err != nil {
-				utils.AppLog.Error("backend timer method: ", zap.Error(err))
-				panic(err)
+				utils.AppLog.Error("backend timer: ", zap.Error(err))
 			}
 			Collector(data)
-			time.Sleep(1 * time.Second)
+		case <-ender:
+			ticker.Stop()
+			close(ender)
+			return
 		}
-	}()
+	}
 }
