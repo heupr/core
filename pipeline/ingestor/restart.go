@@ -2,7 +2,6 @@ package ingestor
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"strconv"
 
@@ -16,26 +15,19 @@ import (
 )
 
 const RESTART_QUERY = `
-SELECT MAX(ghe.number)
+SELECT ifnull(g.number, 0) as number, g.is_pull as is_pull
 FROM (
-    SELECT repo_id, number
+    SELECT MAX(number) as number, ifnull(is_pull, FALSE) as is_pull
     FROM github_events
-    WHERE is_pull = false
-    ORDER BY repo_id, number
-) ghe
-WHERE repo_id = ?
+    WHERE repo_id = ? AND is_pull = FALSE
 
-UNION ALL
+    UNION ALL
 
-SELECT MAX(ghe.number)
-FROM (
-    SELECT repo_id, number
+    SELECT MAX(number) as number, ifnull(is_pull, TRUE) as is_pull
     FROM github_events
-    WHERE is_pull = true
-    ORDER BY repo_id, number
-) ghe
-WHERE repo_id = ?
-`
+    WHERE repo_id = ? AND is_pull = TRUE
+) g
+ORDER BY g.is_pull`
 
 func (i *IngestorServer) Restart() error {
 	bufferPool := NewPool()
@@ -45,7 +37,7 @@ func (i *IngestorServer) Restart() error {
 
 	db, err := bolt.Open(utils.Config.BoltDBPath, 0644, nil)
 	if err != nil {
-		utils.AppLog.Error("Failed opening bolt on ingestor restart;", zap.Error(err))
+		utils.AppLog.Error("Failed opening bolt on ingestor restart", zap.Error(err))
 		return err
 	}
 	defer db.Close()
@@ -58,26 +50,26 @@ func (i *IngestorServer) Restart() error {
 
 	repos, tokens, err := boltDB.RetrieveBulk("token")
 	if err != nil {
-		utils.AppLog.Error("Retrieve bulk tokens on ingestor restart;", zap.Error(err))
+		utils.AppLog.Error("Retrieve bulk tokens on ingestor restart", zap.Error(err))
 	}
 
 	for key := range tokens {
 		token := oauth2.Token{}
 		if err := json.Unmarshal(tokens[key], &token); err != nil {
-			utils.AppLog.Error("converting tokens; ", zap.Error(err))
+			utils.AppLog.Error("converting tokens", zap.Error(err))
 			return err
 		}
 		client := NewClient(token)
 
 		repoID, err := strconv.Atoi(string(repos[key]))
 		if err != nil {
-			utils.AppLog.Error("Repo id int conversion;", zap.Error(err))
+			utils.AppLog.Error("Repo id int conversion", zap.Error(err))
 			return err
 		}
 
 		repo, _, err := client.Repositories.GetByID(context.Background(), repoID)
 		if err != nil {
-			utils.AppLog.Error("Ingestor restart get by id;", zap.Error(err))
+			utils.AppLog.Error("Ingestor restart get by id", zap.Error(err))
 			return err
 		}
 
@@ -85,18 +77,26 @@ func (i *IngestorServer) Restart() error {
 		name := repo.Name
 
 		iOld, pOld, iNew, pNew := new(int), new(int), new(int), new(int)
-		result := i.Database.db.QueryRow(RESTART_QUERY, repoID, repoID).Scan(&iOld, &pOld)
-		switch {
-		case result == sql.ErrNoRows:
-			utils.AppLog.Error("no rows in restart query: ", zap.Error(result))
-			break
-		case result != nil:
-			utils.AppLog.Error("restart query: ", zap.Error(result))
-		default:
-			continue
+		rows, err := i.Database.db.Query(RESTART_QUERY, repoID, repoID)
+		if err != nil {
+			utils.AppLog.Error("restart query: ", zap.Error(err))
+		}
+		defer rows.Close()
+		for rows.Next() {
+			number := new(int)
+			is_pull := new(bool)
+			if err := rows.Scan(number, is_pull); err != nil {
+				utils.AppLog.Error("restart scan: ", zap.Error(err))
+			}
+			switch *is_pull {
+			case false:
+				*iOld = *number
+			case true:
+				*pOld = *number
+			}
 		}
 
-		if *iOld == 0 && *pOld == 0 {
+		if iOld == nil && pOld == nil {
 			authRepo := AuthenticatedRepo{
 				Repo:   repo,
 				Client: client,
@@ -105,32 +105,30 @@ func (i *IngestorServer) Restart() error {
 			i.RepoInitializer.AddRepo(authRepo)
 			return nil
 		}
-		if iOld == nil {
-			*iOld = 0
-		}
-		if pOld == nil {
-			*pOld = 0
-		}
 
 		issue, _, err := client.Issues.ListByRepo(context.Background(), *owner, *name, &github.IssueListByRepoOptions{
+			State: "all",
 			ListOptions: github.ListOptions{
 				PerPage: 1,
 			},
 		})
 		if err != nil {
-			utils.AppLog.Error("newest issue retrival; ", zap.Error(err))
-		} else {
+			utils.AppLog.Error("newest issue retrival", zap.Error(err))
+			return err
+		}
+		if len(issue) > 0 {
 			iNew = issue[0].Number
 		}
 
 		iDiff := *iNew - *iOld
 		missingIssues := []*github.Issue{}
-		for iDiff > 1 {
+		for iDiff > 0 {
 			opts := github.IssueListByRepoOptions{
+				State:       "all",
 				ListOptions: github.ListOptions{},
 			}
 			switch {
-			case iDiff > 1 && iDiff <= 100:
+			case iDiff > 0 && iDiff <= 100:
 				opts.ListOptions.PerPage = iDiff
 				iDiff = 0
 			case iDiff > 100:
@@ -139,7 +137,7 @@ func (i *IngestorServer) Restart() error {
 			}
 			issues, resp, err := client.Issues.ListByRepo(context.Background(), *owner, *name, &opts)
 			if err != nil {
-				utils.AppLog.Error("newest issue retrival; ", zap.Error(err))
+				utils.AppLog.Error("newest issue retrival", zap.Error(err))
 			}
 			missingIssues = append(missingIssues, issues...)
 			if resp.NextPage == 0 {
@@ -150,12 +148,13 @@ func (i *IngestorServer) Restart() error {
 		}
 
 		pull, _, err := client.PullRequests.List(context.Background(), *owner, *name, &github.PullRequestListOptions{
+			State: "all",
 			ListOptions: github.ListOptions{
 				PerPage: 1,
 			},
 		})
 		if err != nil {
-			utils.AppLog.Error("newest pull request retrival; ", zap.Error(err))
+			utils.AppLog.Error("newest pull request retrival", zap.Error(err))
 		}
 
 		if len(pull) > 0 {
@@ -164,12 +163,13 @@ func (i *IngestorServer) Restart() error {
 
 		pDiff := *pNew - *pOld
 		missingPulls := []*github.PullRequest{}
-		for pDiff > 1 {
+		for pDiff > 0 {
 			opts := github.PullRequestListOptions{
+				State:       "all",
 				ListOptions: github.ListOptions{},
 			}
 			switch {
-			case pDiff > 1 && pDiff <= 100:
+			case pDiff > 0 && pDiff <= 100:
 				opts.ListOptions.PerPage = pDiff
 				pDiff = 0
 			case pDiff > 100:
@@ -178,7 +178,7 @@ func (i *IngestorServer) Restart() error {
 			}
 			pulls, resp, err := client.PullRequests.List(context.Background(), *owner, *name, &opts)
 			if err != nil {
-				utils.AppLog.Error("newest pull request retrival; ", zap.Error(err))
+				utils.AppLog.Error("newest pull request retrival", zap.Error(err))
 			}
 			missingPulls = append(missingPulls, pulls...)
 			if resp.NextPage == 0 {
