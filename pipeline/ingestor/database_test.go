@@ -1,16 +1,18 @@
 package ingestor
 
 import (
-	"core/pipeline/gateway"
-	"fmt"
-	"github.com/google/go-github/github"
-	"golang.org/x/oauth2"
+	// "fmt"
 	"runtime"
 	"testing"
+
+	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
+
+	"core/pipeline/gateway"
 )
 
 func TestInsert(t *testing.T) {
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "Enter A Token"})
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "YOUR-TOKEN-HERE"})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 	client := github.NewClient(tc)
 	newGateway := gateway.CachedGateway{Gateway: &gateway.Gateway{Client: client}, DiskCache: &gateway.DiskCache{}}
@@ -30,9 +32,9 @@ func TestInsert(t *testing.T) {
 	db.BulkInsertIssues(githubIssues)
 	runtime.GC()
 
-	issues, _ := db.ReadIssuesTest()
+	// issues, _ := db.ReadIssuesTest()
 	// fmt.Println(issues[0].Repository) // TODO: This was generating a index out of range panic; fix.
-	fmt.Println(issues)
+	// fmt.Println(issues)
 
 	db.BulkInsertPullRequests(githubPulls)
 	runtime.GC()

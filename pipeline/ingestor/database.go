@@ -5,12 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io"
+	"strings"
 
-	"core/utils"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
-	"strings"
+
+	"core/utils"
 )
 
 type Event struct {
