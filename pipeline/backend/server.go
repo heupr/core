@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
+	"github.com/google/go-github/github"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 
@@ -27,24 +28,19 @@ type BackendServer struct {
 }
 
 func (bs *BackendServer) activateHandler(w http.ResponseWriter, r *http.Request) {
-	if r.FormValue("state") != frontend.BackendSecret {
-		utils.AppLog.Error("failed validating frontend-backend secret")
-		return
+	var activationParams struct {
+		Repo  github.Repository `json:"repo"`
+		Token *oauth2.Token     `json:"token"`
 	}
-	repoInfo := r.FormValue("repos")
-	repoID, err := strconv.Atoi(string(repoInfo[0]))
+	err := json.NewDecoder(r.Body).Decode(&activationParams)
 	if err != nil {
-		utils.AppLog.Error("converting repo ID: ", zap.Error(err))
+		utils.AppLog.Error("unable to decode json message. ", zap.Error(err))
 	}
-
-	tokenString := r.FormValue("token")
+	repoID := *activationParams.Repo.ID
+	token := activationParams.Token
 	if bs.Repos.Actives[repoID] == nil {
-		token := oauth2.Token{}
-		if err := json.Unmarshal([]byte(tokenString), &token); err != nil {
-			utils.AppLog.Error("converting tokens: ", zap.Error(err))
-		}
 		bs.NewArchRepo(repoID)
-		bs.NewClient(repoID, &token)
+		bs.NewClient(repoID, token)
 		bs.NewModel(repoID)
 	}
 }
@@ -110,22 +106,23 @@ func (bs *BackendServer) CloseSQL() {
 // Periodically conducts pulldowns from the MemSQL database for processing.
 func (bs *BackendServer) Timer(ender chan bool) {
 	ticker := time.NewTicker(time.Second * 30)
-	defer close(ender)
 
 	bs.Dispatcher(10)
 
-	for {
-		select {
-		case <-ticker.C:
-			data, err := bs.Database.Read()
-			if err != nil {
-				utils.AppLog.Error("backend timer: ", zap.Error(err))
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				data, err := bs.Database.Read()
+				if err != nil {
+					utils.AppLog.Error("backend timer: ", zap.Error(err))
+				}
+				Collector(data)
+			case <-ender:
+				ticker.Stop()
+				close(ender)
+				return
 			}
-			Collector(data)
-		case <-ender:
-			ticker.Stop()
-			close(ender)
-			return
 		}
-	}
+	}()
 }

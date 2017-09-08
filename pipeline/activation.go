@@ -1,12 +1,13 @@
 package pipeline
 
 import (
+	"bytes"
+	"io/ioutil"
 	"net/http"
-	"net/url"
+	"time"
 
 	"go.uber.org/zap"
 
-	"core/pipeline/frontend"
 	"core/utils"
 )
 
@@ -17,26 +18,25 @@ var (
 )
 
 type ActivationServer struct {
-	Server http.Server
+	Server     http.Server
+	httpClient http.Client
 }
 
 func (as *ActivationServer) activationServerHandler(w http.ResponseWriter, r *http.Request) {
-	secret := frontend.BackendSecret
-	if r.FormValue("state") != secret {
-		utils.AppLog.Error("failed validating frontend-backend secret")
-		http.Error(w, "failed validating frontend-backend secret", http.StatusForbidden)
+	payload, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		utils.AppLog.Error("failed to read payload:", zap.Error(err))
 		return
 	}
-	repoInfo := r.FormValue("repos")
-	token := r.FormValue("token")
 	for i := range destinationPorts {
-		resp, err := http.PostForm(destinationBase+destinationPorts[i]+destinationEnd, url.Values{
-			"state": {secret},
-			"repos": {repoInfo},
-			"token": {token},
-		})
+		req, err := http.NewRequest("POST", destinationBase+destinationPorts[i]+destinationEnd, bytes.NewBuffer(payload))
 		if err != nil {
-			utils.AppLog.Error("failed internal post call: ", zap.Error(err))
+			utils.AppLog.Error("failed to create http request:", zap.Error(err))
+			continue
+		}
+		resp, err := as.httpClient.Do(req)
+		if err != nil {
+			utils.AppLog.Error("failed internal post call:", zap.Error(err))
 			http.Error(w, "failed internal post call", http.StatusForbidden)
 			return
 		} else {
@@ -46,6 +46,7 @@ func (as *ActivationServer) activationServerHandler(w http.ResponseWriter, r *ht
 }
 
 func (as *ActivationServer) Start() {
+	as.httpClient = http.Client{Timeout: time.Second * 10}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/activate-service", as.activationServerHandler)
 

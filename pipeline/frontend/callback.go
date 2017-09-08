@@ -1,10 +1,10 @@
 package frontend
 
 import (
+	"bytes"
 	"encoding/json"
 	"html/template"
 	"net/http"
-	"net/url"
 
 	"github.com/google/go-github/github"
 	"github.com/gorilla/schema"
@@ -53,7 +53,7 @@ type Resources struct {
 }
 
 func (fs *FrontendServer) githubCallbackHandlerTest(w http.ResponseWriter, r *http.Request) {
-  testToken := &oauth2.Token{AccessToken: "Enter A Token"}
+	testToken := &oauth2.Token{AccessToken: "Enter A Token"}
 	oaClient := oaConfig.Client(oauth2.NoContext, testToken)
 	client := github.NewClient(oaClient)
 	repo := github.Repository{ID: github.Int(81689981), Owner: &github.User{Login: github.String("heupr")}, Name: github.String("test")}
@@ -71,18 +71,40 @@ func (fs *FrontendServer) githubCallbackHandlerTest(w http.ResponseWriter, r *ht
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	if err := fs.Database.Store("token", *repo.ID, tokenByte); err != nil {
 		utils.AppLog.Error("failure storing token in bolt: ", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	 _, err = http.PostForm("/activate-service", url.Values{
-		"state": {BackendSecret},
-		"repos": {string(*repo.ID), string(*repo.Name), string(*repo.Owner.Login)},
-		"token": {string(tokenByte)},
-	})
-	//defer resp.Body.Close()
+
+	activationParams := struct {
+		Repo  github.Repository `json:"repo"`
+		Token *oauth2.Token     `json:"token"`
+	}{
+		repo,
+		testToken,
+	}
+	payload, err := json.Marshal(activationParams)
+	if err != nil {
+		utils.AppLog.Error("failure converting activation parameters: ", zap.Error(err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	req, err := http.NewRequest("POST", utils.Config.ActivationServiceEndpoint, bytes.NewBuffer(payload))
+	if err != nil {
+		utils.AppLog.Error("failed to create http request:", zap.Error(err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	req.Header.Set("content-type", "application/json")
+	resp, err := fs.httpClient.Do(req)
+	if err != nil {
+		utils.AppLog.Error("failed internal post call:", zap.Error(err))
+		http.Error(w, "failed internal post call", http.StatusForbidden)
+		return
+	} else {
+		defer resp.Body.Close()
+	}
 }
 
 func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -145,17 +167,34 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			resp, err := http.PostForm("/activate-service", url.Values{
-				"state": {BackendSecret},
-				"repos": {string(*repo.ID), string(*repo.Name), string(*repo.Owner.Login)},
-				"token": {string(tokenByte)},
-			})
+			activationParams := struct {
+				Repo  github.Repository `json:"repo"`
+				Token *oauth2.Token     `json:"token"`
+			}{
+				*repo,
+				token,
+			}
+			payload, err := json.Marshal(activationParams)
 			if err != nil {
-				utils.AppLog.Error("error posting to activation service: ", zap.Error(err))
+				utils.AppLog.Error("failure converting activation parameters: ", zap.Error(err))
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			defer resp.Body.Close()
+			req, err := http.NewRequest("POST", utils.Config.ActivationServiceEndpoint, bytes.NewBuffer(payload))
+			if err != nil {
+				utils.AppLog.Error("failed to create http request:", zap.Error(err))
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			req.Header.Set("content-type", "application/json")
+			resp, err := fs.httpClient.Do(req)
+			if err != nil {
+				utils.AppLog.Error("failed internal post call:", zap.Error(err))
+				http.Error(w, "failed internal post call", http.StatusForbidden)
+				return
+			} else {
+				defer resp.Body.Close()
+			}
 		}
 	}
 }

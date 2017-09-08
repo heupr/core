@@ -14,10 +14,11 @@ import (
 )
 
 type Configuration struct {
-	AppLogPath     string
-	ModelLogPath   string
-	DataCachesPath string
-	BoltDBPath     string
+	AppLogPath                string
+	ModelLogPath              string
+	DataCachesPath            string
+	BoltDBPath                string
+	ActivationServiceEndpoint string
 }
 
 var initOnceCnf sync.Once

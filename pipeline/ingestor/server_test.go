@@ -1,6 +1,8 @@
 package ingestor
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -9,8 +11,6 @@ import (
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
-
-	"core/pipeline/frontend"
 )
 
 func Test_NewClient(t *testing.T) {
@@ -34,8 +34,16 @@ func Test_NewClient(t *testing.T) {
 }
 
 func Test_activateHandler(t *testing.T) {
+	id := 1
 	owner := "bomarr-order"
 	repo := "bt-16-perimeter-droid"
+	activationParams := struct {
+		Repo  github.Repository `json:"repo"`
+		Token *oauth2.Token     `json:"token"`
+	}{
+		github.Repository{ID: github.Int(id), Owner: &github.User{Login: github.String(owner)}, Name: github.String(repo), FullName: github.String(owner + "/" + repo)},
+		&oauth2.Token{},
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc(fmt.Sprintf("/repos/%v/%v/issues", owner, repo), func(w http.ResponseWriter, r *http.Request) {
@@ -58,16 +66,16 @@ func Test_activateHandler(t *testing.T) {
 		return c
 	}
 
+	payload, err := json.Marshal(activationParams)
+	if err != nil {
+		t.Errorf("failure converting activation parameters: %v", err)
+	}
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "/handler-test", nil)
+	req, err := http.NewRequest("GET", "/handler-test", bytes.NewBuffer(payload))
 	if err != nil {
 		t.Errorf("failure generating testing request: %v", err)
 	}
-	req.Form = url.Values{}
-	req.Form.Set("state", frontend.BackendSecret)
-	req.Form.Set("repos", fmt.Sprintf("{testID, %v, %v}", owner, repo))
-	req.Form.Set("token", "fake-test-token")
-	req.ParseForm()
+	req.Header.Set("content-type", "application/json")
 
 	testIS := IngestorServer{}
 	handler := http.HandlerFunc(testIS.activateHandler)
