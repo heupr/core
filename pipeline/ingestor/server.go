@@ -2,14 +2,13 @@ package ingestor
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 
-	"core/pipeline/frontend"
 	"core/utils"
 )
 
@@ -27,25 +26,19 @@ var NewClient = func(token oauth2.Token) *github.Client {
 }
 
 func (i *IngestorServer) activateHandler(w http.ResponseWriter, r *http.Request) {
-	if r.FormValue("state") != frontend.BackendSecret {
-		errMsg := "failed validating frontend-backend secret"
-		utils.AppLog.Error(errMsg)
-		http.Error(w, errMsg, http.StatusUnauthorized)
-		return
+	var activationParams struct {
+		Repo  github.Repository `json:"repo"`
+		Token *oauth2.Token     `json:"token"`
 	}
-	repoInfo := r.FormValue("repos")
-	repoInfo = strings.Trim(repoInfo, "{")
-	repoInfo = strings.Trim(repoInfo, "}")
-	repoSlice := strings.Split(repoInfo, ", ")
-	owner := string(repoSlice[1])
-	name := string(repoSlice[2])
-	tokenString := r.FormValue("token")
-
-	client := NewClient(oauth2.Token{AccessToken: tokenString})
+	err := json.NewDecoder(r.Body).Decode(&activationParams)
+	if err != nil {
+		utils.AppLog.Error("unable to decode json message. ", zap.Error(err))
+	}
+	client := NewClient(*activationParams.Token)
 
 	// NOTE: This may ultimately be refactored out into a helper
 	// method/function. Also see the similar code in the Restart method.
-	repo, _, err := client.Repositories.Get(context.Background(), owner, name)
+	repo, _, err := client.Repositories.Get(context.Background(), *activationParams.Repo.Owner.Login, *activationParams.Repo.Name)
 	if err != nil {
 		utils.AppLog.Error("ingestor github pulldown:", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)

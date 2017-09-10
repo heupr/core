@@ -2,6 +2,7 @@ package frontend
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/boltdb/bolt"
 	"go.uber.org/zap"
@@ -10,8 +11,9 @@ import (
 )
 
 type FrontendServer struct {
-	Server   http.Server
-	Database BoltDB
+	Server     http.Server
+	httpClient http.Client
+	Database   BoltDB
 }
 
 func (fs *FrontendServer) routes() *http.ServeMux {
@@ -31,6 +33,7 @@ func (fs *FrontendServer) Start() {
 		panic(err)
 	}
 	fs.CloseBolt()
+	fs.httpClient = http.Client{Timeout: time.Second * 10}
 	fs.Server = http.Server{Addr: "127.0.0.1:8080", Handler: fs.routes()}
 	if err := fs.Server.ListenAndServe(); err != nil {
 		utils.AppLog.Error("frontend server failed to start", zap.Error(err))
