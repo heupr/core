@@ -1,0 +1,3 @@
+# This is just to make absolutely sure that the test BoltDB file is not
+# committed to the version control
+continuity-test-db
