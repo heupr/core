@@ -8,7 +8,15 @@ import (
 
 var maxID = 0
 
-const ISSUE_QUERY = `SELECT id, repo_id, is_pull, payload FROM github_events WHERE id > ?`
+//const ISSUE_QUERY = `SELECT id, repo_id, is_pull, payload FROM github_events WHERE id > ?`
+const ISSUE_QUERY = `select g.id, g.repo_id, g.is_pull, g.payload from github_events g
+join (
+SELECT max(id) id
+FROM github_events
+WHERE id > ?
+group by repo_id, issues_id, number
+) T
+on T.id = g.id ` //MVP Workaround.
 
 type RepoData struct {
 	RepoID int

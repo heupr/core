@@ -33,8 +33,6 @@ GROUP BY g.number, r.number;
 `
 
 func (i *IngestorServer) continuityCheck() ([]*github.Issue, []*github.PullRequest, error) {
-	i.Database.Open()        // NOTE: This may be promoted to Continuity().
-	defer i.Database.Close() // NOTE: This may be promoted to Continuity().
 	results, err := i.Database.db.Query(CONTINUITY_QUERY)
 	if err != nil {
 		utils.AppLog.Error("continuity check query", zap.Error(err))
@@ -103,7 +101,7 @@ func (i *IngestorServer) continuityCheck() ([]*github.Issue, []*github.PullReque
 
 // Periodically ensure that data contained in MemSQL is contiguous.
 func (i *IngestorServer) Continuity() {
-	ticker := time.NewTicker(time.Second * 5) // TEMPORARY
+	ticker := time.NewTicker(time.Second * 30) // TEMPORARY
 	// This chan is being kept as a means for thread-safe graceful shutdowns
 	// and could be eventually passed as an argument into Continuity().
 	ender := make(chan bool)
