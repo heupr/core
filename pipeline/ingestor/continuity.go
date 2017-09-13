@@ -100,10 +100,7 @@ func (i *IngestorServer) continuityCheck() ([]*github.Issue, []*github.PullReque
 
 // Periodically ensure that data contained in MemSQL is contiguous.
 func (i *IngestorServer) Continuity() {
-	i.Database.Open()
-	defer i.Database.Close()
-
-	ticker := time.NewTicker(time.Minute * 3)
+	ticker := time.NewTicker(time.Second * 30) // TEMPORARY
 	// This chan is being kept as a means for thread-safe graceful shutdowns
 	// and could be eventually passed as an argument into Continuity().
 	ender := make(chan bool)

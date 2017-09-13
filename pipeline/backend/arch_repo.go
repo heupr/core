@@ -71,9 +71,6 @@ func (a *ArchRepo) TriageOpenIssues() {
 		r := strings.Split(name, "/")
 		number := *openIssues[i].Issue.Number
 		_, _, err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{assignees[0]})
-		//fmt.Println(issue)
-		//utils.AppLog.Info("Issue Assigned", zap.String("Resp", fmt.Sprintf("%s",resp)), zap.String("Issue", fmt.Sprintf("%s",issue)))
-		//fmt.Println(err)
 		if err != nil {
 			utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
 		}
@@ -93,7 +90,9 @@ func (b *Blender) GetOpenIssues() []conflation.ExpandedIssue {
 	issues := b.Conflator.Context.Issues
 	for i := 0; i < len(issues); i++ {
 		if issues[i].PullRequest.Number == nil && issues[i].Issue.ClosedAt == nil && !issues[i].Issue.Triaged {
-			openIssues = append(openIssues, issues[i])
+			if issues[i].Issue.Assignee == nil && issues[i].Issue.Assignees == nil { //MVP
+				openIssues = append(openIssues, issues[i])
+			}
 		}
 	}
 	return openIssues

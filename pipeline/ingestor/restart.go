@@ -30,11 +30,6 @@ FROM (
 ORDER BY g.is_pull`
 
 func (i *IngestorServer) Restart() error {
-	bufferPool := NewPool()
-	i.Database = Database{BufferPool: bufferPool}
-	i.Database.Open()
-	defer i.Database.Close()
-
 	db, err := bolt.Open(utils.Config.BoltDBPath, 0644, nil)
 	if err != nil {
 		utils.AppLog.Error("Failed opening bolt on ingestor restart", zap.Error(err))
@@ -96,7 +91,7 @@ func (i *IngestorServer) Restart() error {
 			}
 		}
 
-		if iOld == nil && pOld == nil {
+		if *iOld == 0 && *pOld == 0 {
 			authRepo := AuthenticatedRepo{
 				Repo:   repo,
 				Client: client,
