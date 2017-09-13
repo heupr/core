@@ -21,10 +21,16 @@ type Event struct {
 	Payload interface{}       `json:"payload"`
 }
 
-type Value interface{}
+type Value interface{} // NOTE: Is this supposed to be anything?
+
+type SQLDB interface {
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	Close() error
+}
 
 type Database struct {
-	db         *sql.DB
+	db         SQLDB // *sql.DB
 	BufferPool Pool
 }
 
@@ -155,14 +161,14 @@ func (d *Database) ReadBacktestEvents(params EventQuery) ([]Event, error) {
 func (d *Database) ReadBacktestRepos() ([]github.Repository, error) {
 	repos := []github.Repository{}
 
-	results, err := d.db.Query(
-		`select T.repo_name, T.repo_id
- 														from
-														(
-															select count(*) cnt, repo_name, repo_id from backtest_events where is_pull = 0 and is_closed = 1 and repo_name != 'chrsmith/google-api-java-client'
-															group by repo_name
-														) T
-														order by T.cnt desc LIMIT 15`)
+	results, err := d.db.Query(`select T.repo_name, T.repo_id
+	from
+	(
+		select count(*) cnt, repo_name, repo_id from backtest_events where is_pull = 0 and is_closed = 1 and repo_name != 'chrsmith/google-api-java-client'
+		group by repo_name
+	) T
+	order by T.cnt desc LIMIT 15
+    `)
 	if err != nil {
 		return nil, err
 	}
