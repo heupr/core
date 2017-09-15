@@ -15,21 +15,21 @@ import (
 )
 
 const CONTINUITY_QUERY = `
-SELECT g.repo_id, g.number + 1 AS start_num, min(fr.number) - 1 AS stop_num, g.is_pull
-FROM github_events AS g
-    LEFT OUTER JOIN github_events AS r ON g.number = r.number - 1
-    LEFT OUTER JOIN github_events AS fr ON g.number < fr.number
-WHERE r.number IS NULL AND fr.number IS NOT NULL AND g.is_pull = FALSE
-GROUP BY g.number, r.number
+SELECT *
+FROM (
+    SELECT repo_id, number AS start_num, LEAD(number, 1) OVER (PARTITION BY repo_id ORDER BY number) AS end_num, is_pull
+    FROM github_events
+  ) t
+WHERE t.end_num - t.start_num > 1 AND is_pull = FALSE
 
 UNION ALL
 
-SELECT g.repo_id, g.number + 1 AS start_num, min(fr.number) - 1 AS stop_num, g.is_pull
-FROM github_events AS g
-    LEFT OUTER JOIN github_events AS r ON g.number = r.number - 1
-    LEFT OUTER JOIN github_events AS fr ON g.number < fr.number
-WHERE r.number IS NULL AND fr.number IS NOT NULL AND g.is_pull = TRUE
-GROUP BY g.number, r.number;
+SELECT *
+FROM (
+    SELECT repo_id, number AS start_num, LEAD(number, 1) OVER (PARTITION BY repo_id ORDER BY number) AS end_num, is_pull
+    FROM github_events
+  ) t
+WHERE t.end_num - t.start_num > 1 AND is_pull = TRUE;
 `
 
 func (i *IngestorServer) continuityCheck() ([]*github.Issue, []*github.PullRequest, error) {
@@ -77,7 +77,7 @@ func (i *IngestorServer) continuityCheck() ([]*github.Issue, []*github.PullReque
 		owner := repo.Owner.Login
 		name := repo.Name
 
-		for j := *startNum; j <= *endNum; j++ {
+		for j := *startNum + 1; j < *endNum; j++ {
 			if *is_pull {
 				pull, _, err := client.PullRequests.Get(context.Background(), *owner, *name, j)
 				if err != nil {

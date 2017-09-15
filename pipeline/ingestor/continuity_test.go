@@ -105,8 +105,8 @@ func (tr testRows) Next(dest []driver.Value) error {
 		dest[0] = 1 // repo_id
 		// NOTE: This is what the query would return if the number 2 issue was
 		// missing from the table.
-		dest[1] = 2     // startNum issue
-		dest[2] = 2     // endNum issue
+		dest[1] = 1     // startNum issue
+		dest[2] = 3     // endNum issue
 		dest[3] = false // is_pull
 		startstop = false
 		return nil
