@@ -17,8 +17,8 @@ var (
 )
 
 type User struct {
-	Name string
-	Repo string
+	Owner string
+	Repo  string
 }
 
 type Config struct {
@@ -29,7 +29,7 @@ type Config struct {
 
 func checkTOML(users []User, owner, repo string) bool {
 	for _, user := range users {
-		if user.Name == owner && user.Repo == repo {
+		if user.Owner == owner && user.Repo == repo {
 			return true
 		}
 	}

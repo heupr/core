@@ -12,7 +12,7 @@ func Test_checkTOML(t *testing.T) {
 	owner := "darth-krayt"
 	repo := "sith-holocron"
 	users := []User{
-		User{Name: owner, Repo: repo},
+		User{Owner: owner, Repo: repo},
 	}
 	output := checkTOML(users, owner, repo)
 	expected := true

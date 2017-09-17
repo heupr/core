@@ -2,5 +2,13 @@ title = "Beta Whitelist"
 maximum = 200
 
 [[user]]
-name = "forstmeier"
-repo = "gpsi"
+owner = "dotnet"
+repo = "corefx"
+
+[[user]]
+owner = "tensorflow"
+repo = "tensorflow"
+
+[[user]]
+owner = "google"
+repo = "go-github"
