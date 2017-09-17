@@ -8,6 +8,19 @@ import (
 	"github.com/google/go-github/github"
 )
 
+func Test_checkTOML(t *testing.T) {
+	owner := "darth-krayt"
+	repo := "sith-holocron"
+	users := []User{
+		User{Name: owner, Repo: repo},
+	}
+	output := checkTOML(users, owner, repo)
+	expected := true
+	if output != expected {
+		t.Errorf("Returning incorrect status: expected %v, received %v", expected, output)
+	}
+}
+
 func TestAutomaticWhitelist(t *testing.T) {
 	name := "test-whitelist.db"
 	file, err := ioutil.TempFile("", name)
@@ -26,11 +39,10 @@ func TestAutomaticWhitelist(t *testing.T) {
 			Login: &l,
 		},
 	}
-	testToken := []byte("RIGHT!")
 
 	databaseName = name
 
-	err = testFS.AutomaticWhitelist(*testRepo, testToken)
+	err = testFS.AutomaticWhitelist(*testRepo)
 	if err != nil {
 		t.Errorf("automatic whitelist: %v", err)
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/boltdb/bolt"
 	"github.com/google/go-github/github"
-	// "github.com/spf13/viper"
 )
 
 var (
@@ -18,18 +17,26 @@ var (
 )
 
 type User struct {
-	Name  string
-	Repo  string
-	Token string
+	Name string
+	Repo string
 }
 
 type Config struct {
 	Title   string
 	Maximum int
-	user    []User
+	User    []User
 }
 
-func (fs *FrontendServer) AutomaticWhitelist(repo github.Repository, token []byte) error {
+func checkTOML(users []User, owner, repo string) bool {
+	for _, user := range users {
+		if user.Name == owner && user.Repo == repo {
+			return true
+		}
+	}
+	return false
+}
+
+func (fs *FrontendServer) AutomaticWhitelist(repo github.Repository) error {
 	boltDB, err := bolt.Open(databaseName, 0644, nil)
 	if err != nil {
 		return err
@@ -47,8 +54,10 @@ func (fs *FrontendServer) AutomaticWhitelist(repo github.Repository, token []byt
 			return err
 		}
 
-		if count <= config.Maximum {
-			content := []string{*repo.Owner.Login, *repo.Name}
+		repoOwner := *repo.Owner.Login
+		repoName := *repo.Name
+		if count <= config.Maximum || checkTOML(config.User, repoOwner, repoName) {
+			content := []string{repoOwner, repoName}
 			buf := &bytes.Buffer{}
 			gob.NewEncoder(buf).Encode(content)
 			info := buf.Bytes()
@@ -58,15 +67,10 @@ func (fs *FrontendServer) AutomaticWhitelist(repo github.Repository, token []byt
 				return err
 			}
 		} else {
-			e := fmt.Errorf("Maximum allowed beta users reached - see %v to adjust cap", whitelist)
-			fmt.Println(e)
+			e := fmt.Errorf("Maximum allowed beta users reached - see %v to adjust cap\nRejected: %v/%v", whitelist, repoOwner, repoName)
 			return e
 		}
 		return nil
 	})
 	return nil
-}
-
-func (fs *FrontendServer) ManualWhitelist() {
-
 }
