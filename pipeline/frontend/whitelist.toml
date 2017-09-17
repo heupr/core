@@ -1,0 +1,7 @@
+title = "Beta Whitelist"
+maximum = 200
+
+[[user]]
+name = "forstmeier"
+repo = "gpsi"
+token = "token-goes-here"
