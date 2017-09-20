@@ -13,7 +13,7 @@ var testBS = &BackendServer{
 }
 
 func TestNewArchRepo(t *testing.T) {
-	testBS.NewArchRepo(repoID)
+	testBS.NewArchRepo(repoID, 0)
 	if testBS.Repos.Actives[repoID] == nil {
 		t.Error("failure generating new arch repo")
 	}

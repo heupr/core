@@ -25,6 +25,11 @@ const options = `
         {{range $idx, $repo := .Repos}}
             <p><input type="checkbox" name="Repos.{{ $idx }}.ID" value="{{ $repo.ID }}">{{ $repo.Owner.Login }}/{{ $repo.Name }}</p>
         {{end}}
+        <p>Select range of issues to be assigned:</p>
+        <input type="radio" name="limit" value=5> Week<br>
+        <input type="radio" name="limit" value=30> Month<br>
+        <input type="radio" name="limit" value=365> Year<br>
+        <input type="radio" name="limit" value=100000 checked> All<br>
     </form>
         <p><a href="/setup_complete">Submit selection(s)</a></p>
     </body>
@@ -50,6 +55,7 @@ var decoder = schema.NewDecoder()
 
 type Resources struct {
 	Repos []*github.Repository
+	Limit int
 }
 
 func (fs *FrontendServer) githubCallbackHandlerTest(w http.ResponseWriter, r *http.Request) {
@@ -121,8 +127,7 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	oaClient := oaConfig.Client(oauth2.NoContext, token)
-	client := github.NewClient(oaClient)
+	client := github.NewClient(oaConfig.Client(oauth2.NoContext, token))
 
 	repos, err := listRepositories(client)
 	if err != nil {
@@ -138,7 +143,7 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		resources := Resources{repos}
+		resources := Resources{Repos: repos}
 		tmpl.Execute(w, resources)
 	} else {
 		r.ParseForm()
@@ -151,6 +156,7 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 		}
 		for i := 0; i < len(results.Repos); i++ {
 			repo := results.Repos[i]
+			limit := results.Limit
 			if err := fs.NewHook(repo, client); err != nil {
 				utils.AppLog.Error("repo hook placement: ", zap.Error(err))
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -170,9 +176,11 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			activationParams := struct {
 				Repo  github.Repository `json:"repo"`
 				Token *oauth2.Token     `json:"token"`
+				Limit int               `json:"limit"`
 			}{
 				*repo,
 				token,
+				limit,
 			}
 			payload, err := json.Marshal(activationParams)
 			if err != nil {

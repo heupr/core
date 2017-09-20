@@ -31,6 +31,7 @@ func (bs *BackendServer) activateHandler(w http.ResponseWriter, r *http.Request)
 	var activationParams struct {
 		Repo  github.Repository `json:"repo"`
 		Token *oauth2.Token     `json:"token"`
+		Limit int               `json:"limit"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&activationParams)
 	if err != nil {
@@ -38,8 +39,9 @@ func (bs *BackendServer) activateHandler(w http.ResponseWriter, r *http.Request)
 	}
 	repoID := *activationParams.Repo.ID
 	token := activationParams.Token
+	limit := activationParams.Limit
 	if bs.Repos.Actives[repoID] == nil {
-		bs.NewArchRepo(repoID)
+		bs.NewArchRepo(repoID, limit)
 		bs.NewClient(repoID, token)
 		bs.NewModel(repoID)
 	}
@@ -83,7 +85,7 @@ func (bs *BackendServer) Start() {
 			panic(err)
 		}
 		if _, ok := bs.Repos.Actives[key]; !ok {
-			bs.NewArchRepo(key)
+			bs.NewArchRepo(key, 0)
 			bs.NewClient(key, &token)
 			bs.NewModel(key)
 		}

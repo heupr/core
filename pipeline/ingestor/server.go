@@ -29,6 +29,7 @@ func (i *IngestorServer) activateHandler(w http.ResponseWriter, r *http.Request)
 	var activationParams struct {
 		Repo  github.Repository `json:"repo"`
 		Token *oauth2.Token     `json:"token"`
+		Limit int               `json:"limit"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&activationParams)
 	if err != nil {

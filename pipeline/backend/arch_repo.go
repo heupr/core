@@ -30,15 +30,18 @@ type ArchRepo struct {
 	sync.Mutex
 	Hive   *ArchHive
 	Client *github.Client
+	Limit  int
 }
 
-func (bs *BackendServer) NewArchRepo(repoID int) {
+func (bs *BackendServer) NewArchRepo(repoID, limit int) {
 	bs.Repos.Lock()
 	defer bs.Repos.Unlock()
 
 	bs.Repos.Actives[repoID] = new(ArchRepo)
 	bs.Repos.Actives[repoID].Hive = new(ArchHive)
 	bs.Repos.Actives[repoID].Hive.Blender = new(Blender)
+
+	bs.Repos.Actives[repoID].Limit = limit
 }
 
 func (bs *BackendServer) NewClient(repoID int, token *oauth2.Token) {
@@ -59,7 +62,15 @@ func (a *ArchRepo) TriageOpenIssues() {
 		return
 	}
 	openIssues := a.Hive.Blender.GetOpenIssues()
-	for i := 0; i < len(openIssues); i++ {
+
+	max := 0
+	if len(openIssues) < a.Limit {
+		max = len(openIssues)
+	} else {
+		max = a.Limit
+	}
+
+	for i := 0; i < max; i++ {
 		assignees := a.Hive.Blender.Predict(openIssues[i])
 		openIssues[i].Issue.Triaged = true
 		var name string
