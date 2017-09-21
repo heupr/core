@@ -37,10 +37,11 @@ func TestWorker(t *testing.T) {
 	}
 
 	issueID := 2187
+	created := time.Now()
 	work := &RepoData{
 		RepoID: repoID,
 		Open: []*github.Issue{
-			&github.Issue{ID: &issueID},
+			&github.Issue{ID: &issueID, CreatedAt: &created},
 		},
 	}
 

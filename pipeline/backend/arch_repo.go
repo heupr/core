@@ -2,14 +2,17 @@ package backend
 
 import (
 	"context"
-	"core/models"
-	"core/pipeline/gateway/conflation"
 	"core/utils"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
-	"strings"
-	"sync"
+
+	"core/models"
+	"core/pipeline/gateway/conflation"
 )
 
 type ArchModel struct {
@@ -19,9 +22,10 @@ type ArchModel struct {
 
 type Blender struct {
 	Models    []*ArchModel
-	Conflator *conflation.Conflator // MVP: Moving the Conflator from ArchModel
-} // to Blender. We might just need to circle back to this.
-
+	Conflator *conflation.Conflator
+	// MVP: Moving the Conflator from ArchModel
+	// to Blender. We might just need to circle back to this.
+}
 type ArchHive struct {
 	Blender *Blender
 }
@@ -64,59 +68,65 @@ func (a *ArchRepo) TriageOpenIssues() {
 	}
 	openIssues := a.Hive.Blender.GetOpenIssues()
 
-	max := 0
+	days := 0
 	if len(openIssues) < a.Limit {
-		max = len(openIssues)
+		days = len(openIssues)
 	} else {
-		max = a.Limit
+		days = a.Limit
 	}
 
-	for i := 0; i < max; i++ {
-		assignees := a.Hive.Blender.Predict(openIssues[i])
-		openIssues[i].Issue.Triaged = true
-		var name string
-		if openIssues[i].Issue.Repository.FullName != nil {
-			name = *openIssues[i].Issue.Repository.FullName
-		} else {
-			name = *openIssues[i].Issue.Repository.Name
-		}
-		r := strings.Split(name, "/")
-		number := *openIssues[i].Issue.Number
-		fallbackAssignee := new(string)
-		assigned := false
-		for i := 0; i < len(assignees); i++ {
-			assignee := assignees[i]
-			if assignmentsCap, ok := a.EligibleAssignees[assignee]; ok {
-				if fallbackAssignee == nil {
-					fallbackAssignee = &assignee
-				}
-				if assignmentsCount, ok := a.AssigneeAllocations[assignee]; ok {
-					if assignmentsCount < assignmentsCap {
-						_, _, err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{assignee})
-						if err != nil {
-							utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
+	today := time.Now()
+	past := today.AddDate(0, 0, -days)
+
+	for i := range openIssues {
+		opened := *openIssues[i].Issue.CreatedAt
+		if opened.Before(today) && opened.After(past) {
+			assignees := a.Hive.Blender.Predict(openIssues[i])
+			openIssues[i].Issue.Triaged = true
+			var name string
+			if openIssues[i].Issue.Repository.FullName != nil {
+				name = *openIssues[i].Issue.Repository.FullName
+			} else {
+				name = *openIssues[i].Issue.Repository.Name
+			}
+			r := strings.Split(name, "/")
+			number := *openIssues[i].Issue.Number
+			fallbackAssignee := new(string)
+			assigned := false
+			for i := 0; i < len(assignees); i++ {
+				assignee := assignees[i]
+				if assignmentsCap, ok := a.EligibleAssignees[assignee]; ok {
+					if fallbackAssignee == nil {
+						fallbackAssignee = &assignee
+					}
+					if assignmentsCount, ok := a.AssigneeAllocations[assignee]; ok {
+						if assignmentsCount < assignmentsCap {
+							_, _, err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{assignee})
+							if err != nil {
+								utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
+								break
+							}
+							assigned = true
+							assignmentsCount++
+							a.AssigneeAllocations[assignee] = assignmentsCount
 							break
 						}
-						assigned = true
-						assignmentsCount++
-						a.AssigneeAllocations[assignee] = assignmentsCount
-						break
 					}
 				}
 			}
-		}
-		if !assigned {
-			if fallbackAssignee == nil {
-				utils.AppLog.Error("AddAssignees Failed. Fallback assignee not found.", zap.String("URL", *openIssues[i].Issue.URL), zap.Int("IssueID", *openIssues[i].Issue.ID))
-				break
+			if !assigned {
+				if fallbackAssignee == nil {
+					utils.AppLog.Error("AddAssignees Failed. Fallback assignee not found.", zap.String("URL", *openIssues[i].Issue.URL), zap.Int("IssueID", *openIssues[i].Issue.ID))
+					break
+				}
+				_, _, err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{*fallbackAssignee})
+				if err != nil {
+					utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
+					break
+				}
+				assigned = true
+				a.AssigneeAllocations[*fallbackAssignee]++
 			}
-			_, _, err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{*fallbackAssignee})
-			if err != nil {
-				utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
-				break
-			}
-			assigned = true
-			a.AssigneeAllocations[*fallbackAssignee]++
 		}
 	}
 }
