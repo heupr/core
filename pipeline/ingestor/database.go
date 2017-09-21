@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
@@ -252,10 +253,12 @@ func (d *Database) ReadPullRequestTest() ([]github.PullRequest, error) {
 }
 
 func (d *Database) InsertIssue(issue github.Issue) {
+	d.LogAssignees(issue)
+
 	var buffer bytes.Buffer
-	eventsInsert := "INSERT INTO github_events(repo_id,issues_id,number,payload,is_pull,is_closed) VALUES"
-	eventsValuesFmt := "(?,?,?,?,0,?)"
-	numValues := 5
+	eventsInsert := "INSERT INTO github_events(repo_id,issues_id,number,payload,is_pull,is_closed,closed_at) VALUES"
+	eventsValuesFmt := "(?,?,?,?,0,?,?)"
+	numValues := 6
 
 	buffer.WriteString(eventsInsert)
 	buffer.WriteString(eventsValuesFmt)
@@ -270,6 +273,7 @@ func (d *Database) InsertIssue(issue github.Issue) {
 	} else {
 		values[4] = true
 	}
+	values[5] = issue.ClosedAt
 	result, err := d.db.Exec(buffer.String(), values...)
 	if err != nil {
 		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
@@ -283,6 +287,8 @@ func (d *Database) BulkInsertIssues(issues []*github.Issue) {
 	buffer := d.BufferPool.Get()
 
 	for i := 0; i < len(issues); i++ {
+		d.LogAssignees(*issues[i])
+
 		buffer.AppendInt(int64(*issues[i].Repository.ID))
 		buffer.AppendByte('~')
 		buffer.AppendInt(int64(*issues[i].ID))
@@ -296,8 +302,11 @@ func (d *Database) BulkInsertIssues(issues []*github.Issue) {
 		buffer.AppendByte('~')
 		if issues[i].ClosedAt == nil {
 			buffer.AppendInt(0)
+			buffer.AppendByte('~')
 		} else {
 			buffer.AppendInt(1)
+			buffer.AppendByte('~')
+			buffer.Write([]byte(issues[i].ClosedAt.Format(time.RFC3339Nano)))
 		}
 		buffer.AppendByte('\n')
 	}
@@ -310,7 +319,7 @@ func (d *Database) BulkInsertIssues(issues []*github.Issue) {
 		return sqlBuffer
 	})
 	defer mysql.DeregisterReaderHandler("data")
-	result, err := d.db.Exec("LOAD DATA LOCAL INFILE 'Reader::data' INTO TABLE github_events FIELDS TERMINATED BY '~' LINES TERMINATED BY '\n' (repo_id,issues_id,number,payload,is_pull,is_closed)")
+	result, err := d.db.Exec("LOAD DATA LOCAL INFILE 'Reader::data' INTO TABLE github_events FIELDS TERMINATED BY '~' LINES TERMINATED BY '\n' (repo_id,issues_id,number,payload,is_pull,is_closed,closed_at)")
 	if err != nil {
 		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
 	} else {
@@ -321,7 +330,7 @@ func (d *Database) BulkInsertIssues(issues []*github.Issue) {
 
 func (d *Database) InsertPullRequest(pull github.PullRequest) {
 	var buffer bytes.Buffer
-	eventsInsert := "INSERT INTO github_events(repo_id,issues_id,number,payload,is_pull,is_closed) VALUES"
+	eventsInsert := "INSERT INTO github_events(repo_id,issues_id,number,payload,is_pull,is_closed,closed_at) VALUES"
 	eventsValuesFmt := "(?,?,?,?,1,?)"
 	numValues := 5
 
@@ -338,6 +347,7 @@ func (d *Database) InsertPullRequest(pull github.PullRequest) {
 	} else {
 		values[4] = true
 	}
+	values[5] = pull.ClosedAt
 	result, err := d.db.Exec(buffer.String(), values...)
 	if err != nil {
 		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
@@ -364,8 +374,11 @@ func (d *Database) BulkInsertPullRequests(pulls []*github.PullRequest) {
 		buffer.AppendByte('~')
 		if pulls[i].ClosedAt == nil {
 			buffer.AppendInt(0)
+			buffer.AppendByte('~')
 		} else {
 			buffer.AppendInt(1)
+			buffer.AppendByte('~')
+			buffer.Write([]byte(pulls[i].ClosedAt.Format(time.RFC3339Nano)))
 		}
 		buffer.AppendByte('\n')
 	}
@@ -378,12 +391,77 @@ func (d *Database) BulkInsertPullRequests(pulls []*github.PullRequest) {
 		return sqlBuffer
 	})
 	defer mysql.DeregisterReaderHandler("data")
-	result, err := d.db.Exec("LOAD DATA LOCAL INFILE 'Reader::data' INTO TABLE github_events FIELDS TERMINATED BY '~' LINES TERMINATED BY '\n' (repo_id,issues_id,number,payload,is_pull,is_closed)")
+	result, err := d.db.Exec("LOAD DATA LOCAL INFILE 'Reader::data' INTO TABLE github_events FIELDS TERMINATED BY '~' LINES TERMINATED BY '\n' (repo_id,issues_id,number,payload,is_pull,is_closed,closed_at)")
 	if err != nil {
 		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
 	} else {
 		rows, _ := result.RowsAffected()
 		utils.AppLog.Info("Database Insert Success", zap.Int64("Rows", rows))
+	}
+}
+
+func (d *Database) LogAssignees(issue github.Issue) {
+	var assigneesID int64
+	var buffer bytes.Buffer
+	issueAssigneesInsert := "INSERT INTO github_issue_assignees(repo_id,issues_id,number,is_closed) VALUES"
+	issueAssigneesValuesFmt := "(?,?,?,?)"
+	issueAssigneesNumValues := 4
+
+	buffer.WriteString(issueAssigneesInsert)
+	buffer.WriteString(issueAssigneesValuesFmt)
+	values := make([]interface{}, issueAssigneesNumValues)
+	values[0] = issue.Repository.ID
+	values[1] = issue.ID
+	values[2] = issue.Number
+	if issue.ClosedAt == nil {
+		values[3] = false
+	} else {
+		values[3] = true
+	}
+
+	result, err := d.db.Exec(buffer.String(), values...)
+	if err != nil {
+		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+		return
+	} else {
+		rows, _ := result.RowsAffected()
+		assigneesID, _ = result.LastInsertId()
+		utils.AppLog.Debug("Database Insert Success", zap.Int64("Rows", rows))
+	}
+	buffer.Reset()
+
+	issueAssigneesLookupInsert := "INSERT INTO github_issue_assignees_lk(github_issue_assignees_fk, assignee) VALUES"
+	issueAssigneesLookupValuesFmt := "(?,?)"
+	issueAssigneesLookupNumValues := 2
+	if issue.Assignees != nil && len(issue.Assignees) > 0 {
+		issueAssigneesLookupNumValues = 2 * len(issue.Assignees)
+	}
+
+	buffer.WriteString(issueAssigneesLookupInsert)
+	values = make([]interface{}, issueAssigneesLookupNumValues)
+	if issue.Assignees != nil && len(issue.Assignees) > 0 {
+		delimeter := ""
+		for i := 0; i < len(issue.Assignees); i++ {
+			buffer.WriteString(delimeter)
+			buffer.WriteString(issueAssigneesLookupValuesFmt)
+			values[i+i+0] = assigneesID
+			values[i+i+1] = issue.Assignees[i].Login
+			delimeter = ","
+		}
+	} else {
+		values[0] = assigneesID
+		if issue.Assignee != nil {
+			values[1] = issue.Assignee.Login
+		}
+		buffer.WriteString(issueAssigneesLookupValuesFmt)
+	}
+
+	result, err = d.db.Exec(buffer.String(), values...)
+	if err != nil {
+		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+	} else {
+		rows, _ := result.RowsAffected()
+		utils.AppLog.Debug("Database Insert Success", zap.Int64("Rows", rows))
 	}
 }
 

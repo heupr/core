@@ -60,6 +60,9 @@ func (w *Worker) Start() {
 				utils.AppLog.Info("Blender.TrainModels() ", zap.Int("RepoID", repodata.RepoID))
 				repo.Hive.Blender.TrainModels()
 
+				repo.AssigneeAllocations = repodata.AssigneeAllocations
+				repo.EligibleAssignees = repodata.EligibleAssignees
+
 				utils.AppLog.Info("TriageOpenIssues() - Begin ", zap.Int("RepoID", repodata.RepoID))
 				repo.TriageOpenIssues()
 				utils.AppLog.Info("TriageOpenIssues() - Complete ", zap.Int("RepoID", repodata.RepoID))

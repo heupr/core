@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/google/go-github/github"
+	"reflect"
+	"strings"
 )
 
 var maxID = 0
@@ -19,10 +21,98 @@ group by repo_id, issues_id, number
 on T.id = g.id ` //MVP Workaround.
 
 type RepoData struct {
-	RepoID int
-	Open   []*github.Issue
-	Closed []*github.Issue
-	Pulls  []*github.PullRequest
+	RepoID              int
+	Open                []*github.Issue
+	Closed              []*github.Issue
+	Pulls               []*github.PullRequest
+	AssigneeAllocations map[string]int
+	EligibleAssignees   map[string]int //Assignees Active in the Past Year + Whitelist
+}
+
+func (m *MemSQL) ReadAssigneeAllocations(repos []interface{}) (map[int]map[string]int, error) {
+	ASSIGNEE_ALLOCATIONS_QUERY := `
+	select T2.repo_id, lk.assignee, count(*) as cnt
+	from (
+		select g.id, g.repo_id from github_issue_assignees g
+		join (
+			SELECT max(id) id
+			FROM github_issue_assignees
+	    where is_closed = false` + "and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" +
+		`group by repo_id, issues_id, number
+		) T
+		on T.id = g.id
+	) T2
+	join github_issue_assignees_lk lk on lk.github_issue_assignees_fk = T2.id
+	`
+
+	results, err := m.db.Query(ASSIGNEE_ALLOCATIONS_QUERY, repos...)
+	if err != nil {
+		return nil, err
+	}
+	defer results.Close()
+
+	allocations := make(map[int]map[string]int)
+	for results.Next() {
+		repo_id := new(int)
+		assignee := new(string)
+		count := new(int)
+		if err := results.Scan(repo_id, assignee, count); err != nil {
+			return nil, err
+		}
+		if _, ok := allocations[*repo_id]; !ok {
+			allocations[*repo_id] = make(map[string]int)
+		}
+		repoAllocations := allocations[*repo_id]
+		repoAllocations[*assignee] = *count
+	}
+	return allocations, nil
+}
+
+func (m *MemSQL) ReadEligibleAssignees(repos []interface{}) (map[int]map[string]int, error) {
+	//TODO: Include Merged PullRequest Users.
+	//TODO: Include users with a status of contributor in the repo
+	//TODO: Add a whitelist
+	RECENT_ASSIGNEES_QUERY := `
+	select distinct T3.repo_id, T3.assignee from github_events
+	where closed_at > DATE_SUB(curdate(), INTERVAL 1 YEAR)
+	and is_pull = false
+	` + "and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" + `
+	JOIN (
+	select T2.repo_id, T2.issues_id, lk.assignee
+	from (
+		select g.id, g.repo_id, g.issues_id from github_issue_assignees g
+		join (
+			SELECT max(id) id
+			FROM github_issue_assignees
+	    where is_closed = true` + "and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" + `
+			group by repo_id, issues_id, number
+		) T
+		on T.id = g.id
+	) T2
+	join github_issue_assignees_lk lk on lk.github_issue_assignees_fk = T2.id
+	) T3
+	on T3.issues_id = github_events.issues_id `
+
+	results, err := m.db.Query(RECENT_ASSIGNEES_QUERY, repos...)
+	if err != nil {
+		return nil, err
+	}
+	defer results.Close()
+
+	recentAssignees := make(map[int]map[string]int)
+	for results.Next() {
+		repo_id := new(int)
+		assignee := new(string)
+		if err := results.Scan(repo_id, assignee); err != nil {
+			return nil, err
+		}
+		if _, ok := recentAssignees[*repo_id]; !ok {
+			recentAssignees[*repo_id] = make(map[string]int)
+		}
+		repoAssignees := recentAssignees[*repo_id]
+		repoAssignees[*assignee] = 10
+	}
+	return recentAssignees, nil
 }
 
 func (m *MemSQL) Read() (map[int]*RepoData, error) {
@@ -74,6 +164,20 @@ func (m *MemSQL) Read() (map[int]*RepoData, error) {
 				repodata[*repo_id].Closed = append(repodata[*repo_id].Closed, &issue)
 			}
 		}
+	}
+	keys := reflect.ValueOf(repodata).MapKeys()
+	interfaceKeys := make([]interface{}, len(keys))
+	intKeys := make([]int, len(keys))
+	for i := 0; i < len(keys); i++ {
+		interfaceKeys[i] = keys[i].Interface()
+		intKeys[i] = int(keys[i].Int())
+	}
+	allocations, err := m.ReadAssigneeAllocations(interfaceKeys)
+	if err != nil {
+		return nil, err
+	}
+	for i := 0; i < len(intKeys); i++ {
+		repodata[i].AssigneeAllocations = allocations[i]
 	}
 	return repodata, nil
 }
