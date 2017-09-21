@@ -21,16 +21,16 @@ group by repo_id, issues_id, number
 on T.id = g.id ` //MVP Workaround.
 
 type RepoData struct {
-	RepoID int
-	Open   []*github.Issue
-	Closed []*github.Issue
-	Pulls  []*github.PullRequest
+	RepoID              int
+	Open                []*github.Issue
+	Closed              []*github.Issue
+	Pulls               []*github.PullRequest
 	AssigneeAllocations map[string]int
-	EligibleAssignees 	map[string]int //Assignees Active in the Past Year + Whitelist
+	EligibleAssignees   map[string]int //Assignees Active in the Past Year + Whitelist
 }
 
 func (m *MemSQL) ReadAssigneeAllocations(repos []interface{}) (map[int]map[string]int, error) {
-  ASSIGNEE_ALLOCATIONS_QUERY := `
+	ASSIGNEE_ALLOCATIONS_QUERY := `
 	select T2.repo_id, lk.assignee, count(*) as cnt
 	from (
 		select g.id, g.repo_id from github_issue_assignees g
@@ -38,7 +38,7 @@ func (m *MemSQL) ReadAssigneeAllocations(repos []interface{}) (map[int]map[strin
 			SELECT max(id) id
 			FROM github_issue_assignees
 	    where is_closed = false` + "and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" +
-			`group by repo_id, issues_id, number
+		`group by repo_id, issues_id, number
 		) T
 		on T.id = g.id
 	) T2
@@ -69,14 +69,14 @@ func (m *MemSQL) ReadAssigneeAllocations(repos []interface{}) (map[int]map[strin
 }
 
 func (m *MemSQL) ReadEligibleAssignees(repos []interface{}) (map[int]map[string]int, error) {
-//TODO: Include Merged PullRequest Users.
-//TODO: Include users with a status of contributor in the repo
-//TODO: Add a whitelist
- RECENT_ASSIGNEES_QUERY := `
+	//TODO: Include Merged PullRequest Users.
+	//TODO: Include users with a status of contributor in the repo
+	//TODO: Add a whitelist
+	RECENT_ASSIGNEES_QUERY := `
 	select distinct T3.repo_id, T3.assignee from github_events
 	where closed_at > DATE_SUB(curdate(), INTERVAL 1 YEAR)
 	and is_pull = false
-	`+ "and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" +`
+	` + "and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" + `
 	JOIN (
 	select T2.repo_id, T2.issues_id, lk.assignee
 	from (
@@ -84,7 +84,7 @@ func (m *MemSQL) ReadEligibleAssignees(repos []interface{}) (map[int]map[string]
 		join (
 			SELECT max(id) id
 			FROM github_issue_assignees
-	    where is_closed = true` + "and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" +`
+	    where is_closed = true` + "and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" + `
 			group by repo_id, issues_id, number
 		) T
 		on T.id = g.id

@@ -28,11 +28,11 @@ type ArchHive struct {
 
 type ArchRepo struct {
 	sync.Mutex
-	Hive   *ArchHive
-	Client *github.Client
-	Limit  int
+	Hive                *ArchHive
+	Client              *github.Client
+	Limit               int
 	AssigneeAllocations map[string]int
-	EligibleAssignees 	map[string]int
+	EligibleAssignees   map[string]int
 }
 
 func (bs *BackendServer) NewArchRepo(repoID, limit int) {

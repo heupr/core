@@ -444,8 +444,8 @@ func (d *Database) LogAssignees(issue github.Issue) {
 		for i := 0; i < len(issue.Assignees); i++ {
 			buffer.WriteString(delimeter)
 			buffer.WriteString(issueAssigneesLookupValuesFmt)
-			values[i + i + 0] = assigneesID
-			values[i + i + 1] = issue.Assignees[i].Login
+			values[i+i+0] = assigneesID
+			values[i+i+1] = issue.Assignees[i].Login
 			delimeter = ","
 		}
 	} else {
