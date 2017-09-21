@@ -31,6 +31,8 @@ type ArchRepo struct {
 	Hive   *ArchHive
 	Client *github.Client
 	Limit  int
+	AssigneeAllocations map[string]int
+	EligibleAssignees 	map[string]int
 }
 
 func (bs *BackendServer) NewArchRepo(repoID, limit int) {
@@ -57,7 +59,6 @@ func (bs *BackendServer) NewClient(repoID int, token *oauth2.Token) {
 
 func (a *ArchRepo) TriageOpenIssues() {
 	if !a.Hive.Blender.AllModelsBootstrapped() {
-		//TODO: Add Logging
 		utils.AppLog.Error("!AllModelsBootstrapped()")
 		return
 	}
@@ -81,9 +82,41 @@ func (a *ArchRepo) TriageOpenIssues() {
 		}
 		r := strings.Split(name, "/")
 		number := *openIssues[i].Issue.Number
-		_, _, err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{assignees[0]})
-		if err != nil {
-			utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
+		fallbackAssignee := new(string)
+		assigned := false
+		for i := 0; i < len(assignees); i++ {
+			assignee := assignees[i]
+			if assignmentsCap, ok := a.EligibleAssignees[assignee]; ok {
+				if fallbackAssignee == nil {
+					fallbackAssignee = &assignee
+				}
+				if assignmentsCount, ok := a.AssigneeAllocations[assignee]; ok {
+					if assignmentsCount < assignmentsCap {
+						_, _, err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{assignee})
+						if err != nil {
+							utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
+							break
+						}
+						assigned = true
+						assignmentsCount++
+						a.AssigneeAllocations[assignee] = assignmentsCount
+						break
+					}
+				}
+			}
+		}
+		if !assigned {
+			if fallbackAssignee == nil {
+				utils.AppLog.Error("AddAssignees Failed. Fallback assignee not found.", zap.String("URL", *openIssues[i].Issue.URL), zap.Int("IssueID", *openIssues[i].Issue.ID))
+				break
+			}
+			_, _, err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{*fallbackAssignee})
+			if err != nil {
+				utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
+				break
+			}
+			assigned = true
+			a.AssigneeAllocations[*fallbackAssignee]++
 		}
 	}
 }
