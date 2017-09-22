@@ -30,20 +30,23 @@ type RepoData struct {
 }
 
 func (m *MemSQL) ReadAssigneeAllocations(repos []interface{}) (map[int]map[string]int, error) {
-	ASSIGNEE_ALLOCATIONS_QUERY := `
-	select T2.repo_id, lk.assignee, count(*) as cnt
-	from (
-		select g.id, g.repo_id from github_issue_assignees g
-		join (
-			SELECT max(id) id
-			FROM github_issue_assignees
-	    where is_closed = false` + "and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" +
-		`group by repo_id, issues_id, number
-		) T
-		on T.id = g.id
-	) T2
-	join github_issue_assignees_lk lk on lk.github_issue_assignees_fk = T2.id
-	`
+	if len(repos) == 0 {
+		return nil, nil
+	}
+	/*
+		select T2.repo_id, lk.assignee, count(*) as cnt
+		from (
+			select g.id, g.repo_id from github_issue_assignees g
+			join (
+				SELECT max(id) id
+				FROM github_issue_assignees
+		    where is_closed = false` + `and repo_id in (?` + strings.Repeat(",?", len(repos)-1) + ") " +
+			 `group by repo_id, issues_id, number
+			 ) T on T.id = g.id
+		) T2
+		join github_issue_assignees_lk lk on lk.github_issue_assignees_fk = T2.id
+		` */
+	ASSIGNEE_ALLOCATIONS_QUERY := "select T2.repo_id, lk.assignee, count(*) as cnt from ( select g.id, g.repo_id from github_issue_assignees g join (SELECT max(id) id FROM github_issue_assignees where is_closed = false and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ") " + "group by repo_id, issues_id, number) T on T.id = g.id) T2 join github_issue_assignees_lk lk on lk.github_issue_assignees_fk = T2.id"
 
 	results, err := m.db.Query(ASSIGNEE_ALLOCATIONS_QUERY, repos...)
 	if err != nil {
@@ -72,26 +75,30 @@ func (m *MemSQL) ReadEligibleAssignees(repos []interface{}) (map[int]map[string]
 	//TODO: Include Merged PullRequest Users.
 	//TODO: Include users with a status of contributor in the repo
 	//TODO: Add a whitelist
-	RECENT_ASSIGNEES_QUERY := `
-	select distinct T3.repo_id, T3.assignee from github_events
-	where closed_at > DATE_SUB(curdate(), INTERVAL 1 YEAR)
-	and is_pull = false
-	` + "and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" + `
-	JOIN (
-	select T2.repo_id, T2.issues_id, lk.assignee
-	from (
-		select g.id, g.repo_id, g.issues_id from github_issue_assignees g
-		join (
-			SELECT max(id) id
-			FROM github_issue_assignees
-	    where is_closed = true` + "and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" + `
-			group by repo_id, issues_id, number
-		) T
-		on T.id = g.id
-	) T2
-	join github_issue_assignees_lk lk on lk.github_issue_assignees_fk = T2.id
-	) T3
-	on T3.issues_id = github_events.issues_id `
+	if len(repos) == 0 {
+		return nil, nil
+	}
+	/*
+	   select distinct T3.repo_id, T3.assignee from github_events
+	   JOIN (
+	   select T2.repo_id, T2.issues_id, lk.assignee
+	   from (
+	   	select g.id, g.repo_id, g.issues_id from github_issue_assignees g
+	   	join (
+	   		SELECT max(id) id
+	   		FROM github_issue_assignees
+	   		where is_closed = true` + " and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" + `
+	   		 group by repo_id, issues_id, number
+	   	) T
+	   	on T.id = g.id
+	   ) T2
+	   join github_issue_assignees_lk lk on lk.github_issue_assignees_fk = T2.id
+	   ) T3
+	   on T3.issues_id = github_events.issues_id
+	   where closed_at > DATE_SUB(curdate(), INTERVAL 1 YEAR)
+	   and is_pull = false
+	*/
+	RECENT_ASSIGNEES_QUERY := "select distinct T3.repo_id, T3.assignee from github_events JOIN (select T2.repo_id, T2.issues_id, lk.assignee from (select g.id, g.repo_id, g.issues_id from github_issue_assignees g join (SELECT max(id) id FROM github_issue_assignees where is_closed = true" + " and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" + "group by repo_id, issues_id, number) T on T.id = g.id) T2 join github_issue_assignees_lk lk on lk.github_issue_assignees_fk = T2.id) T3 on T3.issues_id = github_events.issues_id where closed_at > DATE_SUB(curdate(), INTERVAL 1 YEAR) and is_pull = false"
 
 	results, err := m.db.Query(RECENT_ASSIGNEES_QUERY, repos...)
 	if err != nil {
@@ -176,8 +183,14 @@ func (m *MemSQL) Read() (map[int]*RepoData, error) {
 	if err != nil {
 		return nil, err
 	}
+	eligibleAssignees, err := m.ReadEligibleAssignees(interfaceKeys)
+	if err != nil {
+		return nil, err
+	}
 	for i := 0; i < len(intKeys); i++ {
-		repodata[i].AssigneeAllocations = allocations[i]
+		repoID := intKeys[i]
+		repodata[repoID].AssigneeAllocations = allocations[repoID]
+		repodata[repoID].EligibleAssignees = eligibleAssignees[repoID]
 	}
 	return repodata, nil
 }
