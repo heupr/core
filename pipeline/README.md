@@ -1,4 +1,4 @@
-# Heupr&trade; Pipeline
+# Heupr Pipeline
 
 ## Description
 

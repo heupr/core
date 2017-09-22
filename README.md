@@ -1,4 +1,4 @@
-# Heupr&trade; Core
+# Heupr Core
 
 ### Build well
 

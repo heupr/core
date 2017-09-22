@@ -1,4 +1,4 @@
-# Heupr&trade; Utils
+# Heupr Utils
 
 ## Description
 

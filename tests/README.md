@@ -1,4 +1,4 @@
-# Heupr&trade; Tests
+# Heupr Tests
 
 ## Description
 
