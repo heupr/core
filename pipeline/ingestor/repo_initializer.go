@@ -1,8 +1,6 @@
 package ingestor
 
 import (
-	"fmt"
-
 	"core/pipeline/gateway"
 	"core/utils"
 )
@@ -28,7 +26,6 @@ func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
 		// TODO: Proper error handling should be evaluated for this method;
 		// possibly adjust to return an error variable.
 		utils.AppLog.Error(err.Error())
-		fmt.Println(err)
 	}
 	// The Repo struct needs to be added to the Issue struct body - this is
 	// possibly a bug in the GitHub API.
@@ -38,8 +35,6 @@ func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
 	githubPulls, err := newGateway.GetPullRequests(*authRepo.Repo.Owner.Login, *authRepo.Repo.Name)
 	if err != nil {
 		utils.AppLog.Error(err.Error())
-		fmt.Println(err)
 	}
-	db.BulkInsertIssues(githubIssues)
-	db.BulkInsertPullRequests(githubPulls)
+	db.BulkInsertIssuesPullRequests(githubIssues, githubPulls)
 }

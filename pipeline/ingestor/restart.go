@@ -186,8 +186,7 @@ func (i *IngestorServer) Restart() error {
 		for j := 0; j < len(missingIssues); j++ {
 			missingIssues[j].Repository = repo
 		}
-		i.Database.BulkInsertIssues(missingIssues)
-		i.Database.BulkInsertPullRequests(missingPulls)
+		i.Database.BulkInsertIssuesPullRequests(missingIssues, missingPulls)
 	}
 	return nil
 }

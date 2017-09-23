@@ -253,7 +253,7 @@ func (d *Database) ReadPullRequestTest() ([]github.PullRequest, error) {
 }
 
 func (d *Database) InsertIssue(issue github.Issue) {
-	d.LogAssignees(issue)
+	d.LogIssueAssignees(issue)
 
 	var buffer bytes.Buffer
 	eventsInsert := "INSERT INTO github_events(repo_id,issues_id,number,payload,is_pull,is_closed,closed_at) VALUES"
@@ -283,11 +283,84 @@ func (d *Database) InsertIssue(issue github.Issue) {
 	}
 }
 
+func (d *Database) BulkInsertIssuesPullRequests(issues []*github.Issue, pulls []*github.PullRequest) {
+	buffer := d.BufferPool.Get()
+
+	for i := 0; i < len(issues); i++ {
+		d.LogIssueAssignees(*issues[i])
+
+		buffer.AppendInt(int64(*issues[i].Repository.ID))
+		buffer.AppendByte('~')
+		buffer.AppendInt(int64(*issues[i].ID))
+		buffer.AppendByte('~')
+		buffer.AppendInt(int64(*issues[i].Number))
+		buffer.AppendByte('~')
+		payload, _ := json.Marshal(*issues[i])
+		_, _ = buffer.Write(escapeBytesBackslash(stripCtlAndExtFromBytes(payload)))
+		buffer.AppendByte('~')
+		buffer.AppendInt(0)
+		buffer.AppendByte('~')
+		if issues[i].ClosedAt == nil {
+			buffer.AppendInt(0)
+			buffer.AppendByte('~')
+		} else {
+			buffer.AppendInt(1)
+			buffer.AppendByte('~')
+			buffer.Write([]byte(issues[i].ClosedAt.Format(time.RFC3339Nano)))
+		}
+		buffer.AppendByte('\n')
+	}
+
+	for i := 0; i < len(pulls); i++ {
+		if pulls[i].Merged != nil && *pulls[i].Merged == true {
+			d.LogMergedPullRequestAssignees(*pulls[i])
+		}
+
+		buffer.AppendInt(int64(*pulls[i].Base.Repo.ID))
+		buffer.AppendByte('~')
+		buffer.AppendInt(int64(*pulls[i].ID))
+		buffer.AppendByte('~')
+		buffer.AppendInt(int64(*pulls[i].Number))
+		buffer.AppendByte('~')
+		payload, _ := json.Marshal(*pulls[i])
+		_, _ = buffer.Write(escapeBytesBackslash(stripCtlAndExtFromBytes(payload)))
+		buffer.AppendByte('~')
+		buffer.AppendInt(1)
+		buffer.AppendByte('~')
+		if pulls[i].ClosedAt == nil {
+			buffer.AppendInt(0)
+			buffer.AppendByte('~')
+		} else {
+			buffer.AppendInt(1)
+			buffer.AppendByte('~')
+			buffer.Write([]byte(pulls[i].ClosedAt.Format(time.RFC3339Nano)))
+		}
+		buffer.AppendByte('\n')
+	}
+
+	issues = nil //PERF: Mark for garbage collection
+	pulls = nil  //PERF: Mark for garbage collection
+	sqlBuffer := bytes.NewBuffer(buffer.Bytes())
+	buffer.Reset()
+	buffer.Free()
+	mysql.RegisterReaderHandler("data", func() io.Reader {
+		return sqlBuffer
+	})
+	defer mysql.DeregisterReaderHandler("data")
+	result, err := d.db.Exec("LOAD DATA LOCAL INFILE 'Reader::data' INTO TABLE github_events FIELDS TERMINATED BY '~' LINES TERMINATED BY '\n' (repo_id,issues_id,number,payload,is_pull,is_closed,closed_at)")
+	if err != nil {
+		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+	} else {
+		rows, _ := result.RowsAffected()
+		utils.AppLog.Info("Database Insert Success", zap.Int64("Rows", rows))
+	}
+}
+
 func (d *Database) BulkInsertIssues(issues []*github.Issue) {
 	buffer := d.BufferPool.Get()
 
 	for i := 0; i < len(issues); i++ {
-		d.LogAssignees(*issues[i])
+		d.LogIssueAssignees(*issues[i])
 
 		buffer.AppendInt(int64(*issues[i].Repository.ID))
 		buffer.AppendByte('~')
@@ -329,6 +402,9 @@ func (d *Database) BulkInsertIssues(issues []*github.Issue) {
 }
 
 func (d *Database) InsertPullRequest(pull github.PullRequest) {
+	if pull.Merged != nil && *pull.Merged == true {
+		d.LogMergedPullRequestAssignees(pull)
+	}
 	var buffer bytes.Buffer
 	eventsInsert := "INSERT INTO github_events(repo_id,issues_id,number,payload,is_pull,is_closed,closed_at) VALUES"
 	eventsValuesFmt := "(?,?,?,?,1,?)"
@@ -361,6 +437,10 @@ func (d *Database) BulkInsertPullRequests(pulls []*github.PullRequest) {
 	buffer := d.BufferPool.Get()
 
 	for i := 0; i < len(pulls); i++ {
+		if pulls[i].Merged != nil && *pulls[i].Merged == true {
+			d.LogMergedPullRequestAssignees(*pulls[i])
+		}
+
 		buffer.AppendInt(int64(*pulls[i].Base.Repo.ID))
 		buffer.AppendByte('~')
 		buffer.AppendInt(int64(*pulls[i].ID))
@@ -400,11 +480,11 @@ func (d *Database) BulkInsertPullRequests(pulls []*github.PullRequest) {
 	}
 }
 
-func (d *Database) LogAssignees(issue github.Issue) {
+func (d *Database) LogIssueAssignees(issue github.Issue) {
 	var assigneesID int64
 	var buffer bytes.Buffer
-	issueAssigneesInsert := "INSERT INTO github_issue_assignees(repo_id,issues_id,number,is_closed) VALUES"
-	issueAssigneesValuesFmt := "(?,?,?,?)"
+	issueAssigneesInsert := "INSERT INTO github_event_assignees(repo_id,issues_id,number,is_closed, is_pull) VALUES"
+	issueAssigneesValuesFmt := "(?,?,?,?,0)"
 	issueAssigneesNumValues := 4
 
 	buffer.WriteString(issueAssigneesInsert)
@@ -430,7 +510,7 @@ func (d *Database) LogAssignees(issue github.Issue) {
 	}
 	buffer.Reset()
 
-	issueAssigneesLookupInsert := "INSERT INTO github_issue_assignees_lk(github_issue_assignees_fk, assignee) VALUES"
+	issueAssigneesLookupInsert := "INSERT INTO github_event_assignees_lk(github_event_assignees_fk, assignee) VALUES"
 	issueAssigneesLookupValuesFmt := "(?,?)"
 	issueAssigneesLookupNumValues := 2
 	if issue.Assignees != nil && len(issue.Assignees) > 0 {
@@ -455,6 +535,57 @@ func (d *Database) LogAssignees(issue github.Issue) {
 		}
 		buffer.WriteString(issueAssigneesLookupValuesFmt)
 	}
+
+	result, err = d.db.Exec(buffer.String(), values...)
+	if err != nil {
+		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+	} else {
+		rows, _ := result.RowsAffected()
+		utils.AppLog.Debug("Database Insert Success", zap.Int64("Rows", rows))
+	}
+}
+
+func (d *Database) LogMergedPullRequestAssignees(pull github.PullRequest) {
+	var assigneesID int64
+	var buffer bytes.Buffer
+	pullAssigneesInsert := "INSERT INTO github_event_assignees(repo_id,issues_id,number,is_closed, is_pull) VALUES"
+	pullAssigneesValuesFmt := "(?,?,?,?,1)"
+	pullAssigneesNumValues := 4
+
+	buffer.WriteString(pullAssigneesInsert)
+	buffer.WriteString(pullAssigneesValuesFmt)
+	values := make([]interface{}, pullAssigneesNumValues)
+	values[0] = pull.Base.Repo.ID
+	values[1] = pull.ID
+	values[2] = pull.Number
+	if pull.ClosedAt == nil {
+		values[3] = false
+	} else {
+		values[3] = true
+	}
+
+	result, err := d.db.Exec(buffer.String(), values...)
+	if err != nil {
+		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+		return
+	} else {
+		rows, _ := result.RowsAffected()
+		assigneesID, _ = result.LastInsertId()
+		utils.AppLog.Debug("Database Insert Success", zap.Int64("Rows", rows))
+	}
+	buffer.Reset()
+
+	pullAssigneesLookupInsert := "INSERT INTO github_event_assignees_lk(github_event_assignees_fk, assignee) VALUES"
+	pullAssigneesLookupValuesFmt := "(?,?)"
+	pullAssigneesLookupNumValues := 2
+
+	buffer.WriteString(pullAssigneesLookupInsert)
+	values = make([]interface{}, pullAssigneesLookupNumValues)
+	values[0] = assigneesID
+	if pull.User != nil {
+		values[1] = pull.User.Login
+	}
+	buffer.WriteString(pullAssigneesLookupValuesFmt)
 
 	result, err = d.db.Exec(buffer.String(), values...)
 	if err != nil {

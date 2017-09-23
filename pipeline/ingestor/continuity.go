@@ -113,8 +113,7 @@ func (i *IngestorServer) Continuity() {
 			if err != nil {
 				utils.AppLog.Error("continuity check", zap.Error(err))
 			}
-			i.Database.BulkInsertIssues(issues)
-			i.Database.BulkInsertPullRequests(pulls)
+			i.Database.BulkInsertIssuesPullRequests(issues, pulls)
 		case <-ender:
 			ticker.Stop()
 			return

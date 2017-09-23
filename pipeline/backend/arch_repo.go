@@ -66,21 +66,11 @@ func (a *ArchRepo) TriageOpenIssues() {
 		utils.AppLog.Error("!AllModelsBootstrapped()")
 		return
 	}
+	cutoff := time.Now().AddDate(0, 0, -a.Limit)
+
 	openIssues := a.Hive.Blender.GetOpenIssues()
-
-	days := 0
-	if len(openIssues) < a.Limit {
-		days = len(openIssues)
-	} else {
-		days = a.Limit
-	}
-
-	today := time.Now()
-	past := today.AddDate(0, 0, -days)
-
-	for i := range openIssues {
-		opened := *openIssues[i].Issue.CreatedAt
-		if opened.Before(today) && opened.After(past) {
+	for i := 0; i < len(openIssues); i++ {
+		if openIssues[i].Issue.CreatedAt.After(cutoff) {
 			assignees := a.Hive.Blender.Predict(openIssues[i])
 			openIssues[i].Issue.Triaged = true
 			var name string
