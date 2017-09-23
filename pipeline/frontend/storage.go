@@ -7,7 +7,8 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-// Buckets thus far are "hook" and "token" with keys named "repoID".
+// Buckets thus far are "hook" and "token" with keys named "repoID."
+// There is also a bucket for "limit" which is being used in the beta.
 type BoltDB struct {
 	DB *bolt.DB
 }
@@ -18,6 +19,9 @@ func (b *BoltDB) Initialize() error {
 			return err
 		}
 		if _, err := tx.CreateBucketIfNotExists([]byte("hook")); err != nil {
+			return err
+		}
+		if _, err := tx.CreateBucketIfNotExists([]byte("limit")); err != nil {
 			return err
 		}
 		return nil

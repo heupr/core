@@ -34,12 +34,12 @@ type ArchRepo struct {
 	sync.Mutex
 	Hive                *ArchHive
 	Client              *github.Client
-	Limit               int
+	Limit               time.Time
 	AssigneeAllocations map[string]int
 	EligibleAssignees   map[string]int
 }
 
-func (bs *BackendServer) NewArchRepo(repoID, limit int) {
+func (bs *BackendServer) NewArchRepo(repoID int, limit time.Time) {
 	bs.Repos.Lock()
 	defer bs.Repos.Unlock()
 
@@ -66,11 +66,10 @@ func (a *ArchRepo) TriageOpenIssues() {
 		utils.AppLog.Error("!AllModelsBootstrapped()")
 		return
 	}
-	cutoff := time.Now().AddDate(0, 0, -a.Limit)
 
 	openIssues := a.Hive.Blender.GetOpenIssues()
 	for i := 0; i < len(openIssues); i++ {
-		if openIssues[i].Issue.CreatedAt.After(cutoff) {
+		if openIssues[i].Issue.CreatedAt.After(a.Limit) {
 			assignees := a.Hive.Blender.Predict(openIssues[i])
 			openIssues[i].Issue.Triaged = true
 			var name string

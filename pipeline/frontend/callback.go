@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"net/http"
+	"time"
 
 	"github.com/google/go-github/github"
 	"github.com/gorilla/schema"
@@ -156,7 +157,8 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 		}
 		for i := 0; i < len(results.Repos); i++ {
 			repo := results.Repos[i]
-			limit := results.Limit
+			limit := time.Now().AddDate(0, 0, -results.Limit)
+
 			if err := fs.NewHook(repo, client); err != nil {
 				utils.AppLog.Error("repo hook placement: ", zap.Error(err))
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -164,19 +166,31 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			}
 			tokenByte, err := json.Marshal(token)
 			if err != nil {
-				utils.AppLog.Error("failure converting callback token: ", zap.Error(err))
+				utils.AppLog.Error("converting callback token: ", zap.Error(err))
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			if err := fs.Database.Store("token", *repo.ID, tokenByte); err != nil {
-				utils.AppLog.Error("failure storing token in bolt: ", zap.Error(err))
+				utils.AppLog.Error("storing token in bolt: ", zap.Error(err))
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			limitByte, err := json.Marshal(limit)
+			if err != nil {
+				utils.AppLog.Error("converting callback limit: ", zap.Error(err))
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if err := fs.Database.Store("limit", *repo.ID, limitByte); err != nil {
+				utils.AppLog.Error("storing limit in bolt: ", zap.Error(err))
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			activationParams := struct {
 				Repo  github.Repository `json:"repo"`
 				Token *oauth2.Token     `json:"token"`
-				Limit int               `json:"limit"`
+				Limit time.Time         `json:"limit"`
 			}{
 				*repo,
 				token,

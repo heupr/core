@@ -36,12 +36,35 @@ func TestWorker(t *testing.T) {
 		},
 	}
 
-	issueID := 2187
+	fullname := "skywalker/t-16"
 	created := time.Now()
+	n1 := 1
+	i := []*github.Issue{
+		&github.Issue{
+			Number: &n1,
+			Repository: &github.Repository{
+				FullName: &fullname,
+			},
+			CreatedAt: &created,
+		},
+	}
+
+	bs.Repos.Actives[repoID].Hive.Blender.Conflator.SetIssueRequests(i)
+	bs.Repos.Actives[repoID].Limit = time.Now() //.AddDate(0, 0, -1)
+
+	issueID := 2187
+	n2 := 2
 	work := &RepoData{
 		RepoID: repoID,
 		Open: []*github.Issue{
-			&github.Issue{ID: &issueID, CreatedAt: &created},
+			&github.Issue{
+				ID:        &issueID,
+				Number:    &n2,
+				CreatedAt: &created,
+				Repository: &github.Repository{
+					FullName: &fullname,
+				},
+			},
 		},
 	}
 

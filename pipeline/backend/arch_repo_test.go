@@ -2,6 +2,7 @@ package backend
 
 import (
 	"testing"
+	"time"
 
 	"golang.org/x/oauth2"
 )
@@ -13,7 +14,8 @@ var testBS = &BackendServer{
 }
 
 func TestNewArchRepo(t *testing.T) {
-	testBS.NewArchRepo(repoID, 0)
+	testTime := time.Time{}
+	testBS.NewArchRepo(repoID, testTime)
 	if testBS.Repos.Actives[repoID] == nil {
 		t.Error("failure generating new arch repo")
 	}

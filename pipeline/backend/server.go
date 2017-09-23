@@ -31,7 +31,7 @@ func (bs *BackendServer) activateHandler(w http.ResponseWriter, r *http.Request)
 	var activationParams struct {
 		Repo  github.Repository `json:"repo"`
 		Token *oauth2.Token     `json:"token"`
-		Limit int               `json:"limit"`
+		Limit time.Time         `json:"limit"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&activationParams)
 	if err != nil {
@@ -69,7 +69,18 @@ func (bs *BackendServer) Start() {
 
 	keys, tokens, err := boltDB.RetrieveBulk("token")
 	if err != nil {
-		utils.AppLog.Error("backend server: ", zap.Error(err))
+		utils.AppLog.Error("retrieve bulk tokens:", zap.Error(err))
+		panic(err)
+	}
+
+	_, limits, err := boltDB.RetrieveBulk("limit")
+	if err != nil {
+		utils.AppLog.Error("retrieve bulk limits:", zap.Error(err))
+		panic(err)
+	}
+
+	if len(tokens) != len(limits) {
+		utils.AppLog.Error("bolt db buckets are not equal size")
 		panic(err)
 	}
 
@@ -84,8 +95,14 @@ func (bs *BackendServer) Start() {
 			utils.AppLog.Error("backend server: ", zap.Error(err))
 			panic(err)
 		}
+
+		limit := time.Time{}
+		if err := json.Unmarshal(limits[i], &limit); err != nil {
+			utils.AppLog.Error("backend server: ", zap.Error(err))
+			panic(err)
+		}
 		if _, ok := bs.Repos.Actives[key]; !ok {
-			bs.NewArchRepo(key, 0)
+			bs.NewArchRepo(key, limit)
 			bs.NewClient(key, &token)
 			bs.NewModel(key)
 		}
