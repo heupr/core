@@ -104,7 +104,7 @@ func (b *BacktestServer) AddRepo(id int, org string, name string) {
 	url, _ := url.Parse(localPath)
 	client.BaseURL = url
 	client.UploadURL = url
-	repo := ingestor.AuthenticatedRepo{Repo: &github.Repository{ID: github.Int(id), Organization: &github.Organization{Name: github.String(org)}, Name: github.String(name), FullName: github.String(org + "/" + name)}, Client: client}
+	repo := ingestor.AuthenticatedRepo{Repo: &github.Repository{ID: github.Int(id), Owner: &github.User{Login: github.String(org)}, Name: github.String(name), FullName: github.String(org + "/" + name)}, Client: client}
 	b.repoInitializer.AddRepo(repo)
 }
 

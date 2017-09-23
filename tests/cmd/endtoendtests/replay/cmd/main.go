@@ -62,19 +62,18 @@ func main() {
 			backendServer.Repos.Actives[*repo.ID].Client = client
 		}
 
-		go backendServer.Start()
-
 		for i := 0; i < len(repos); i++ {
 			repo := repos[i]
 			bs.AddRepo(*repo.ID, *repo.Organization.Name, *repo.Name)
 		}
 
-		backendServer.OpenSQL()
-		backendServer.Timer()
+		bs.StreamWebhookEvents()
+		go backendServer.Start()
+
 
 		//time.Sleep(5 * time.Second)
 
-		bs.StreamWebhookEvents()
+
 
 		//time.Sleep(15 * time.Second)
 

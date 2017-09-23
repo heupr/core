@@ -168,7 +168,7 @@ func (d *Database) ReadBacktestRepos() ([]github.Repository, error) {
 		select count(*) cnt, repo_name, repo_id from backtest_events where is_pull = 0 and is_closed = 1 and repo_name != 'chrsmith/google-api-java-client'
 		group by repo_name
 	) T
-	order by T.cnt desc LIMIT 15
+	order by T.cnt desc LIMIT 3
     `)
 	if err != nil {
 		return nil, err
