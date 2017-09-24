@@ -3,6 +3,7 @@ package frontend
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"net/http"
 	"time"
@@ -60,7 +61,7 @@ type Resources struct {
 }
 
 func (fs *FrontendServer) githubCallbackHandlerTest(w http.ResponseWriter, r *http.Request) {
-	testToken := &oauth2.Token{AccessToken: "Enter A Token"}
+	testToken := &oauth2.Token{AccessToken: "TEST TOKEN"}
 	oaClient := oaConfig.Client(oauth2.NoContext, testToken)
 	client := github.NewClient(oaClient)
 	repo := github.Repository{ID: github.Int(81689981), Owner: &github.User{Login: github.String("heupr")}, Name: github.String("test")}
@@ -84,12 +85,27 @@ func (fs *FrontendServer) githubCallbackHandlerTest(w http.ResponseWriter, r *ht
 		return
 	}
 
+	limit := time.Now().AddDate(0, 0, -5)
+	limitByte, err := json.Marshal(limit)
+	if err != nil {
+		utils.AppLog.Error("converting callback limit: ", zap.Error(err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := fs.Database.Store("limit", *repo.ID, limitByte); err != nil {
+		utils.AppLog.Error("storing limit in bolt: ", zap.Error(err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	activationParams := struct {
 		Repo  github.Repository `json:"repo"`
 		Token *oauth2.Token     `json:"token"`
+		Limit time.Time         `json:"limit"`
 	}{
 		repo,
 		testToken,
+		limit,
 	}
 	payload, err := json.Marshal(activationParams)
 	if err != nil {
@@ -217,11 +233,13 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			} else {
 				defer resp.Body.Close()
 			}
+            utils.SlackLog.Info(fmt.Sprintf("Signup %v", *repo.FullName))
 		}
 	}
 }
 
 func completeHandle(w http.ResponseWriter, r *http.Request) {
+	utils.SlackLog.Info("Complete handle entered - user signed up")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(setup))

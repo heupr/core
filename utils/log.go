@@ -1,13 +1,17 @@
 package utils
 
 import (
-	"go.uber.org/zap"
 	"log"
 	"sync"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/johntdyer/slackrus"
+	"go.uber.org/zap"
 )
 
 var AppLog *zap.Logger
 var ModelLog *zap.Logger
+var SlackLog *logrus.Logger
 
 var initOnceLog sync.Once
 
@@ -15,6 +19,7 @@ func init() {
 	initOnceLog.Do(func() {
 		AppLog = IntializeLog(Config.AppLogPath)
 		ModelLog = IntializeLog(Config.ModelLogPath)
+        SlackLog = InitializeSlackLog()
 	})
 }
 
@@ -27,4 +32,16 @@ func IntializeLog(logPath string) *zap.Logger {
 		log.Fatal(err)
 	}
 	return logger
+}
+
+func InitializeSlackLog() *logrus.Logger {
+	logInstance := logrus.New()
+	logInstance.Formatter = new(logrus.TextFormatter)
+	logInstance.Hooks.Add(&slackrus.SlackrusHook{
+		HookURL:        "https://hooks.slack.com/services/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",
+		AcceptedLevels: slackrus.LevelThreshold(logrus.InfoLevel),
+		Channel:        "#gcp",
+		Username:       "gcp-slack-bot",
+	})
+	return logInstance
 }
