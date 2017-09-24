@@ -6,6 +6,7 @@ import (
 	"github.com/google/go-github/github"
 	"reflect"
 	"strings"
+	"core/utils"
 )
 
 var maxID = 0
@@ -44,9 +45,9 @@ func (m *MemSQL) ReadAssigneeAllocations(repos []interface{}) (map[int]map[strin
 			 `group by repo_id, issues_id, number
 			 ) T on T.id = g.id
 		) T2
-		join github_event_assignees_lk lk on lk.github_event_assignees_fk = T2.id
+		join github_event_assignees_lk lk on lk.github_event_assignees_fk = T2.id and lk.assignee is not null
 		` */
-	ASSIGNEE_ALLOCATIONS_QUERY := "select T2.repo_id, lk.assignee, count(*) as cnt from ( select g.id, g.repo_id from github_event_assignees g join (SELECT max(id) id FROM github_event_assignees where is_closed = false and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ") " + "group by repo_id, issues_id, number) T on T.id = g.id) T2 join github_event_assignees_lk lk on lk.github_event_assignees_fk = T2.id"
+	ASSIGNEE_ALLOCATIONS_QUERY := "select T2.repo_id, lk.assignee, count(*) as cnt from ( select g.id, g.repo_id from github_event_assignees g join (SELECT max(id) id FROM github_event_assignees where is_closed = false and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ") " + "group by repo_id, issues_id, number) T on T.id = g.id) T2 join github_event_assignees_lk lk on lk.github_event_assignees_fk = T2.id and lk.assignee is not null"
 
 	results, err := m.db.Query(ASSIGNEE_ALLOCATIONS_QUERY, repos...)
 	if err != nil {
@@ -180,10 +181,12 @@ func (m *MemSQL) Read() (map[int]*RepoData, error) {
 	}
 	allocations, err := m.ReadAssigneeAllocations(interfaceKeys)
 	if err != nil {
+		utils.AppLog.Error("Database read failure. ReadAssigneeAllocations()")
 		return nil, err
 	}
 	eligibleAssignees, err := m.ReadEligibleAssignees(interfaceKeys)
 	if err != nil {
+		utils.AppLog.Error("Database read failure. ReadEligibleAssignees()")
 		return nil, err
 	}
 	for i := 0; i < len(intKeys); i++ {

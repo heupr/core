@@ -80,7 +80,7 @@ func (a *ArchRepo) TriageOpenIssues() {
 			}
 			r := strings.Split(name, "/")
 			number := *openIssues[i].Issue.Number
-			fallbackAssignee := new(string)
+			var fallbackAssignee *string
 			assigned := false
 			for i := 0; i < len(assignees); i++ {
 				assignee := assignees[i]
