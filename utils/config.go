@@ -33,8 +33,8 @@ var Config Configuration
 func init() {
 	initOnceCnf.Do(func() {
 		viper.SetConfigName("config")                                             // name of the config file
-		viper.AddConfigPath(".")                                                  // look for config in the working directory
-		viper.AddConfigPath("$GOPATH/src/core/tests/cmd/backtests/bhattacharya/") // optionally look here
+		viper.AddConfigPath("$GOPATH/src/core/tests/cmd/backtests/bhattacharya/") // look for config in the working directory
+		viper.AddConfigPath(".")                                                  // optionally for config in the working directory
 
 		err := viper.ReadInConfig() // Find and read the config file
 		if err != nil {             // Handle errors reading the config file
