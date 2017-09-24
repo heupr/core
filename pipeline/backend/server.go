@@ -124,7 +124,7 @@ func (bs *BackendServer) CloseSQL() {
 
 // Periodically conducts pulldowns from the MemSQL database for processing.
 func (bs *BackendServer) Timer(ender chan bool) {
-	ticker := time.NewTicker(time.Second * 30)
+	ticker := time.NewTicker(time.Second * 5)
 
 	bs.Dispatcher(10)
 
