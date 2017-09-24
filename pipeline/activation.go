@@ -23,7 +23,7 @@ func (as *ActivationServer) activationServerHandler(w http.ResponseWriter, r *ht
 		utils.AppLog.Error("failed to read payload:", zap.Error(err))
 		return
 	}
-	for i := range destinationPorts {
+	for i := range activationEndpoints {
 		req, err := http.NewRequest("POST", activationEndpoints[i], bytes.NewBuffer(payload))
 		if err != nil {
 			utils.AppLog.Error("failed to create http request:", zap.Error(err))

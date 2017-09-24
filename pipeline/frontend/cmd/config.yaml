@@ -4,7 +4,7 @@ datacachespath: $GOPATH/src/core/data/caches
 boltdbpath: $GOPATH/src/core/data/bolt/storage.db
 activationserveraddress: "10.142.1.0:8010"
 activationserviceendpoint: "http://10.142.1.0:8010/activate-service"
-ingestorserveraddress: "10.142.1.0:8030"
+ingestorserveraddress: "10.142.1.0:8020"
 ingestoractivationendpoint: "http://10.142.1.0:8020/activate-ingestor-backend"
-backendserveraddress: "10.142.1.0:8020"
+backendserveraddress: "10.142.1.0:8030"
 backendactivationendpoint: "http://10.142.1.0:8030/activate-ingestor-backend"
