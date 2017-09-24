@@ -34,7 +34,7 @@ func (fs *FrontendServer) Start() {
 	}
 	fs.CloseBolt()
 	fs.httpClient = http.Client{Timeout: time.Second * 10}
-	fs.Server = http.Server{Addr: "127.0.0.1:8080", Handler: fs.routes()}
+	fs.Server = http.Server{Addr: "10.142.1.0:8080", Handler: fs.routes()}
 	if err := fs.Server.ListenAndServe(); err != nil {
 		utils.AppLog.Error("frontend server failed to start", zap.Error(err))
 		panic(err)
