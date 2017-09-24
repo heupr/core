@@ -69,7 +69,7 @@ func (i *IngestorServer) Start() error {
 	i.RepoInitializer = RepoInitializer{}
 	i.Restart()
 	i.Continuity()
-	i.Server = http.Server{Addr: "127.0.0.1:8030", Handler: i.routes()}
+	i.Server = http.Server{Addr: utils.Config.IngestorServerAddress, Handler: i.routes()}
 	err := i.Server.ListenAndServe()
 	if err != nil {
 		utils.AppLog.Error("ingestor server failed to start; ", zap.Error(err))

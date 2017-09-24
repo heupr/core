@@ -11,25 +11,20 @@ import (
 	"core/utils"
 )
 
-var (
-	destinationBase  = "http://127.0.0.1"
-	destinationPorts = []string{":8020", ":8030"}
-	destinationEnd   = "/activate-ingestor-backend"
-)
-
 type ActivationServer struct {
 	Server     http.Server
 	httpClient http.Client
 }
 
 func (as *ActivationServer) activationServerHandler(w http.ResponseWriter, r *http.Request) {
+	activationEndpoints := []string{utils.Config.IngestorActivationEndpoint, utils.Config.BackendActivationEndpoint}
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		utils.AppLog.Error("failed to read payload:", zap.Error(err))
 		return
 	}
 	for i := range destinationPorts {
-		req, err := http.NewRequest("POST", destinationBase+destinationPorts[i]+destinationEnd, bytes.NewBuffer(payload))
+		req, err := http.NewRequest("POST", activationEndpoints[i], bytes.NewBuffer(payload))
 		if err != nil {
 			utils.AppLog.Error("failed to create http request:", zap.Error(err))
 			continue
@@ -51,7 +46,7 @@ func (as *ActivationServer) Start() {
 	mux.HandleFunc("/activate-service", as.activationServerHandler)
 
 	as.Server = http.Server{
-		Addr:    "127.0.0.1:8010",
+		Addr:    utils.Config.ActivationServerAddress,
 		Handler: mux,
 	}
 	as.Server.ListenAndServe()

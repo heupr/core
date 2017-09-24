@@ -51,7 +51,7 @@ func (bs *BackendServer) Start() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/activate-ingestor-backend", bs.activateHandler)
 	bs.Server = http.Server{
-		Addr:    "127.0.0.1:8020",
+		Addr:    utils.Config.BackendServerAddress,
 		Handler: mux,
 	}
 	bs.OpenSQL()

@@ -98,6 +98,10 @@ func (tr testRows) Close() error {
 
 var startstop = true
 
+func destPopulator(dest *[]interface{}, new []interface{}) {
+	*dest = new
+}
+
 func (tr testRows) Next(dest []driver.Value) error {
 	if startstop {
 		// NOTE: Below is a commented list of the corresponding database

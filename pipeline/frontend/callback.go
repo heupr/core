@@ -233,7 +233,7 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			} else {
 				defer resp.Body.Close()
 			}
-            utils.SlackLog.Info(fmt.Sprintf("Signup %v", *repo.FullName))
+			utils.SlackLog.Info(fmt.Sprintf("Signup %v", *repo.FullName))
 		}
 	}
 }

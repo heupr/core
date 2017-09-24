@@ -19,7 +19,7 @@ func init() {
 	initOnceLog.Do(func() {
 		AppLog = IntializeLog(Config.AppLogPath)
 		ModelLog = IntializeLog(Config.ModelLogPath)
-        SlackLog = InitializeSlackLog()
+		SlackLog = InitializeSlackLog()
 	})
 }
 
