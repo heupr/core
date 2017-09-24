@@ -1,6 +1,10 @@
-# Ignore storage file until a more robust solution can be implemented
 # This is primarily due to the hassle involved in deleting the changes to the
-# file following a unit test run with 'go test'
-hooker_test.db
+# file following a unit test run with 'go test'; the test files are removed
+# after the test runs, but they are included here as a precaution.
+
+# Test files
+test-hooker.db
+test-storage.db
+
+# Production file
 storage.db
-storage_test.db

@@ -3,6 +3,7 @@ package frontend
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -23,12 +24,15 @@ func TestNewHook(t *testing.T) {
 	client.BaseURL = url
 	client.UploadURL = url
 
-	fileName := "hooker_test.db"
-	if _, err := os.Stat(fileName); err == nil {
-		os.Remove(fileName)
+	filename := "test-hook.db"
+	file, err := ioutil.TempFile("", filename)
+	if err != nil {
+		t.Errorf("generate hooker test file: %v", err)
 	}
+	file.Close()
+	defer os.Remove(filename)
 
-	testDB, err := bolt.Open(fileName, 0644, nil)
+	testDB, err := bolt.Open(filename, 0644, nil)
 	if err != nil {
 		t.Errorf("error opening test database: %v", err)
 	}

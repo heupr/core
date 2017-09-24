@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"io/ioutil"
 	"os"
 	"strconv"
 	"testing"
@@ -9,12 +10,15 @@ import (
 )
 
 func Test_open(t *testing.T) {
-	fileName := "storage_test.db"
-	if _, err := os.Stat(fileName); err == nil {
-		os.Remove(fileName)
+	filename := "test-storage.db"
+	file, err := ioutil.TempFile("", filename)
+	if err != nil {
+		t.Errorf("generate storage test file: %v", err)
 	}
+	file.Close()
+	defer os.Remove(filename)
 
-	testDB, err := bolt.Open(fileName, 0644, nil)
+	testDB, err := bolt.Open(filename, 0644, nil)
 	if err != nil {
 		t.Errorf("error opening test database: %v", err)
 	}
