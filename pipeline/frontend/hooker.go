@@ -17,10 +17,10 @@ func (fs *FrontendServer) NewHook(repo *github.Repository, client *github.Client
 	}
 	name := *repo.Name
 	owner := *repo.Owner.Login
-	url := "http://0cc4fe04.ngrok.io/hook"
+	url := "http://35.196.33.44/hook"
 	hook, _, err := client.Repositories.CreateHook(context.Background(), owner, name, &github.Hook{
 		Name:   github.String("web"),
-		Events: []string{"issues", "repository"},
+		Events: []string{"issues", "pull_request"},
 		Active: github.Bool(true),
 		Config: map[string]interface{}{
 			"url":          url,
