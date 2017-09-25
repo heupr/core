@@ -104,19 +104,20 @@ func (i *IngestorServer) Continuity() {
 	// This chan is being kept as a means for thread-safe graceful shutdowns
 	// and could be eventually passed as an argument into Continuity().
 	ender := make(chan bool)
-	defer close(ender)
-
-	for {
-		select {
-		case <-ticker.C:
-			issues, pulls, err := i.continuityCheck()
-			if err != nil {
-				utils.AppLog.Error("continuity check", zap.Error(err))
+	go func() {
+		defer close(ender)
+		for {
+			select {
+			case <-ticker.C:
+				issues, pulls, err := i.continuityCheck()
+				if err != nil {
+					utils.AppLog.Error("continuity check", zap.Error(err))
+				}
+				i.Database.BulkInsertIssuesPullRequests(issues, pulls)
+			case <-ender:
+				ticker.Stop()
+				return
 			}
-			i.Database.BulkInsertIssuesPullRequests(issues, pulls)
-		case <-ender:
-			ticker.Stop()
-			return
 		}
-	}
+	}()
 }
