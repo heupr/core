@@ -1,0 +1,14 @@
+title = "Beta Whitelist"
+maximum = 200
+
+[[user]]
+owner = "dotnet"
+repo = "corefx"
+
+[[user]]
+owner = "tensorflow"
+repo = "tensorflow"
+
+[[user]]
+owner = "google"
+repo = "go-github"

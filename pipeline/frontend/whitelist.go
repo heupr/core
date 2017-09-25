@@ -43,7 +43,7 @@ func (fs *FrontendServer) AutomaticWhitelist(repo github.Repository) error {
 	}
 	defer boltDB.Close()
 
-	boltDB.Update(func(tx *bolt.Tx) error {
+	return boltDB.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists([]byte(bucketName))
 		if err != nil {
 			return err
@@ -72,5 +72,4 @@ func (fs *FrontendServer) AutomaticWhitelist(repo github.Repository) error {
 		}
 		return nil
 	})
-	return nil
 }

@@ -65,6 +65,11 @@ func (fs *FrontendServer) githubCallbackHandlerTest(w http.ResponseWriter, r *ht
 	oaClient := oaConfig.Client(oauth2.NoContext, testToken)
 	client := github.NewClient(oaClient)
 	repo := github.Repository{ID: github.Int(81689981), Owner: &github.User{Login: github.String("heupr")}, Name: github.String("test")}
+	if err := fs.AutomaticWhitelist(repo); err != nil {
+		utils.AppLog.Error("whitelist failure: ", zap.Error(err))
+		http.Error(w, "Maximum allowed beta users reached. Standby for a signup confirmation email", http.StatusInternalServerError)
+		return
+	}
 
 	fs.OpenBolt()
 	defer fs.CloseBolt()
@@ -76,12 +81,12 @@ func (fs *FrontendServer) githubCallbackHandlerTest(w http.ResponseWriter, r *ht
 	tokenByte, err := json.Marshal(testToken)
 	if err != nil {
 		utils.AppLog.Error("failure converting callback token: ", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 		return
 	}
 	if err := fs.Database.Store("token", *repo.ID, tokenByte); err != nil {
 		utils.AppLog.Error("failure storing token in bolt: ", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 		return
 	}
 
@@ -89,12 +94,12 @@ func (fs *FrontendServer) githubCallbackHandlerTest(w http.ResponseWriter, r *ht
 	limitByte, err := json.Marshal(limit)
 	if err != nil {
 		utils.AppLog.Error("converting callback limit: ", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 		return
 	}
 	if err := fs.Database.Store("limit", *repo.ID, limitByte); err != nil {
 		utils.AppLog.Error("storing limit in bolt: ", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 		return
 	}
 
@@ -110,20 +115,20 @@ func (fs *FrontendServer) githubCallbackHandlerTest(w http.ResponseWriter, r *ht
 	payload, err := json.Marshal(activationParams)
 	if err != nil {
 		utils.AppLog.Error("failure converting activation parameters: ", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 		return
 	}
 	req, err := http.NewRequest("POST", utils.Config.ActivationServiceEndpoint, bytes.NewBuffer(payload))
 	if err != nil {
 		utils.AppLog.Error("failed to create http request:", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 		return
 	}
 	req.Header.Set("content-type", "application/json")
 	resp, err := fs.httpClient.Do(req)
 	if err != nil {
 		utils.AppLog.Error("failed internal post call:", zap.Error(err))
-		http.Error(w, "failed internal post call", http.StatusForbidden)
+		http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 		return
 	} else {
 		defer resp.Body.Close()
@@ -149,7 +154,7 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 	repos, err := listRepositories(client)
 	if err != nil {
 		utils.AppLog.Error("callback list user repos: ", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 		return
 	}
 
@@ -157,7 +162,7 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 		tmpl, err := template.New("options").Parse(options)
 		if err != nil {
 			utils.AppLog.Error("failure parsing user options template: ", zap.Error(err))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 			return
 		}
 		resources := Resources{Repos: repos}
@@ -168,11 +173,17 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 		err := decoder.Decode(results, r.PostForm)
 		if err != nil {
 			utils.AppLog.Error("failure decoding postform: ", zap.Error(err))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 			return
 		}
 		for i := 0; i < len(results.Repos); i++ {
 			repo := results.Repos[i]
+			if err := fs.AutomaticWhitelist(*repo); err != nil {
+				utils.AppLog.Error("whitelist failure: ", zap.Error(err))
+				http.Error(w, "Maximum allowed beta users reached. Standby for a signup confirmation email", http.StatusInternalServerError)
+				return
+			}
+
 			limit := time.Now().AddDate(0, 0, -results.Limit)
 
 			if err := fs.NewHook(repo, client); err != nil {
@@ -183,24 +194,24 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			tokenByte, err := json.Marshal(token)
 			if err != nil {
 				utils.AppLog.Error("converting callback token: ", zap.Error(err))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
 			}
 			if err := fs.Database.Store("token", *repo.ID, tokenByte); err != nil {
 				utils.AppLog.Error("storing token in bolt: ", zap.Error(err))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
 			}
 
 			limitByte, err := json.Marshal(limit)
 			if err != nil {
 				utils.AppLog.Error("converting callback limit: ", zap.Error(err))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
 			}
 			if err := fs.Database.Store("limit", *repo.ID, limitByte); err != nil {
 				utils.AppLog.Error("storing limit in bolt: ", zap.Error(err))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
 			}
 			activationParams := struct {
@@ -215,20 +226,20 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			payload, err := json.Marshal(activationParams)
 			if err != nil {
 				utils.AppLog.Error("failure converting activation parameters: ", zap.Error(err))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
 			}
 			req, err := http.NewRequest("POST", utils.Config.ActivationServiceEndpoint, bytes.NewBuffer(payload))
 			if err != nil {
 				utils.AppLog.Error("failed to create http request:", zap.Error(err))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
 			}
 			req.Header.Set("content-type", "application/json")
 			resp, err := fs.httpClient.Do(req)
 			if err != nil {
 				utils.AppLog.Error("failed internal post call:", zap.Error(err))
-				http.Error(w, "failed internal post call", http.StatusForbidden)
+				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
 			} else {
 				defer resp.Body.Close()
