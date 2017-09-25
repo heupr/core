@@ -17,7 +17,7 @@ func (fs *FrontendServer) NewHook(repo *github.Repository, client *github.Client
 	}
 	name := *repo.Name
 	owner := *repo.Owner.Login
-	url := "http://35.196.33.44/hook"
+	url := "http://35.196.33.44:8020/hook"
 	hook, _, err := client.Repositories.CreateHook(context.Background(), owner, name, &github.Hook{
 		Name:   github.String("web"),
 		Events: []string{"issues", "pull_request"},
