@@ -9,7 +9,7 @@ import (
 	"core/utils"
 )
 
-var secretKey = "test"
+const secretKey = "figrin-dan-and-the-modal-nodes"
 var Workload = make(chan interface{}, 100)
 
 func collectorHandler() http.Handler {
