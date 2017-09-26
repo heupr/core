@@ -192,6 +192,7 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			}
 			utils.SlackLog.Info(fmt.Sprintf("Signup %v", *repo.FullName))
 		}
+		http.Redirect(w, r, "/setup_complete", http.StatusTemporaryRedirect)
 	}
 }
 
