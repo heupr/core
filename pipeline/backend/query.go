@@ -179,6 +179,12 @@ func (m *MemSQL) Read() (map[int]*RepoData, error) {
 	}
 	for i := 0; i < len(intKeys); i++ {
 		repoID := intKeys[i]
+		if _, ok := allocations[repoID]; !ok {
+			allocations[repoID] = make(map[string]int)
+		}
+		if _, ok := eligibleAssignees[repoID]; !ok {
+			eligibleAssignees[repoID] = make(map[string]int)
+		}
 		repodata[repoID].AssigneeAllocations = allocations[repoID]
 		repodata[repoID].EligibleAssignees = eligibleAssignees[repoID]
 	}
