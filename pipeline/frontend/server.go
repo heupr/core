@@ -21,7 +21,7 @@ func (fs *FrontendServer) routes() *http.ServeMux {
 	mux.Handle("/", mainHandler)
 	mux.HandleFunc("/login", githubLoginHandler)
 	mux.HandleFunc("/github_oauth_cb", fs.githubCallbackHandler)
-	mux.HandleFunc("/setup_complete", fs.completeHandle)
+	mux.HandleFunc("/setup_complete", completeHandle)
 	return mux
 }
 
