@@ -101,6 +101,8 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 			return
 		}
+		//utils.AppLog.Info("user repos", zap.String("results.Repos",fmt.Sprintf(results.Repos)))
+		fmt.Println(results.Repos[0])
 		for i := 0; i < len(results.Repos); i++ {
 			repo := results.Repos[i]
 			if err := fs.AutomaticWhitelist(*repo); err != nil {
