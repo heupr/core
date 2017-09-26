@@ -102,14 +102,16 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			return
 		}
 		//utils.AppLog.Info("user repos", zap.String("results.Repos",fmt.Sprintf(results.Repos)))
-		fmt.Println(results.Repos[0])
+		utils.AppLog.Info("RepoName",zap.String("RepoName",*results.Repos[0].Name))
+		utils.AppLog.Info("Limit",zap.Int("Limit",results.Limit))
 		for i := 0; i < len(results.Repos); i++ {
 			repo := results.Repos[i]
+			/*
 			if err := fs.AutomaticWhitelist(*repo); err != nil {
 				utils.AppLog.Error("whitelist failure: ", zap.Error(err))
 				http.Error(w, "Maximum allowed beta users reached. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
-			}
+			}*/
 
 			limit := time.Now().AddDate(0, 0, -results.Limit)
 
