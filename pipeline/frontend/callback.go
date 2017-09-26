@@ -105,6 +105,7 @@ func (fs *FrontendServer) completeHandle(w http.ResponseWriter, r *http.Request)
 	}
 
 	client := github.NewClient(oaConfig.Client(oauth2.NoContext, token))
+	fmt.Println(r.PostForm)
 	results := new(Resources)
 	err = decoder.Decode(results, r.PostForm)
 	if err != nil {
