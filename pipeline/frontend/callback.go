@@ -92,99 +92,98 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			return
 		}
 		resources := Resources{Repos: repos}
-		utils.AppLog.Info("tmpl.Execute Enter")
 		tmpl.Execute(w, resources)
-		utils.AppLog.Info("tmpl.Execute Exit")
-		utils.AppLog.Info("Get Exit")
-	} else {
-		utils.AppLog.Info("ParseForm Enter")
-		r.ParseForm()
-		utils.AppLog.Info("ParseForm Exit")
-		results := new(Resources)
-		err := decoder.Decode(results, r.PostForm)
-		if err != nil {
-			utils.AppLog.Error("failure decoding postform: ", zap.Error(err))
-			http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
-			return
-		}
-		//utils.AppLog.Info("user repos", zap.String("results.Repos",fmt.Sprintf(results.Repos)))
-		utils.AppLog.Info("RepoName",zap.String("RepoName",*results.Repos[0].Name))
-		utils.AppLog.Info("Limit",zap.Int("Limit",results.Limit))
-		for i := 0; i < len(results.Repos); i++ {
-			repo := results.Repos[i]
-			/*
-			if err := fs.AutomaticWhitelist(*repo); err != nil {
-				utils.AppLog.Error("whitelist failure: ", zap.Error(err))
-				http.Error(w, "Maximum allowed beta users reached. Standby for a signup confirmation email", http.StatusInternalServerError)
-				return
-			}*/
-
-			limit := time.Now().AddDate(0, 0, -results.Limit)
-
-			if err := fs.NewHook(repo, client); err != nil {
-				utils.AppLog.Error("repo hook placement: ", zap.Error(err))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			tokenByte, err := json.Marshal(token)
-			if err != nil {
-				utils.AppLog.Error("converting callback token: ", zap.Error(err))
-				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
-				return
-			}
-			if err := fs.Database.Store("token", *repo.ID, tokenByte); err != nil {
-				utils.AppLog.Error("storing token in bolt: ", zap.Error(err))
-				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
-				return
-			}
-
-			limitByte, err := json.Marshal(limit)
-			if err != nil {
-				utils.AppLog.Error("converting callback limit: ", zap.Error(err))
-				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
-				return
-			}
-			if err := fs.Database.Store("limit", *repo.ID, limitByte); err != nil {
-				utils.AppLog.Error("storing limit in bolt: ", zap.Error(err))
-				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
-				return
-			}
-			activationParams := struct {
-				Repo  github.Repository `json:"repo"`
-				Token *oauth2.Token     `json:"token"`
-				Limit time.Time         `json:"limit"`
-			}{
-				*repo,
-				token,
-				limit,
-			}
-			payload, err := json.Marshal(activationParams)
-			if err != nil {
-				utils.AppLog.Error("failure converting activation parameters: ", zap.Error(err))
-				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
-				return
-			}
-			req, err := http.NewRequest("POST", utils.Config.ActivationServiceEndpoint, bytes.NewBuffer(payload))
-			if err != nil {
-				utils.AppLog.Error("failed to create http request:", zap.Error(err))
-				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
-				return
-			}
-			req.Header.Set("content-type", "application/json")
-			resp, err := fs.httpClient.Do(req)
-			if err != nil {
-				utils.AppLog.Error("failed internal post call:", zap.Error(err))
-				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
-				return
-			} else {
-				defer resp.Body.Close()
-			}
-			utils.SlackLog.Info(fmt.Sprintf("Signup %v", *repo.FullName))
-		}
 	}
 }
 
-func completeHandle(w http.ResponseWriter, r *http.Request) {
+func (fs *FrontendServer) completeHandle(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	token, err := oaConfig.Exchange(oauth2.NoContext, r.FormValue("code"))
+	if err != nil {
+		utils.AppLog.Error("callback token exchange: ", zap.Error(err))
+		http.Redirect(w, r, "/", http.StatusInternalServerError)
+		return
+	}
+
+	client := github.NewClient(oaConfig.Client(oauth2.NoContext, token))
+	results := new(Resources)
+	err = decoder.Decode(results, r.PostForm)
+	if err != nil {
+		utils.AppLog.Error("failure decoding postform: ", zap.Error(err))
+		http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
+		return
+	}
+
+	for i := 0; i < len(results.Repos); i++ {
+		repo := results.Repos[i]
+		if err := fs.AutomaticWhitelist(*repo); err != nil {
+			utils.AppLog.Error("whitelist failure: ", zap.Error(err))
+			http.Error(w, "Maximum allowed beta users reached. Standby for a signup confirmation email", http.StatusInternalServerError)
+			return
+		}
+
+		limit := time.Now().AddDate(0, 0, -results.Limit)
+
+		if err := fs.NewHook(repo, client); err != nil {
+			utils.AppLog.Error("repo hook placement: ", zap.Error(err))
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		tokenByte, err := json.Marshal(token)
+		if err != nil {
+			utils.AppLog.Error("converting callback token: ", zap.Error(err))
+			http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
+			return
+		}
+		if err := fs.Database.Store("token", *repo.ID, tokenByte); err != nil {
+			utils.AppLog.Error("storing token in bolt: ", zap.Error(err))
+			http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
+			return
+		}
+
+		limitByte, err := json.Marshal(limit)
+		if err != nil {
+			utils.AppLog.Error("converting callback limit: ", zap.Error(err))
+			http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
+			return
+		}
+		if err := fs.Database.Store("limit", *repo.ID, limitByte); err != nil {
+			utils.AppLog.Error("storing limit in bolt: ", zap.Error(err))
+			http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
+			return
+		}
+		activationParams := struct {
+			Repo  github.Repository `json:"repo"`
+			Token *oauth2.Token     `json:"token"`
+			Limit time.Time         `json:"limit"`
+		}{
+			*repo,
+			token,
+			limit,
+		}
+		payload, err := json.Marshal(activationParams)
+		if err != nil {
+			utils.AppLog.Error("failure converting activation parameters: ", zap.Error(err))
+			http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
+			return
+		}
+		req, err := http.NewRequest("POST", utils.Config.ActivationServiceEndpoint, bytes.NewBuffer(payload))
+		if err != nil {
+			utils.AppLog.Error("failed to create http request:", zap.Error(err))
+			http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
+			return
+		}
+		req.Header.Set("content-type", "application/json")
+		resp, err := fs.httpClient.Do(req)
+		if err != nil {
+			utils.AppLog.Error("failed internal post call:", zap.Error(err))
+			http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
+			return
+		} else {
+			defer resp.Body.Close()
+		}
+		utils.SlackLog.Info(fmt.Sprintf("Signup %v", *repo.FullName))
+	}
 	utils.SlackLog.Info("Complete handle entered - user signed up")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
