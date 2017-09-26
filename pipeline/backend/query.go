@@ -34,21 +34,8 @@ func (m *MemSQL) ReadAssigneeAllocations(repos []interface{}) (map[int]map[strin
 	if len(repos) == 0 {
 		return nil, nil
 	}
-	/*
-		select T2.repo_id, lk.assignee, count(*) as cnt
-		from (
-			select g.id, g.repo_id from github_event_assignees g
-			join (
-				SELECT max(id) id
-				FROM github_event_assignees
-		    where repo_id in (?` + strings.Repeat(",?", len(repos)-1) + ") " +
-			 `group by repo_id, issues_id, number
-			 ) T on T.id = g.id
-			 where g.is_closed = false
-		) T2
-		join github_event_assignees_lk lk on lk.github_event_assignees_fk = T2.id and lk.assignee is not null
-		` */
-	ASSIGNEE_ALLOCATIONS_QUERY := "select T2.repo_id, lk.assignee, count(*) as cnt from ( select g.id, g.repo_id from github_event_assignees g join (SELECT max(id) id FROM github_event_assignees where repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ") " + "group by repo_id, issues_id, number) T on T.id = g.id where g.is_closed = false) T2 join github_event_assignees_lk lk on lk.github_event_assignees_fk = T2.id and lk.assignee is not null"
+  //select T2.repo_id, lk.assignee, count(*) as cnt from ( select g.id, g.repo_id from github_event_assignees g join (SELECT max(id) id FROM github_event_assignees group by repo_id, issues_id, number) T on T.id = g.id and g.is_closed = false) T2 join github_event_assignees_lk lk on lk.github_event_assignees_fk = T2.id and lk.assignee is not null group by T2.repo_id, lk.assignee
+	ASSIGNEE_ALLOCATIONS_QUERY := "select T2.repo_id, lk.assignee, count(*) as cnt from ( select g.id, g.repo_id from github_event_assignees g join (SELECT max(id) id FROM github_event_assignees where repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ") " + " group by repo_id, issues_id, number) T on T.id = g.id and g.is_closed = false) T2 join github_event_assignees_lk lk on lk.github_event_assignees_fk = T2.id and lk.assignee is not null group by T2.repo_id, lk.assignee"
 
 	results, err := m.db.Query(ASSIGNEE_ALLOCATIONS_QUERY, repos...)
 	if err != nil {
