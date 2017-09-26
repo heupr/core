@@ -9,8 +9,8 @@ import (
 
 var oaConfig = &oauth2.Config{
 	// NOTE: Both fields will be available after registering Heupr w/ GitHub.
-	ClientID:     "CLIENT_ID",
-	ClientSecret: "CLIENT_SECRET",
+	ClientID:     "5ffc021b1fe3702c6888",
+	ClientSecret: "42edf1ab560dce313ff3e27dd7b94f58e41df3e7",
 	Endpoint:     ghoa.Endpoint,
 	Scopes:       []string{"admin:repo_hook", "repo:status", "public_repo"},
 }
