@@ -45,8 +45,10 @@ const options = `
         <input type="radio" name="Limit" value=30> Month<br>
         <input type="radio" name="Limit" value=365> Year<br>
         <input type="radio" name="Limit" value=100000 checked> All<br>
+				<p>
+            <input type="submit" value="Submit selection(s)">
+        </p>
     </form>
-        <p><a href="/setup_complete">Submit selection(s)</a></p>
     </body>
 </html>
 `
