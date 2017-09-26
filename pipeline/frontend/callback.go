@@ -84,6 +84,7 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 	}
 
 	if r.Method == "GET" {
+		utils.AppLog.Info("Get Enter")
 		tmpl, err := template.New("options").Parse(options)
 		if err != nil {
 			utils.AppLog.Error("failure parsing user options template: ", zap.Error(err))
@@ -91,9 +92,14 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			return
 		}
 		resources := Resources{Repos: repos}
+		utils.AppLog.Info("tmpl.Execute Enter")
 		tmpl.Execute(w, resources)
+		utils.AppLog.Info("tmpl.Execute Exit")
+		utils.AppLog.Info("Get Exit")
 	} else {
+		utils.AppLog.Info("ParseForm Enter")
 		r.ParseForm()
+		utils.AppLog.Info("ParseForm Exit")
 		results := new(Resources)
 		err := decoder.Decode(results, r.PostForm)
 		if err != nil {
