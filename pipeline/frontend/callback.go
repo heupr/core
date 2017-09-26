@@ -192,13 +192,9 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			}
 			utils.SlackLog.Info(fmt.Sprintf("Signup %v", *repo.FullName))
 		}
-		http.Redirect(w, r, "/setup_complete", http.StatusTemporaryRedirect)
+		utils.SlackLog.Info("Complete handle entered - user signed up")
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(setup))
 	}
-}
-
-func completeHandle(w http.ResponseWriter, r *http.Request) {
-	utils.SlackLog.Info("Complete handle entered - user signed up")
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(setup))
 }
