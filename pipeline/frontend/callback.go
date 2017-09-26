@@ -71,16 +71,16 @@ const BackendSecret = "fear-is-my-ally"
 var decoder = schema.NewDecoder()
 
 func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	if r.FormValue("state") != oaState {
-		utils.AppLog.Error("incorrect callback state value")
-		http.Redirect(w, r, "/", http.StatusForbidden)
-		return
-	}
 	var token *oauth2.Token
 	var client *github.Client
 	var err2 error
 
 	if r.Method == "GET" {
+		if r.FormValue("state") != oaState {
+			utils.AppLog.Error("incorrect callback state value")
+			http.Redirect(w, r, "/", http.StatusForbidden)
+			return
+		}
 		token, err2 = oaConfig.Exchange(oauth2.NoContext, r.FormValue("code"))
 		if err2 != nil {
 			utils.AppLog.Error("callback token exchange: ", zap.Error(err2))
