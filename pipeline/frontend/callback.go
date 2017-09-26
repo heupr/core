@@ -84,7 +84,6 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 	}
 
 	if r.Method == "GET" {
-		utils.AppLog.Info("Get Enter")
 		tmpl, err := template.New("options").Parse(options)
 		if err != nil {
 			utils.AppLog.Error("failure parsing user options template: ", zap.Error(err))
@@ -113,7 +112,7 @@ func (fs *FrontendServer) completeHandle(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 		return
 	}
-
+	fmt.Println("results.Repos", results.Repos)
 	for i := 0; i < len(results.Repos); i++ {
 		repo := results.Repos[i]
 		if err := fs.AutomaticWhitelist(*repo); err != nil {
