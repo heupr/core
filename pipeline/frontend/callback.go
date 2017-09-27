@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/boltdb/bolt"
 	"github.com/google/go-github/github"
 	"github.com/gorilla/schema"
 	"go.uber.org/zap"
@@ -125,7 +126,7 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			fs.state.Lock()
 			token := fs.state.Tokens[repoForm.Repos[i].ID]
 			fs.state.Unlock()
-			
+
 			if token == nil {
 				utils.AppLog.Error("failed to lookup repo from shared state ", zap.Int("RepoID", repoForm.Repos[i].ID))
 				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
@@ -157,7 +158,14 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
 			}
-			if err := fs.Database.Store("token", *repo.ID, tokenByte); err != nil {
+			boltDB, err := bolt.Open(utils.Config.BoltDBPath, 0644, nil)
+			if err != nil {
+				utils.AppLog.Error("failed opening bolt", zap.Error(err))
+				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
+				return
+			}
+			database := BoltDB{DB: boltDB}
+			if err := database.Store("token", *repo.ID, tokenByte); err != nil {
 				utils.AppLog.Error("storing token in bolt: ", zap.Error(err))
 				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
@@ -169,11 +177,12 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
 			}
-			if err := fs.Database.Store("limit", *repo.ID, limitByte); err != nil {
+			if err := database.Store("limit", *repo.ID, limitByte); err != nil {
 				utils.AppLog.Error("storing limit in bolt: ", zap.Error(err))
 				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
 			}
+			boltDB.Close()
 			activationParams := struct {
 				Repo  github.Repository `json:"repo"`
 				Token *oauth2.Token     `json:"token"`
