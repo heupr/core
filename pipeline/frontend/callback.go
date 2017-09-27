@@ -70,25 +70,22 @@ const BackendSecret = "fear-is-my-ally"
 
 var decoder = schema.NewDecoder()
 
-func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	var token *oauth2.Token
-	var client *github.Client
-	var err2 error
 
+func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		if r.FormValue("state") != oaState {
 			utils.AppLog.Error("incorrect callback state value")
 			http.Redirect(w, r, "/", http.StatusForbidden)
 			return
 		}
-		token, err2 = oaConfig.Exchange(oauth2.NoContext, r.FormValue("code"))
-		if err2 != nil {
-			utils.AppLog.Error("callback token exchange: ", zap.Error(err2))
+		token, err := oaConfig.Exchange(oauth2.NoContext, r.FormValue("code"))
+		if err != nil {
+			utils.AppLog.Error("callback token exchange: ", zap.Error(err))
 			http.Redirect(w, r, "/", http.StatusInternalServerError)
 			return
 		}
 
-		client = github.NewClient(oaConfig.Client(oauth2.NoContext, token))
+		client := github.NewClient(oaConfig.Client(oauth2.NoContext, token))
 
 		repos, err := listRepositories(client)
 		if err != nil {
@@ -106,6 +103,7 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 		reposList := make([]Repo, len(repos))
 		for i := 0; i < len(reposList); i++ {
 			reposList[i] = Repo{ID: *repos[i].ID, FullName: *repos[i].FullName, Selected: false}
+			fs.state.Tokens[*repos[i].ID] = token
 		}
 		repoForm := RepoForm{Name: "Default", Repos: reposList}
 		tmpl.Execute(w, repoForm)
@@ -119,6 +117,17 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			return
 		}
 		for i := 0; i < len(repoForm.Repos); i++ {
+			if repoForm.Repos[i].ID == 0 {
+				continue
+			}
+			token := fs.state.Tokens[repoForm.Repos[i].ID]
+			if token == nil {
+				utils.AppLog.Error("failed to lookup repo from shared state ", zap.Int("RepoID", repoForm.Repos[i].ID))
+				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
+				return
+			}
+			client := github.NewClient(oaConfig.Client(oauth2.NoContext, token))
+
 			repo, _, err := client.Repositories.GetByID(context.Background(), repoForm.Repos[i].ID)
 			if err != nil {
 				utils.AppLog.Error("Callback get by id", zap.Error(err))

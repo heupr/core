@@ -2,18 +2,26 @@ package frontend
 
 import (
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/boltdb/bolt"
+	"golang.org/x/oauth2"
 	"go.uber.org/zap"
 
 	"core/utils"
 )
 
+type State struct {
+	sync.Mutex
+	Tokens map[int]*oauth2.Token
+}
+
 type FrontendServer struct {
 	Server     http.Server
 	httpClient http.Client
 	Database   BoltDB
+	state			 State
 }
 
 func (fs *FrontendServer) routes() *http.ServeMux {
@@ -31,6 +39,8 @@ func (fs *FrontendServer) Start() {
 		panic(err)
 	}
 	fs.CloseBolt()
+	fs.state = State{}
+	fs.state.Tokens = make(map[int]*oauth2.Token)
 	fs.httpClient = http.Client{Timeout: time.Second * 10}
 	fs.Server = http.Server{Addr: "10.142.1.0:80", Handler: fs.routes()}
 	if err := fs.Server.ListenAndServe(); err != nil {
