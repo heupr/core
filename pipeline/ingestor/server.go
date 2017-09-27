@@ -2,9 +2,9 @@ package ingestor
 
 import (
 	"context"
-	"time"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"

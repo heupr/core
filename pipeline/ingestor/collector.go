@@ -10,6 +10,7 @@ import (
 )
 
 const secretKey = "figrin-dan-and-the-modal-nodes"
+
 var Workload = make(chan interface{}, 100)
 
 func collectorHandler() http.Handler {
