@@ -42,18 +42,3 @@ func Test_githubCallbackHandler(t *testing.T) {
 		t.Errorf("handler returning incorrect status code; received %v, wanted %v", receivedStatus, wantedStatus)
 	}
 }
-
-func Test_completeHandle(t *testing.T) {
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "/handler-test", nil)
-	if err != nil {
-		t.Errorf("failure generating testing request: %v", err)
-	}
-	handler := http.HandlerFunc(completeHandle)
-	handler.ServeHTTP(rec, req)
-
-	wantedStatus := http.StatusOK
-	if receivedStatus := rec.Code; receivedStatus != wantedStatus {
-		t.Errorf("handler returning incorrect status code; received %v, wanted %v", receivedStatus, wantedStatus)
-	}
-}

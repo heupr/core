@@ -18,15 +18,15 @@ import (
 )
 
 type Repo struct {
-    ID int
-    FullName string `schema:"-"`
-    Selected bool `schema:"-"`
+	ID       int
+	FullName string `schema:"-"`
+	Selected bool   `schema:"-"`
 }
 
 type RepoForm struct {
-    Name string
-    Repos []Repo `schema:"Repos"`
-		Limit int `schema:"Limit"`
+	Name  string
+	Repos []Repo `schema:"Repos"`
+	Limit int    `schema:"Limit"`
 }
 
 const options = `
@@ -35,20 +35,20 @@ const options = `
         Heupr
     </title>
     <body>
-    <form action="/github_oauth_cb" method="post">
-        <p>Choose your repo(s):</p>
-        {{range $idx, $repo := .Repos}}
+        <form action="/github_oauth_cb" method="post">
+            <p>Choose your repo(s):</p>
+                {{range $idx, $repo := .Repos}}
             <p><input type="checkbox" name="Repos.{{ $idx }}.ID" value="{{ $repo.ID }}">{{ $repo.FullName }}</p>
-        {{end}}
-        <p>Select range of issues to be assigned:</p>
-        <input type="radio" name="Limit" value=5> Week<br>
-        <input type="radio" name="Limit" value=30> Month<br>
-        <input type="radio" name="Limit" value=365> Year<br>
-        <input type="radio" name="Limit" value=100000 checked> All<br>
-				<p>
-            <input type="submit" value="Submit selection(s)">
-        </p>
-    </form>
+                {{end}}
+            <p>Select range of issues to be assigned:</p>
+                <input type="radio" name="Limit" value=5> Week<br>
+                <input type="radio" name="Limit" value=30> Month<br>
+                <input type="radio" name="Limit" value=365> Year<br>
+                <input type="radio" name="Limit" value=100000 checked> All<br>
+    		<p>
+                <input type="submit" value="Submit selection(s)">
+            </p>
+        </form>
     </body>
 </html>
 `
@@ -192,7 +192,7 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			}
 			utils.SlackLog.Info(fmt.Sprintf("Signup %v", *repo.FullName))
 		}
-		utils.SlackLog.Info("Complete handle entered - user signed up")
+		utils.SlackLog.Info("Completed user signed up")
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(setup))
