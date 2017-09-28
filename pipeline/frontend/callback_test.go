@@ -10,6 +10,7 @@ import (
 
 func Test_githubCallbackHandler(t *testing.T) {
 	testFS := new(FrontendServer)
+    testFS.state.Tokens = make(map[int]*oauth2.Token)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/x-www-form-urlencoded")

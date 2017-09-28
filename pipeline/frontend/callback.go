@@ -71,7 +71,6 @@ const BackendSecret = "fear-is-my-ally"
 
 var decoder = schema.NewDecoder()
 
-
 func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		if r.FormValue("state") != oaState {
@@ -105,7 +104,7 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 		fs.state.Lock()
 		for i := 0; i < len(reposList); i++ {
 			reposList[i] = Repo{ID: *repos[i].ID, FullName: *repos[i].FullName, Selected: false}
-			fs.state.Tokens[*repos[i].ID] = token
+			fs.state.Tokens[*repos[i].ID] = token // THIS IS PANICING
 		}
 		fs.state.Unlock()
 		repoForm := RepoForm{Name: "Default", Repos: reposList}
