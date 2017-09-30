@@ -68,6 +68,7 @@ func (a *ArchRepo) TriageOpenIssues() {
 	}
 
 	openIssues := a.Hive.Blender.GetOpenIssues()
+	utils.AppLog.Info("TriageOpenIssues()", zap.Int("Total", len(openIssues)))
 	for i := 0; i < len(openIssues); i++ {
 		if openIssues[i].Issue.CreatedAt.After(a.Limit) {
 			assignees := a.Hive.Blender.Predict(openIssues[i])
@@ -118,6 +119,7 @@ func (a *ArchRepo) TriageOpenIssues() {
 				}
 				assigned = true
 				a.AssigneeAllocations[fallbackAssignee]++
+				utils.AppLog.Info("AddAssignees Success. Fallback assignee found.", zap.String("URL", *openIssues[i].Issue.URL), zap.Int("IssueID", *openIssues[i].Issue.ID))
 			}
 		}
 	}
@@ -159,6 +161,7 @@ func (b *Blender) GetClosedIssues() []conflation.ExpandedIssue {
 
 func (b *Blender) TrainModels() {
 	closedIssues := b.GetClosedIssues()
+	utils.AppLog.Info("TrainModels() ", zap.Int("Total", len(closedIssues)))
 	if len(closedIssues) == 0 {
 		//TODO: Add Logging
 		return
