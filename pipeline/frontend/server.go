@@ -47,7 +47,7 @@ func (fs *FrontendServer) Start() {
 
 	// Production server with HTTPS.
 	fs.Server = http.Server{
-		Addr:    "127.0.0.1:8081",
+		Addr:    "10.142.1.0:443",
 		Handler: fs.routes(),
 	}
 	go func() {
@@ -59,7 +59,7 @@ func (fs *FrontendServer) Start() {
 
 	// For redirection purposese only.
 	unprotected := http.Server{
-		Addr:    "127.0.0.1:8080",
+		Addr:    "10.142.1.0:80",
 		Handler: http.HandlerFunc(httpRedirect),
 	}
 	if err := unprotected.ListenAndServe(); err != nil {
