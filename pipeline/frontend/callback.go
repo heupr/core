@@ -204,20 +204,20 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			if err != nil {
 				utils.AppLog.Error("failure converting activation parameters: ", zap.Error(err))
 				utils.SlackLog.Error("failure converting activation parameters: ", err)
-				return
+				continue
 			}
 			req, err := http.NewRequest("POST", utils.Config.ActivationServiceEndpoint, bytes.NewBuffer(payload))
 			if err != nil {
 				utils.AppLog.Error("failed to create http request: ", zap.Error(err))
 				utils.SlackLog.Error("failed to create http request: ", err)
-				return
+				continue
 			}
 			req.Header.Set("content-type", "application/json")
 			resp, err := fs.httpClient.Do(req)
 			if err != nil {
 				utils.AppLog.Error("failed internal post call: ", zap.Error(err))
 				utils.SlackLog.Error("failed internal post call: ", err)
-				return
+				continue
 			} else {
 				defer resp.Body.Close()
 			}
