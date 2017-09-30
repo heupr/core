@@ -94,10 +94,16 @@ func (a *ArchRepo) TriageOpenIssues() {
 					}
 					if assignmentsCount, ok := a.AssigneeAllocations[assignee]; ok {
 						if assignmentsCount < assignmentsCap {
-							_, _, err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{assignee})
+							issue, _, err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{assignee})
 							if err != nil {
 								utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
 								break
+							}
+							if issue.Assignees == nil || len(issue.Assignees) == 0 {
+								if fallbackAssignee == assignee {
+									fallbackAssignee = ""
+								}
+								continue
 							}
 							assigned = true
 							assignmentsCount++
