@@ -1,1 +1,1 @@
-nohup /home/michael/golang/src/core/pipeline/frontend/cmd/cmd &
+nohup /home/heupr/golang/src/core/pipeline/frontend/cmd/cmd &

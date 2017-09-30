@@ -1,1 +1,1 @@
-nohup /home/michael/golang/src/core/pipeline/ingestor/cmd/cmd &
+nohup /home/heupr/golang/src/core/pipeline/ingestor/cmd/cmd &
