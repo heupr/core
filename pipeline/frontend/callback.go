@@ -161,31 +161,35 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
 			}
-			boltDB, err := bolt.Open(utils.Config.BoltDBPath, 0644, nil)
-			if err != nil {
-				utils.AppLog.Error("failed opening bolt", zap.Error(err))
-				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
-				return
-			}
-			database := BoltDB{DB: boltDB}
-			if err := database.Store("token", *repo.ID, tokenByte); err != nil {
-				utils.AppLog.Error("storing token in bolt: ", zap.Error(err))
-				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
-				return
-			}
 
-			limitByte, err := json.Marshal(limit)
-			if err != nil {
-				utils.AppLog.Error("converting callback limit: ", zap.Error(err))
-				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
-				return
-			}
-			if err := database.Store("limit", *repo.ID, limitByte); err != nil {
-				utils.AppLog.Error("storing limit in bolt: ", zap.Error(err))
-				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
-				return
-			}
-			boltDB.Close()
+			go func() {
+				boltDB, err := bolt.Open(utils.Config.BoltDBPath, 0644, nil)
+				if err != nil {
+					utils.AppLog.Error("failed opening bolt: ", zap.Error(err))
+					utils.SlackLog.Error("failed opening bolt: ", zap.Error(err))
+					return
+				}
+				database := BoltDB{DB: boltDB}
+				if err := database.Store("token", *repo.ID, tokenByte); err != nil {
+					utils.AppLog.Error("error storing token in bolt: ", zap.Error(err))
+					utils.SlackLog.Error("error storing token in bolt: ", zap.Error(err))
+					return
+				}
+
+				limitByte, err := json.Marshal(limit)
+				if err != nil {
+					utils.AppLog.Error("error converting callback limit: ", zap.Error(err))
+					utils.SlackLog.Error("error converting callback limit: ", zap.Error(err))
+					return
+				}
+				if err := database.Store("limit", *repo.ID, limitByte); err != nil {
+					utils.AppLog.Error("error storing limit in bolt: ", zap.Error(err))
+					utils.SlackLog.Error("error storing limit in bolt: ", zap.Error(err))
+					return
+				}
+				boltDB.Close()
+			}()
+
 			activationParams := struct {
 				Repo  github.Repository `json:"repo"`
 				Token *oauth2.Token     `json:"token"`
@@ -195,21 +199,24 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 				token,
 				limit,
 			}
-		  utils.SlackLog.Info(fmt.Sprintf("Signup %v", *repo.FullName))
+			utils.SlackLog.Info(fmt.Sprintf("Callback signup: %v", *repo.FullName))
 			payload, err := json.Marshal(activationParams)
 			if err != nil {
 				utils.AppLog.Error("failure converting activation parameters: ", zap.Error(err))
+				utils.SlackLog.Error("failure converting activation parameters: ", zap.Error(err))
 				return
 			}
 			req, err := http.NewRequest("POST", utils.Config.ActivationServiceEndpoint, bytes.NewBuffer(payload))
 			if err != nil {
-				utils.AppLog.Error("failed to create http request:", zap.Error(err))
+				utils.AppLog.Error("failed to create http request: ", zap.Error(err))
+				utils.SlackLog.Error("failed to create http request: ", zap.Error(err))
 				return
 			}
 			req.Header.Set("content-type", "application/json")
 			resp, err := fs.httpClient.Do(req)
 			if err != nil {
-				utils.AppLog.Error("failed internal post call:", zap.Error(err))
+				utils.AppLog.Error("failed internal post call: ", zap.Error(err))
+				utils.SlackLog.Error("failed internal post call: ", zap.Error(err))
 				return
 			} else {
 				defer resp.Body.Close()
