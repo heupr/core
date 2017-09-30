@@ -195,28 +195,25 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 				token,
 				limit,
 			}
+		  utils.SlackLog.Info(fmt.Sprintf("Signup %v", *repo.FullName))
 			payload, err := json.Marshal(activationParams)
 			if err != nil {
 				utils.AppLog.Error("failure converting activation parameters: ", zap.Error(err))
-				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
 			}
 			req, err := http.NewRequest("POST", utils.Config.ActivationServiceEndpoint, bytes.NewBuffer(payload))
 			if err != nil {
 				utils.AppLog.Error("failed to create http request:", zap.Error(err))
-				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
 			}
 			req.Header.Set("content-type", "application/json")
 			resp, err := fs.httpClient.Do(req)
 			if err != nil {
 				utils.AppLog.Error("failed internal post call:", zap.Error(err))
-				http.Error(w, "Apologies, we are experiencing technical difficulties. Standby for a signup confirmation email", http.StatusInternalServerError)
 				return
 			} else {
 				defer resp.Body.Close()
 			}
-			utils.SlackLog.Info(fmt.Sprintf("Signup %v", *repo.FullName))
 		}
 		utils.SlackLog.Info("Completed user signed up")
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
