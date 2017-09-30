@@ -71,7 +71,6 @@ func (a *ArchRepo) TriageOpenIssues() {
 	for i := 0; i < len(openIssues); i++ {
 		if openIssues[i].Issue.CreatedAt.After(a.Limit) {
 			assignees := a.Hive.Blender.Predict(openIssues[i])
-			openIssues[i].Issue.Triaged = true
 			var name string
 			if openIssues[i].Issue.Repository.FullName != nil {
 				name = *openIssues[i].Issue.Repository.FullName
@@ -139,6 +138,7 @@ func (b *Blender) GetOpenIssues() []conflation.ExpandedIssue {
 		if issues[i].PullRequest.Number == nil && issues[i].Issue.ClosedAt == nil && !issues[i].Issue.Triaged {
 			if issues[i].Issue.Assignee == nil && issues[i].Issue.Assignees == nil { //MVP
 				openIssues = append(openIssues, issues[i])
+				issues[i].Issue.Triaged = true
 			}
 		}
 	}
@@ -149,8 +149,9 @@ func (b *Blender) GetClosedIssues() []conflation.ExpandedIssue {
 	closedIssues := []conflation.ExpandedIssue{}
 	issues := b.Conflator.Context.Issues
 	for i := 0; i < len(issues); i++ {
-		if issues[i].Issue.ClosedAt != nil && issues[i].Conflate {
+		if issues[i].Issue.ClosedAt != nil && issues[i].Conflate && !issues[i].IsTrained {
 			closedIssues = append(closedIssues, issues[i])
+			issues[i].IsTrained = true
 		}
 	}
 	return closedIssues

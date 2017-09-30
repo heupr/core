@@ -23,6 +23,7 @@ type ExpandedIssue struct {
 	PullRequest CRPullRequest
 	Issue       CRIssue
 	Conflate    bool
+	IsTrained		bool
 }
 
 func (cr *CRPullRequest) ReferencesIssues() bool {

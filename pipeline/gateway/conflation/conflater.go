@@ -20,14 +20,14 @@ type Context struct {
 
 func (c *Conflator) SetPullRequests(pulls []*github.PullRequest) {
 	for i := 0; i < len(pulls); i++ {
-		c.Context.Issues = append(c.Context.Issues, ExpandedIssue{PullRequest: CRPullRequest{*pulls[i], []int{}, []CRIssue{}}})
+		c.Context.Issues = append(c.Context.Issues, ExpandedIssue{PullRequest: CRPullRequest{*pulls[i], []int{}, []CRIssue{}}, IsTrained: false})
 	}
 }
 
 func (c *Conflator) SetIssueRequests(issues []*github.Issue) {
 	for i := 0; i < len(issues); i++ {
 		isTriaged := issues[i].Assignees != nil || issues[i].Assignee != nil
-		c.Context.Issues = append(c.Context.Issues, ExpandedIssue{Issue: CRIssue{*issues[i], []int{}, []CRPullRequest{}, isTriaged}})
+		c.Context.Issues = append(c.Context.Issues, ExpandedIssue{Issue: CRIssue{*issues[i], []int{}, []CRPullRequest{}, isTriaged}, IsTrained: false})
 	}
 }
 
