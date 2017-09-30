@@ -1,0 +1,10 @@
+applogpath: $GOPATH/bin/core/data/logs/application-frontend-%Y%m%d%H%M.log
+modellogpath: $GOPATH/bin/core/data/logs/model-frontend-%Y%m%d%H%M.log
+datacachespath: $GOPATH/bin/core/data/caches
+boltdbpath: $GOPATH/bin/core/data/bolt/storage.db
+activationserveraddress: "10.142.1.0:8010"
+activationserviceendpoint: "http://10.142.1.0:8010/activate-service"
+ingestorserveraddress: "10.142.1.0:8020"
+ingestoractivationendpoint: "http://10.142.1.0:8020/activate-ingestor-backend"
+backendserveraddress: "10.142.1.0:8030"
+backendactivationendpoint: "http://10.142.1.0:8030/activate-ingestor-backend"
