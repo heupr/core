@@ -51,7 +51,7 @@ func (fs *FrontendServer) Start() {
 		Handler: fs.routes(),
 	}
 	go func() {
-		if err := fs.Server.ListenAndServeTLS("cert.pem", "key.pem"); err != nil { // TEMPORARY
+		if err := fs.Server.ListenAndServeTLS("heupr_io.crt", "heupr.key"); err != nil { // TEMPORARY
 			utils.AppLog.Error("frontend server failed to start", zap.Error(err))
 			panic(err)
 		}
