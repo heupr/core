@@ -40,8 +40,8 @@ func InitializeSlackLog() *logrus.Logger {
 	logInstance.Hooks.Add(&slackrus.SlackrusHook{
 		HookURL:        "https://hooks.slack.com/services/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",
 		AcceptedLevels: slackrus.LevelThreshold(logrus.InfoLevel),
-		Channel:        "#gcp",
-		Username:       "gcp-slack-bot",
+		Channel:        "#status",
+		Username:       "status-update",
 	})
 	return logInstance
 }
