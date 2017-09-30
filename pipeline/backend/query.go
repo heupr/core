@@ -19,7 +19,7 @@ FROM github_events
 WHERE id > ?
 group by repo_id, issues_id, number
 ) T
-on T.id = g.id ` //MVP Workaround.
+on T.id = g.id and g.action in ('opened', 'closed')` //MVP Workaround.
 
 type RepoData struct {
 	RepoID              int

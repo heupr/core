@@ -34,11 +34,12 @@ func (w *Worker) Start() {
 			case event := <-w.Work:
 				switch v := event.(type) {
 				case github.IssuesEvent:
+					//The Action that was performed. Can be one of "assigned", "unassigned", "labeled", "unlabeled", "opened", "edited", "milestoned", "demilestoned", "closed", or "reopened".
 					v.Issue.Repository = v.Repo
-					w.Db.InsertIssue(*v.Issue)
+					w.Db.InsertIssue(*v.Issue, v.Action)
 				case github.PullRequestEvent:
 					//v.PullRequest.Base.Repo = v.Repo //TODO: Confirm
-					w.Db.InsertPullRequest(*v.PullRequest)
+					w.Db.InsertPullRequest(*v.PullRequest, v.Action)
 				default:
 					utils.AppLog.Error("Unknown", zap.Any("GithubEvent", v))
 				}
