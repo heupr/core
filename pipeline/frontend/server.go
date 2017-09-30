@@ -39,13 +39,31 @@ func (fs *FrontendServer) Start() {
 		panic(err)
 	}
 	fs.CloseBolt()
-	fs.state = State{
-        Tokens: make(map[int]*oauth2.Token),
-    }
-	fs.httpClient = http.Client{Timeout: time.Second * 10}
-	fs.Server = http.Server{Addr: "10.142.1.0:80", Handler: fs.routes()}
-	if err := fs.Server.ListenAndServe(); err != nil {
-		utils.AppLog.Error("frontend server failed to start", zap.Error(err))
+
+	fs.state = State{Tokens: make(map[int]*oauth2.Token)}
+	fs.httpClient = http.Client{
+		Timeout: time.Second * 10,
+	}
+
+	// Production server with HTTPS.
+	fs.Server = http.Server{
+		Addr:    "127.0.0.1:8081",
+		Handler: fs.routes(),
+	}
+	go func() {
+		if err := fs.Server.ListenAndServeTLS("cert.pem", "key.pem"); err != nil { // TEMPORARY
+			utils.AppLog.Error("frontend server failed to start", zap.Error(err))
+			panic(err)
+		}
+	}()
+
+	// For redirection purposese only.
+	unprotected := http.Server{
+		Addr:    "127.0.0.1:8080",
+		Handler: http.HandlerFunc(httpRedirect),
+	}
+	if err := unprotected.ListenAndServe(); err != nil {
+		utils.AppLog.Error("unprotected server failed to start", zap.Error(err))
 		panic(err)
 	}
 }

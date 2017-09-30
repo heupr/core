@@ -71,6 +71,10 @@ const BackendSecret = "fear-is-my-ally"
 
 var decoder = schema.NewDecoder()
 
+func httpRedirect(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "https://127.0.0.1:8081"+r.RequestURI, http.StatusMovedPermanently)
+}
+
 func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		if r.FormValue("state") != oaState {
