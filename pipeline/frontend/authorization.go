@@ -12,7 +12,7 @@ var oaConfig = &oauth2.Config{
 	ClientID:     "5ffc021b1fe3702c6888",
 	ClientSecret: "42edf1ab560dce313ff3e27dd7b94f58e41df3e7",
 	Endpoint:     ghoa.Endpoint,
-	Scopes:       []string{"admin:repo_hook", "repo:status", "public_repo"},
+	Scopes:       []string{"admin:repo_hook", "public_repo"},
 }
 
 const oaState = "the-force-shall-set-me-free"

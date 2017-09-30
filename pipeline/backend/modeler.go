@@ -10,7 +10,7 @@ func (bs *BackendServer) NewModel(repoID int) error {
 	bs.Repos.Lock()
 	defer bs.Repos.Unlock()
 	context := &conflation.Context{}
-	scenarios := []conflation.Scenario{&conflation.Scenario2{}, &conflation.Scenario3{}, &conflation.Scenario5{}}
+	scenarios := []conflation.Scenario{&conflation.Scenario2{}, &conflation.Scenario3{}, &conflation.Scenario7{}}
 	algos := []conflation.ConflationAlgorithm{
 		&conflation.ComboAlgorithm{Context: context},
 	}
