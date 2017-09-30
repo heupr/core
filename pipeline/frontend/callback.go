@@ -166,25 +166,25 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 				boltDB, err := bolt.Open(utils.Config.BoltDBPath, 0644, nil)
 				if err != nil {
 					utils.AppLog.Error("failed opening bolt: ", zap.Error(err))
-					utils.SlackLog.Error("failed opening bolt: ", zap.Error(err))
+					utils.SlackLog.Error("failed opening bolt: ", err)
 					return
 				}
 				database := BoltDB{DB: boltDB}
 				if err := database.Store("token", *repo.ID, tokenByte); err != nil {
 					utils.AppLog.Error("error storing token in bolt: ", zap.Error(err))
-					utils.SlackLog.Error("error storing token in bolt: ", zap.Error(err))
+					utils.SlackLog.Error("error storing token in bolt: ", err)
 					return
 				}
 
 				limitByte, err := json.Marshal(limit)
 				if err != nil {
 					utils.AppLog.Error("error converting callback limit: ", zap.Error(err))
-					utils.SlackLog.Error("error converting callback limit: ", zap.Error(err))
+					utils.SlackLog.Error("error converting callback limit: ", err)
 					return
 				}
 				if err := database.Store("limit", *repo.ID, limitByte); err != nil {
 					utils.AppLog.Error("error storing limit in bolt: ", zap.Error(err))
-					utils.SlackLog.Error("error storing limit in bolt: ", zap.Error(err))
+					utils.SlackLog.Error("error storing limit in bolt: ", err)
 					return
 				}
 				boltDB.Close()
@@ -203,20 +203,20 @@ func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.R
 			payload, err := json.Marshal(activationParams)
 			if err != nil {
 				utils.AppLog.Error("failure converting activation parameters: ", zap.Error(err))
-				utils.SlackLog.Error("failure converting activation parameters: ", zap.Error(err))
+				utils.SlackLog.Error("failure converting activation parameters: ", err)
 				return
 			}
 			req, err := http.NewRequest("POST", utils.Config.ActivationServiceEndpoint, bytes.NewBuffer(payload))
 			if err != nil {
 				utils.AppLog.Error("failed to create http request: ", zap.Error(err))
-				utils.SlackLog.Error("failed to create http request: ", zap.Error(err))
+				utils.SlackLog.Error("failed to create http request: ", err)
 				return
 			}
 			req.Header.Set("content-type", "application/json")
 			resp, err := fs.httpClient.Do(req)
 			if err != nil {
 				utils.AppLog.Error("failed internal post call: ", zap.Error(err))
-				utils.SlackLog.Error("failed internal post call: ", zap.Error(err))
+				utils.SlackLog.Error("failed internal post call: ", err)
 				return
 			} else {
 				defer resp.Body.Close()
