@@ -1,3 +1,4 @@
+go build -tags prod
 cp ./cmd /home/heupr/golang/bin/core/pipeline/frontend/cmd/cmd
 cp ./startprod.sh /home/heupr/golang/bin/core/pipeline/frontend/cmd/start.sh
 chmod +x /home/heupr/golang/bin/core/pipeline/frontend/cmd/start.sh
