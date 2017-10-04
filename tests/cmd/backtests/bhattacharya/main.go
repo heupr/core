@@ -3,18 +3,10 @@ package main
 import (
 	"core/models"
 	"core/models/bhattacharya"
-	"core/pipeline/ingestor"
-	"core/tests/cmd/endtoendtests/replay"
 	"github.com/pkg/profile"
 )
 
 func main() {
-	bufferPool := ingestor.NewPool()
-	db := ingestor.Database{BufferPool: bufferPool}
-	db.Open()
-	bs := replay.BacktestServer{DB: &db}
-	go bs.Start()
-
 	defer profile.Start().Stop()
 	nbModel := models.Model{Algorithm: &bhattacharya.NBModel{}}
 	testContext := TestContext{Model: nbModel}
@@ -24,6 +16,7 @@ func main() {
 	//testRunner.Run("dotnet/roslyn")
 	//testRunner.Run("openSUSE/osem")
 	testRunner.Run("dotnet/corefx")
+	//testRunner.Run("kubernetes/kubernetes")
 	//testRunner.Run("dotnet/coreclr")
 
 	//testRunner.Run("fabric8io/fabric8")

@@ -31,7 +31,7 @@ func (t *BackTestRunner) Run(repo string) {
 		//utils.Log.Error("Panic Recovered: ", recover(), bytes.NewBuffer(debug.Stack()).String())
 	}()
 
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "23fc398670a80700b19b1ae1587825a16aa8ce57"})
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "c813d7dab123d3c4813618bf64503a7a1efa540f"})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 	client := github.NewClient(tc)
 	newGateway := gateway.CachedGateway{Gateway: &gateway.Gateway{Client: client}, DiskCache: &gateway.DiskCache{}}
@@ -64,9 +64,7 @@ func (t *BackTestRunner) Run(repo string) {
 	for i := 0; i < len(conflator.Context.Issues); i++ {
 		expandedIssue := conflator.Context.Issues[i]
 		if expandedIssue.Conflate {
-			if expandedIssue.Issue.Assignees == nil {
-				continue
-			} else {
+			if expandedIssue.Issue.Assignees != nil || expandedIssue.PullRequest.User != nil {
 				trainingSet = append(trainingSet, conflator.Context.Issues[i])
 			}
 		}
@@ -78,7 +76,7 @@ func (t *BackTestRunner) Run(repo string) {
 	excludeAssignees := From(trainingSet).Where(func(exclude interface{}) bool {
 		if exclude.(conf.ExpandedIssue).Issue.Assignee != nil {
 			assignee := *exclude.(conf.ExpandedIssue).Issue.Assignee.Login
-			return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b" && assignee != "stephentoub"
+			return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b"
 		} else {
 			return true
 		}

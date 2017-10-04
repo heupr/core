@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"core/pipeline/gateway/conflation"
 	"core/utils"
 	"go.uber.org/zap"
@@ -35,10 +36,10 @@ func (m *Model) JohnFold(issues []conflation.ExpandedIssue) float64 {
 		}
 		modelRecoveryFile := utils.Config.DataCachesPath + "/JFold" + ToString(i*10.0) + ".model"
 		m.GenerateRecoveryFile(modelRecoveryFile)
+		fmt.Println("John Fold Loop#", (int)(Round(i)*10.0), "Accuracy", score)
 		utils.ModelLog.Info("John Fold", zap.Int("Loop#", (int)(Round(i)*10.0)), zap.Float64("Accuracy", score))
 		distinct = distinct
-		//TODO: Temporary
-		mat.classesEvaluation([]string{"bartonjs"})
+		mat = mat
 		//mat.classesEvaluation(distinct)
 		finalScore += score
 	}

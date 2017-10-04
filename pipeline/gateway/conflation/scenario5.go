@@ -12,6 +12,10 @@ type Scenario5 struct {
 //      words in the text body.
 //      Note that this value is set in the Scenario4a Words struct value.
 func (s *Scenario5) Filter(expandedIssue *ExpandedIssue) bool {
+	if expandedIssue.Issue.Body == nil {
+		return false
+	}
+
 	if strings.Count(*expandedIssue.Issue.Body, " ")+1 >= s.Words {
 		return true
 	} else {
