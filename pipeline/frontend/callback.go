@@ -70,7 +70,11 @@ const BackendSecret = "fear-is-my-ally"
 var decoder = schema.NewDecoder()
 
 func httpRedirect(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "https://heupr.io", http.StatusMovedPermanently)
+	if PROD {
+		http.Redirect(w, r, "https://heupr.io", http.StatusMovedPermanently)
+	} else {
+		http.Redirect(w, r, "https://127.0.0.1:8081", http.StatusMovedPermanently)
+	}
 }
 
 func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {

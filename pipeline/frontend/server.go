@@ -45,26 +45,50 @@ func (fs *FrontendServer) Start() {
 		Timeout: time.Second * 10,
 	}
 
-	// Production server with HTTPS.
-	fs.Server = http.Server{
-		Addr:    "10.142.1.0:443",
-		Handler: fs.routes(),
-	}
-	go func() {
-		if err := fs.Server.ListenAndServeTLS("heupr_io.crt", "heupr.key"); err != nil { // TEMPORARY
-			utils.AppLog.Error("frontend server failed to start", zap.Error(err))
+	if PROD {
+		// Production server with HTTPS.
+		fs.Server = http.Server{
+			Addr:    "10.142.1.0:443",
+			Handler: fs.routes(),
+		}
+		go func() {
+			if err := fs.Server.ListenAndServeTLS("heupr_io.crt", "heupr.key"); err != nil {
+				utils.AppLog.Error("frontend server failed to start", zap.Error(err))
+				panic(err)
+			}
+		}()
+
+		// For redirection purposese only.
+		unprotected := http.Server{
+			Addr:    "10.142.1.0:80",
+			Handler: http.HandlerFunc(httpRedirect),
+		}
+		if err := unprotected.ListenAndServe(); err != nil {
+			utils.AppLog.Error("unprotected server failed to start", zap.Error(err))
 			panic(err)
 		}
-	}()
+	} else {
+		// Dev server with HTTPS.
+		fs.Server = http.Server{
+			Addr:    "127.0.0.1:8081",
+			Handler: fs.routes(),
+		}
+		go func() {
+			if err := fs.Server.ListenAndServeTLS("cert.pem", "key.pem"); err != nil {
+				utils.AppLog.Error("frontend server failed to start", zap.Error(err))
+				panic(err)
+			}
+		}()
 
-	// For redirection purposese only.
-	unprotected := http.Server{
-		Addr:    "10.142.1.0:80",
-		Handler: http.HandlerFunc(httpRedirect),
-	}
-	if err := unprotected.ListenAndServe(); err != nil {
-		utils.AppLog.Error("unprotected server failed to start", zap.Error(err))
-		panic(err)
+		// For redirection purposese only.
+		unprotected := http.Server{
+			Addr:    "127.0.0.1:8080",
+			Handler: http.HandlerFunc(httpRedirect),
+		}
+		if err := unprotected.ListenAndServe(); err != nil {
+			utils.AppLog.Error("unprotected server failed to start", zap.Error(err))
+			panic(err)
+		}
 	}
 }
 
