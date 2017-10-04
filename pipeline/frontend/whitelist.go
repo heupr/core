@@ -36,14 +36,15 @@ func checkTOML(users []User, owner, repo string) bool {
 	return false
 }
 
-func (fs *FrontendServer) AutomaticWhitelist(repo github.Repository) error {
+func (fs *FrontendServer) CheckWhitelist(repo github.Repository) (string, error) {
 	boltDB, err := bolt.Open(databaseName, 0644, nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer boltDB.Close()
 
-	return boltDB.Update(func(tx *bolt.Tx) error {
+	output := ""
+	err = boltDB.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists([]byte(bucketName))
 		if err != nil {
 			return err
@@ -61,15 +62,12 @@ func (fs *FrontendServer) AutomaticWhitelist(repo github.Repository) error {
 			buf := &bytes.Buffer{}
 			gob.NewEncoder(buf).Encode(content)
 			info := buf.Bytes()
-
-			err := bucket.Put([]byte(bucketName), info)
-			if err != nil {
+			if err := bucket.Put([]byte(bucketName), info); err != nil {
 				return err
 			}
-		} else {
-			e := fmt.Errorf("Maximum allowed beta users reached - see %v to adjust cap\nRejected: %v/%v", whitelist, repoOwner, repoName)
-			return e
 		}
+		output = fmt.Sprintf("%v/%v", repoOwner, repoName)
 		return nil
 	})
+	return output, err
 }

@@ -21,7 +21,7 @@ func Test_checkTOML(t *testing.T) {
 	}
 }
 
-func TestAutomaticWhitelist(t *testing.T) {
+func TestCheckWhitelist(t *testing.T) {
 	name := "test-whitelist.db"
 	file, err := ioutil.TempFile("", name)
 	if err != nil {
@@ -42,7 +42,7 @@ func TestAutomaticWhitelist(t *testing.T) {
 
 	databaseName = name
 
-	err = testFS.AutomaticWhitelist(*testRepo)
+	_, err = testFS.CheckWhitelist(*testRepo)
 	if err != nil {
 		t.Errorf("automatic whitelist: %v", err)
 	}
