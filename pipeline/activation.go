@@ -20,19 +20,20 @@ func (as *ActivationServer) activationServerHandler(w http.ResponseWriter, r *ht
 	activationEndpoints := []string{utils.Config.IngestorActivationEndpoint, utils.Config.BackendActivationEndpoint}
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		utils.AppLog.Error("failed to read payload:", zap.Error(err))
+		utils.AppLog.Error("failed to read payload", zap.Error(err))
 		return
 	}
 	for i := range activationEndpoints {
 		req, err := http.NewRequest("POST", activationEndpoints[i], bytes.NewBuffer(payload))
 		if err != nil {
-			utils.AppLog.Error("failed to create http request:", zap.Error(err))
+			utils.AppLog.Error("failed to create http request", zap.Error(err))
 			continue
 		}
 		resp, err := as.httpClient.Do(req)
 		if err != nil {
-			utils.AppLog.Error("failed internal post call:", zap.Error(err))
-			http.Error(w, "failed internal post call", http.StatusForbidden)
+			errMsg := "failed internal post"
+			utils.AppLog.Error(errMsg, zap.Error(err))
+			http.Error(w, errMsg, http.StatusForbidden)
 			return
 		} else {
 			defer resp.Body.Close()
