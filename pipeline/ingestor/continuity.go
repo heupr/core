@@ -2,15 +2,11 @@ package ingestor
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
-	"github.com/boltdb/bolt"
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
-	"golang.org/x/oauth2"
 
-	"core/pipeline/frontend"
 	"core/utils"
 )
 
@@ -40,36 +36,23 @@ func (i *IngestorServer) continuityCheck() ([]*github.Issue, []*github.PullReque
 	}
 	defer results.Close()
 
-	db, err := bolt.Open(utils.Config.BoltDBPath, 0644, nil)
-	if err != nil {
-		utils.AppLog.Error("failed opening bolt on continuity check", zap.Error(err))
-		return nil, nil, err
-	}
-	defer db.Close()
-	boltDB := frontend.BoltDB{DB: db}
-
 	issues := []*github.Issue{}
 	pulls := []*github.PullRequest{}
 
 	for results.Next() {
-		repoID, startNum, endNum, is_pull := new(int), new(int), new(int), new(bool)
-		if err := results.Scan(repoID, startNum, endNum, is_pull); err != nil {
+		repoId, startNum, endNum, is_pull := new(int), new(int), new(int), new(bool)
+		if err := results.Scan(repoId, startNum, endNum, is_pull); err != nil {
 			utils.AppLog.Error("continuity check row scan", zap.Error(err))
 			return nil, nil, err
 		}
-		tokenByte, err := boltDB.Retrieve("token", *repoID)
+
+		integration, err := i.Database.ReadIntegrationById(*repoId)
 		if err != nil {
 			utils.AppLog.Error("retrieve token continuity check", zap.Error(err))
 		}
+		client := NewClient(integration.AppId, integration.InstallationId)
 
-		token := oauth2.Token{}
-		if err := json.Unmarshal(tokenByte, &token); err != nil {
-			utils.AppLog.Error("converting tokens", zap.Error(err))
-			return nil, nil, err
-		}
-		client := NewClient(token)
-
-		repo, _, err := client.Repositories.GetByID(context.Background(), *repoID)
+		repo, _, err := client.Repositories.GetByID(context.Background(), *repoId)
 		if err != nil {
 			utils.AppLog.Error("ingestor restart get by id", zap.Error(err))
 			return nil, nil, err

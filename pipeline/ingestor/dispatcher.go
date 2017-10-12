@@ -3,12 +3,14 @@ package ingestor
 var Workers chan chan interface{}
 
 type Dispatcher struct {
+	Database        *Database
+	RepoInitializer *RepoInitializer
 }
 
 func (d *Dispatcher) Start(count int) {
 	Workers = make(chan chan interface{}, count)
 	for i := 0; i < count; i++ {
-		worker := NewWorker(i+1, Workers)
+		worker := NewWorker(i+1, d.Database, d.RepoInitializer, Workers)
 		worker.Start()
 	}
 

@@ -1,32 +1,39 @@
 package ingestor
 
 import (
-	"core/utils"
+	"context"
+
+	"net/http"
+
+	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
+
 	"go.uber.org/zap"
+
+	"core/utils"
 )
 
 type Worker struct {
-	ID    int
-	Db    Database
-	Work  chan interface{}
-	Queue chan chan interface{}
-	Quit  chan bool
+	ID              int
+	Database        *Database
+	RepoInitializer *RepoInitializer
+	Work            chan interface{}
+	Queue           chan chan interface{}
+	Quit            chan bool
 }
 
-func NewWorker(id int, queue chan chan interface{}) Worker {
+func NewWorker(id int, db *Database, repoInitializer *RepoInitializer, queue chan chan interface{}) Worker {
 	return Worker{
-		ID:    id,
-		Db:    Database{},
-		Work:  make(chan interface{}),
-		Queue: queue,
-		Quit:  make(chan bool),
+		ID:              id,
+		Database:        db,
+		RepoInitializer: repoInitializer,
+		Work:            make(chan interface{}),
+		Queue:           queue,
+		Quit:            make(chan bool),
 	}
 }
 
 func (w *Worker) Start() {
-	//TODO: pull this out into shared state
-	w.Db.Open()
 	go func() {
 		for {
 			w.Queue <- w.Work
@@ -36,10 +43,38 @@ func (w *Worker) Start() {
 				case github.IssuesEvent:
 					//The Action that was performed. Can be one of "assigned", "unassigned", "labeled", "unlabeled", "opened", "edited", "milestoned", "demilestoned", "closed", or "reopened".
 					v.Issue.Repository = v.Repo
-					w.Db.InsertIssue(*v.Issue, v.Action)
+					w.Database.InsertIssue(*v.Issue, v.Action)
 				case github.PullRequestEvent:
 					//v.PullRequest.Base.Repo = v.Repo //TODO: Confirm
-					w.Db.InsertPullRequest(*v.PullRequest, v.Action)
+					w.Database.InsertPullRequest(*v.PullRequest, v.Action)
+				case HeuprInstallationEvent:
+					//TODO: Check for duped events
+					go func(e HeuprInstallationEvent) {
+						switch *e.Action {
+						case "created":
+							w.RepoInitializer.ActivateBackend(ActivationParams{InstallationEvent: e})
+							// Wrap the shared transport for use with the Github Installation.
+							itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID, "heupr.2017-10-04.private-key.pem")
+							if err != nil {
+								utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
+								return
+							}
+							// Use installation transport with client.
+							client := github.NewClient(&http.Client{Transport: itr})
+							for i := 0; i < len(e.Repositories); i++ {
+								githubRepo, _, err := client.Repositories.GetByID(context.Background(), *e.Repositories[i].ID)
+								if err != nil {
+									utils.AppLog.Error("ingestor get by id", zap.Error(err))
+									return
+								}
+								repo := AuthenticatedRepo{Repo: githubRepo, Client: client}
+								go w.RepoInitializer.AddRepo(repo)
+								go w.RepoInitializer.AddRepositoryIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+							}
+						case "deleted":
+							//TODO
+						}
+					}(v)
 				default:
 					utils.AppLog.Error("Unknown", zap.Any("GithubEvent", v))
 				}

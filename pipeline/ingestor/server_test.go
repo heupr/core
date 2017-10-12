@@ -1,8 +1,6 @@
 package ingestor
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -10,41 +8,35 @@ import (
 	"testing"
 
 	"github.com/google/go-github/github"
-	"golang.org/x/oauth2"
 )
 
 func Test_NewClient(t *testing.T) {
 	// NOTE: I'd ultimately like this to be truly "table driven" but I can't
 	// think of a good way to assert the NewClient results.
 	tests := []struct {
-		token  oauth2.Token
+		integration struct {
+			appId          int
+			installationId int
+		}
 		output interface{}
 	}{
-		{oauth2.Token{AccessToken: ""}, nil},
-		{oauth2.Token{AccessToken: "test-token"}, nil},
-		{oauth2.Token{AccessToken: "039f5f2f98a87f46abef10170866ed8ecf3b5b2d"}, nil},
+		{struct {
+			appId          int
+			installationId int
+		}{1, 2}, nil},
+		{struct {
+			appId          int
+			installationId int
+		}{2, 2}, nil},
+		{struct {
+			appId          int
+			installationId int
+		}{3, 3}, nil},
 	}
 
-	for _, test := range tests {
-		c := NewClient(test.token)
-		if c == nil {
-			t.Errorf("failed to make client")
-		}
-	}
-}
-
-func Test_activateHandler(t *testing.T) {
 	id := 1
 	owner := "bomarr-order"
 	repo := "bt-16-perimeter-droid"
-	activationParams := struct {
-		Repo  github.Repository `json:"repo"`
-		Token *oauth2.Token     `json:"token"`
-	}{
-		github.Repository{ID: github.Int(id), Owner: &github.User{Login: github.String(owner)}, Name: github.String(repo), FullName: github.String(owner + "/" + repo)},
-		&oauth2.Token{},
-	}
-
 	mux := http.NewServeMux()
 	mux.HandleFunc(fmt.Sprintf("/repos/%v/%v/issues", owner, repo), func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `[{"id":123,"number":456}]`) // Issues dummy service.
@@ -59,28 +51,17 @@ func Test_activateHandler(t *testing.T) {
 	server := httptest.NewServer(mux)
 	testURL, _ := url.Parse(server.URL)
 
-	NewClient = func(t oauth2.Token) *github.Client {
+	NewClient = func(appId int, installationId int) *github.Client {
 		c := github.NewClient(nil)
 		c.BaseURL = testURL
 		c.UploadURL = testURL
 		return c
 	}
 
-	payload, err := json.Marshal(activationParams)
-	if err != nil {
-		t.Errorf("failure converting activation parameters: %v", err)
-	}
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "/handler-test", bytes.NewBuffer(payload))
-	if err != nil {
-		t.Errorf("failure generating testing request: %v", err)
-	}
-	req.Header.Set("content-type", "application/json")
-
-	testIS := IngestorServer{}
-	handler := http.HandlerFunc(testIS.activateHandler)
-	handler.ServeHTTP(rec, req)
-	if received := rec.Code; received != http.StatusOK {
-		t.Errorf("handler returning incorrect status code; received %v, expected %v", received, http.StatusOK)
+	for _, test := range tests {
+		c := NewClient(test.integration.appId, test.integration.installationId)
+		if c == nil {
+			t.Errorf("failed to make client")
+		}
 	}
 }

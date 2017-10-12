@@ -23,17 +23,17 @@ func main() {
 		return
 	}
 
-	bufferPool := ingestor.NewPool()
-	db := ingestor.Database{BufferPool: bufferPool}
+	//bufferPool := ingestor.NewPool()
+	db := ingestor.Database{} //{BufferPool: bufferPool}
 	db.Open()
-
-	bs := replay.BacktestServer{DB: &db}
-	go bs.Start()
 
 	dispatcher := ingestor.Dispatcher{}
 	dispatcher.Start(5)
 	ingestorServer := ingestor.IngestorServer{}
 	go ingestorServer.Start()
+
+	bs := replay.BacktestServer{DB: &db, Ingestor: &ingestorServer}
+	go bs.Start()
 
 	if *loadArchiveFlag && *archivePathFlag != "" {
 		bs.LoadArchive(*archivePathFlag)
@@ -67,23 +67,13 @@ func main() {
 			bs.AddRepo(*repo.ID, *repo.Organization.Name, *repo.Name)
 		}
 
+		fmt.Println("bs.StreamWebhookEvents() start")
 		bs.StreamWebhookEvents()
-		go backendServer.Start()
+		//go backendServer.Start()
+		fmt.Println("bs.StreamWebhookEvents() end")
 
-
-		//time.Sleep(5 * time.Second)
-
-
-
-		//time.Sleep(15 * time.Second)
-
-		//backendServer.OpenSQL()
-		//backendServer.Timer()
-
-		time.Sleep(60 * time.Second)
-
+		time.Sleep(15 * time.Second)
 		bs.PredictionAccuracy()
-
-		time.Sleep(180 * time.Second)
+		time.Sleep(15 * time.Second)
 	}
 }

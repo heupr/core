@@ -50,16 +50,17 @@ func ToString(number float64) string {
 }
 
 type BacktestServer struct {
-	client          http.Client
-	gitClient       *github.Client
-	DB              *ingestor.Database
-	server          http.Server
-	repoInitializer ingestor.RepoInitializer
-	events          []*ingestor.Event
-	WebhookEvents   []*ingestor.Event
-	issueAssignees  map[string][]string
-	scoreboard      AssigneesAccuracy //map[string]*Score
-	eventsCount     int
+	client    http.Client
+	gitClient *github.Client
+	DB        *ingestor.Database
+	server    http.Server
+	//repoInitializer ingestor.RepoInitializer
+	Ingestor       *ingestor.IngestorServer
+	events         []*ingestor.Event
+	WebhookEvents  []*ingestor.Event
+	issueAssignees map[string][]string
+	scoreboard     AssigneesAccuracy //map[string]*Score
+	eventsCount    int
 }
 
 type AssigneesAccuracy struct {
@@ -105,7 +106,7 @@ func (b *BacktestServer) AddRepo(id int, org string, name string) {
 	client.BaseURL = url
 	client.UploadURL = url
 	repo := ingestor.AuthenticatedRepo{Repo: &github.Repository{ID: github.Int(id), Owner: &github.User{Login: github.String(org)}, Name: github.String(name), FullName: github.String(org + "/" + name)}, Client: client}
-	b.repoInitializer.AddRepo(repo)
+	b.Ingestor.RepoInitializer.AddRepo(repo)
 }
 
 func (b *BacktestServer) LoadArchive(path string) {

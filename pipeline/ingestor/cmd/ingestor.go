@@ -13,9 +13,6 @@ func main() {
 		utils.SlackLog.Fatal("Process crash: ", recover(), bytes.NewBuffer(debug.Stack()).String())
 	}()
 
-	dispatcher := ingestor.Dispatcher{}
-	dispatcher.Start(5)
-
 	ingestorServer := ingestor.IngestorServer{}
 	ingestorServer.Start()
 }

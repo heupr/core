@@ -3,16 +3,12 @@ package backend
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
-	"github.com/boltdb/bolt"
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
-	"golang.org/x/oauth2"
 
-	"core/pipeline/frontend"
 	"core/utils"
 )
 
@@ -29,21 +25,21 @@ type BackendServer struct {
 
 func (bs *BackendServer) activateHandler(w http.ResponseWriter, r *http.Request) {
 	var activationParams struct {
-		Repo  github.Repository `json:"repo"`
-		Token *oauth2.Token     `json:"token"`
-		Limit time.Time         `json:"limit"`
+		InstallationEvent HeuprInstallationEvent `json:"installation_event,omitempty"`
+		Limit             time.Time              `json:"limit,omitempty"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&activationParams)
 	if err != nil {
 		utils.AppLog.Error("unable to decode json message. ", zap.Error(err))
 	}
-	repoID := *activationParams.Repo.ID
-	token := activationParams.Token
-	limit := activationParams.Limit
-	if bs.Repos.Actives[repoID] == nil {
-		bs.NewArchRepo(repoID, limit)
-		bs.NewClient(repoID, token)
-		bs.NewModel(repoID)
+	integration := activationParams.InstallationEvent
+	limit := time.Now().AddDate(0, 0, -30) //activationParams.Limit
+	for _, repository := range integration.Repositories {
+		if _, ok := bs.Repos.Actives[*repository.ID]; !ok {
+			bs.NewArchRepo(*repository.ID, limit)
+			bs.NewClient(*repository.ID, *integration.HeuprInstallation.AppID, *integration.HeuprInstallation.ID)
+			bs.NewModel(*repository.ID)
+		}
 	}
 }
 
@@ -59,55 +55,21 @@ func (bs *BackendServer) Start() {
 
 	bs.Repos = &ActiveRepos{Actives: make(map[int]*ArchRepo)}
 
-	db, err := bolt.Open(utils.Config.BoltDBPath, 0644, nil)
-	boltDB := frontend.BoltDB{DB: db}
-
-	if err := boltDB.Initialize(); err != nil {
-		utils.AppLog.Error("backend server: ", zap.Error(err))
-		panic(err)
-	}
-
-	keys, tokens, err := boltDB.RetrieveBulk("token")
+	integrations, err := bs.Database.ReadIntegrations()
 	if err != nil {
-		utils.AppLog.Error("retrieve bulk tokens:", zap.Error(err))
-		panic(err)
+		utils.AppLog.Error("Retrieve bulk tokens on ingestor restart", zap.Error(err))
 	}
 
-	_, limits, err := boltDB.RetrieveBulk("limit")
-	if err != nil {
-		utils.AppLog.Error("retrieve bulk limits:", zap.Error(err))
-		panic(err)
-	}
-
-	if len(tokens) != len(limits) {
-		utils.AppLog.Error("bolt db buckets are not equal size")
-		panic(err)
-	}
-
-	for i := 0; i < len(keys); i++ {
-		key, err := strconv.Atoi(string(keys[i]))
-		if err != nil {
-			utils.AppLog.Error("backend server: ", zap.Error(err))
-			panic(err)
-		}
-		token := oauth2.Token{}
-		if err := json.Unmarshal(tokens[i], &token); err != nil {
-			utils.AppLog.Error("backend server: ", zap.Error(err))
-			panic(err)
-		}
-
-		limit := time.Time{}
-		if err := json.Unmarshal(limits[i], &limit); err != nil {
-			utils.AppLog.Error("backend server: ", zap.Error(err))
-			panic(err)
-		}
-		if _, ok := bs.Repos.Actives[key]; !ok {
-			bs.NewArchRepo(key, limit)
-			bs.NewClient(key, &token)
-			bs.NewModel(key)
+	for _, integration := range integrations {
+		//TODO: Configure Limit
+		limit := time.Now().AddDate(0, 0, -30)
+		if _, ok := bs.Repos.Actives[integration.RepoId]; !ok {
+			bs.NewArchRepo(integration.RepoId, limit)
+			bs.NewClient(integration.RepoId, integration.AppId, integration.InstallationId)
+			bs.NewModel(integration.RepoId)
 		}
 	}
-	db.Close()
+
 	// Keeping this channel to implement graceful shutdowns if needed.
 	wiggin := make(chan bool)
 	bs.Timer(wiggin)
@@ -144,4 +106,29 @@ func (bs *BackendServer) Timer(ender chan bool) {
 			}
 		}
 	}()
+}
+
+// Workaround Github API limitation. This is required to wrap HeuprInstallation
+type HeuprInstallationEvent struct {
+	// The action that was performed. Can be either "created" or "deleted".
+	Action            *string            `json:"action,omitempty"`
+	Sender            *github.User       `json:"sender,omitempty"`
+	HeuprInstallation *HeuprInstallation `json:"installation,omitempty"`
+	Repositories      []HeuprRepository  `json:"repositories,omitempty"`
+}
+
+// Workaround Github API limitation. go-github is missing repositories field
+type HeuprInstallation struct {
+	ID              *int         `json:"id,omitempty"`
+	Account         *github.User `json:"account,omitempty"`
+	AppID           *int         `json:"app_id,omitempty"`
+	AccessTokensURL *string      `json:"access_tokens_url,omitempty"`
+	RepositoriesURL *string      `json:"repositories_url,omitempty"`
+	HTMLURL         *string      `json:"html_url,omitempty"`
+}
+
+type HeuprRepository struct {
+	ID       *int    `json:"id,omitempty"`
+	Name     *string `json:"name,omitempty"`
+	FullName *string `json:"full_name,omitempty"`
 }

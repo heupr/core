@@ -1,22 +1,28 @@
 package ingestor
 
 import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"time"
+
+	"go.uber.org/zap"
+
 	"core/pipeline/gateway"
 	"core/utils"
 )
 
-type RepoInitializer struct {
-	repos map[int]bool
+type ActivationParams struct {
+	InstallationEvent HeuprInstallationEvent `json:"installation_event,omitempty"`
+	Limit             time.Time              `json:"limit,omitempty"`
 }
 
-func (r *RepoInitializer) LoadRepos() {
-
+type RepoInitializer struct {
+	Database   *Database
+	HttpClient http.Client
 }
 
 func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
-	bufferPool := NewPool()
-	db := Database{BufferPool: bufferPool}
-	db.Open()
 	newGateway := gateway.Gateway{
 		Client:      authRepo.Client,
 		UnitTesting: false,
@@ -36,5 +42,37 @@ func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
 	if err != nil {
 		utils.AppLog.Error(err.Error())
 	}
-	db.BulkInsertIssuesPullRequests(githubIssues, githubPulls)
+	r.Database.BulkInsertIssuesPullRequests(githubIssues, githubPulls)
+}
+
+func (r *RepoInitializer) AddRepositoryIntegration(repoId int, appId int, installationId int) {
+	r.Database.InsertIntegration(repoId, appId, installationId)
+}
+
+func (r *RepoInitializer) RemoveRepositoryIntegration(repoId int, appId int, installationId int) {
+	//TODO:
+}
+
+func (r *RepoInitializer) ObliterateIntegration(repoId int, appId int, installationId int) {
+	//TODO:
+}
+
+func (r *RepoInitializer) ActivateBackend(params ActivationParams) {
+	payload, err := json.Marshal(params)
+	if err != nil {
+		utils.AppLog.Error("failed to marshal json", zap.Error(err))
+		return
+	}
+	req, err := http.NewRequest("POST", utils.Config.BackendActivationEndpoint, bytes.NewBuffer(payload))
+	if err != nil {
+		utils.AppLog.Error("failed to create http request", zap.Error(err))
+		return
+	}
+	resp, err := r.HttpClient.Do(req)
+	if err != nil {
+		utils.AppLog.Error("failed internal post", zap.Error(err))
+		return
+	} else {
+		defer resp.Body.Close()
+	}
 }

@@ -3,13 +3,14 @@ package backend
 import (
 	"context"
 	"core/utils"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
-	"golang.org/x/oauth2"
 
 	"core/models"
 	"core/pipeline/gateway/conflation"
@@ -50,15 +51,18 @@ func (bs *BackendServer) NewArchRepo(repoID int, limit time.Time) {
 	bs.Repos.Actives[repoID].Limit = limit
 }
 
-func (bs *BackendServer) NewClient(repoID int, token *oauth2.Token) {
+func (bs *BackendServer) NewClient(repoId int, appId int, installationId int) {
 	bs.Repos.Lock()
 	defer bs.Repos.Unlock()
 
-	tokenSource := oauth2.StaticTokenSource(token)
-	authClient := oauth2.NewClient(oauth2.NoContext, tokenSource)
-	githubClient := github.NewClient(authClient)
+	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appId, installationId, "heupr.2017-10-04.private-key.pem")
+	if err != nil {
+		utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
+		return
+	}
+	client := github.NewClient(&http.Client{Transport: itr})
 
-	bs.Repos.Actives[repoID].Client = githubClient
+	bs.Repos.Actives[repoId].Client = client
 }
 
 func (a *ArchRepo) TriageOpenIssues() {

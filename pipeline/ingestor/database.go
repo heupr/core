@@ -22,10 +22,17 @@ type Event struct {
 	Payload interface{}       `json:"payload"`
 }
 
-type Value interface{} // NOTE: Is this supposed to be anything?
+type Value interface{}
+
+type Integration struct {
+	RepoId         int
+	AppId          int
+	InstallationId int
+}
 
 type SQLDB interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
+	QueryRow(query string, args ...interface{}) *sql.Row
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	Close() error
 }
@@ -78,6 +85,55 @@ func (d *Database) EnableRepo(repoId int) {
 		rows, _ := result.RowsAffected()
 		utils.AppLog.Info("Database Insert Success", zap.Int64("Rows", rows))
 	}
+}
+
+func (d *Database) InsertIntegration(repoId int, appId int, installationId int) {
+	var buffer bytes.Buffer
+	integrationsInsert := "INSERT INTO integrations(repo_id, app_id, installation_id) VALUES"
+	valuesFmt := "(?,?,?)"
+
+	buffer.WriteString(integrationsInsert)
+	buffer.WriteString(valuesFmt)
+	result, err := d.db.Exec(buffer.String(), repoId, appId, installationId)
+	if err != nil {
+		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+	} else {
+		rows, _ := result.RowsAffected()
+		utils.AppLog.Info("Database Insert Success", zap.Int64("Rows", rows))
+	}
+}
+
+func (d *Database) ReadIntegrations() ([]Integration, error) {
+	integrations := []Integration{}
+	results, err := d.db.Query("select repo_id, app_id, installation_id from integrations")
+	if err != nil {
+		return nil, err
+	}
+
+	defer results.Close()
+	for results.Next() {
+		integration := Integration{}
+		err := results.Scan(&integration.RepoId, &integration.AppId, &integration.InstallationId)
+		if err != nil {
+			return nil, err
+		}
+		integrations = append(integrations, integration)
+		err = results.Err()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return integrations, nil
+}
+
+func (d *Database) ReadIntegrationById(repoId int) (*Integration, error) {
+	integration := new(Integration)
+	err := d.db.QueryRow("select repo_id, app_id, installation_id from integrations where repo_id = ?", repoId).Scan(&integration.RepoId, &integration.AppId, &integration.InstallationId)
+	if err != nil {
+		utils.AppLog.Error("ReadIntegrationById Database Read Failure", zap.Error(err))
+		return nil, err
+	}
+	return integration, nil
 }
 
 func (d *Database) BulkInsertBacktestEvents(events []*Event) {
@@ -168,7 +224,7 @@ func (d *Database) ReadBacktestRepos() ([]github.Repository, error) {
 		select count(*) cnt, repo_name, repo_id from backtest_events where is_pull = 0 and is_closed = 1 and repo_name != 'chrsmith/google-api-java-client'
 		group by repo_name
 	) T
-	order by T.cnt desc LIMIT 3
+	order by T.cnt desc LIMIT 10
     `)
 	if err != nil {
 		return nil, err

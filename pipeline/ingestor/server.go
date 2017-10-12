@@ -1,14 +1,13 @@
 package ingestor
 
 import (
-	"context"
-	"encoding/json"
 	"net/http"
 	"time"
 
+	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
+
 	"go.uber.org/zap"
-	"golang.org/x/oauth2"
 
 	"core/utils"
 )
@@ -20,56 +19,37 @@ type IngestorServer struct {
 }
 
 // This is a global variable for unit testing and stubbing out the client URLs.
-var NewClient = func(token oauth2.Token) *github.Client {
-	source := oauth2.StaticTokenSource(&token)
-	githubClient := github.NewClient(oauth2.NewClient(oauth2.NoContext, source))
-	return githubClient
-}
-
-func (i *IngestorServer) activateHandler(w http.ResponseWriter, r *http.Request) {
-	var activationParams struct {
-		Repo  github.Repository `json:"repo"`
-		Token *oauth2.Token     `json:"token"`
-		Limit time.Time         `json:"limit"`
-	}
-	err := json.NewDecoder(r.Body).Decode(&activationParams)
+var NewClient = func(appId int, installationId int) *github.Client {
+	// Wrap the shared transport for use with the Github Installation.
+	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appId, installationId, "heupr.2017-10-04.private-key.pem")
 	if err != nil {
-		utils.AppLog.Error("unable to decode json message. ", zap.Error(err))
+		utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
+		return nil
 	}
-	client := NewClient(*activationParams.Token)
-
-	// NOTE: This may ultimately be refactored out into a helper
-	// method/function. Also see the similar code in the Restart method.
-	repo, _, err := client.Repositories.Get(context.Background(), *activationParams.Repo.Owner.Login, *activationParams.Repo.Name)
-	if err != nil {
-		utils.AppLog.Error("ingestor github pulldown:", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	authRepo := AuthenticatedRepo{
-		Repo:   repo,
-		Client: client,
-	}
-	i.RepoInitializer = RepoInitializer{}
-	i.RepoInitializer.AddRepo(authRepo)
+	client := github.NewClient(&http.Client{Transport: itr})
+	return client
 }
 
 func (i *IngestorServer) routes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("/hook", collectorHandler())
-	mux.HandleFunc("/activate-ingestor-backend", i.activateHandler)
 	return mux
 }
 
 func (i *IngestorServer) Start() error {
 	bufferPool := NewPool()
 	i.Database = Database{BufferPool: bufferPool}
+	defer i.Database.Close()
 	i.Database.Open()
 
-	i.RepoInitializer = RepoInitializer{}
+	i.RepoInitializer = RepoInitializer{Database: &i.Database, HttpClient: http.Client{Timeout: time.Second * 10}}
+
+	dispatcher := Dispatcher{Database: &i.Database, RepoInitializer: &i.RepoInitializer}
+	dispatcher.Start(5)
+
 	i.Restart()
 	i.Continuity()
+
 	i.Server = http.Server{Addr: utils.Config.IngestorServerAddress, Handler: i.routes()}
 	err := i.Server.ListenAndServe()
 	if err != nil {

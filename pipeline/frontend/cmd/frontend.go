@@ -15,5 +15,4 @@ func main() {
 
 	frontendServer := frontend.FrontendServer{}
 	frontendServer.Start()
-	// frontendServer.OpenBolt()
 }

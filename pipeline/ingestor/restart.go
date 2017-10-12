@@ -2,15 +2,10 @@ package ingestor
 
 import (
 	"context"
-	"encoding/json"
-	"strconv"
 
-	"github.com/boltdb/bolt"
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
-	"golang.org/x/oauth2"
 
-	"core/pipeline/frontend"
 	"core/utils"
 )
 
@@ -29,40 +24,18 @@ FROM (
 ) g
 ORDER BY g.is_pull`
 
+
 func (i *IngestorServer) Restart() error {
-	db, err := bolt.Open(utils.Config.BoltDBPath, 0644, nil)
-	if err != nil {
-		utils.AppLog.Error("Failed opening bolt on ingestor restart", zap.Error(err))
-		return err
-	}
-	defer db.Close()
 
-	boltDB := frontend.BoltDB{DB: db}
-	if err := boltDB.Initialize(); err != nil {
-		utils.AppLog.Error("Ingestor server", zap.Error(err))
-		panic(err)
-	}
-
-	repos, tokens, err := boltDB.RetrieveBulk("token")
+	integrations, err := i.Database.ReadIntegrations()
 	if err != nil {
 		utils.AppLog.Error("Retrieve bulk tokens on ingestor restart", zap.Error(err))
 	}
 
-	for key := range tokens {
-		token := oauth2.Token{}
-		if err := json.Unmarshal(tokens[key], &token); err != nil {
-			utils.AppLog.Error("converting tokens", zap.Error(err))
-			return err
-		}
-		client := NewClient(token)
+	for _, integration := range integrations {
+		client := NewClient(integration.AppId, integration.InstallationId)
 
-		repoID, err := strconv.Atoi(string(repos[key]))
-		if err != nil {
-			utils.AppLog.Error("Repo id int conversion", zap.Error(err))
-			return err
-		}
-
-		repo, _, err := client.Repositories.GetByID(context.Background(), repoID)
+		repo, _, err := client.Repositories.GetByID(context.Background(), integration.RepoId)
 		if err != nil {
 			utils.AppLog.Error("Ingestor restart get by id", zap.Error(err))
 			return err
@@ -72,7 +45,7 @@ func (i *IngestorServer) Restart() error {
 		name := repo.Name
 
 		iOld, pOld, iNew, pNew := new(int), new(int), new(int), new(int)
-		rows, err := i.Database.db.Query(RESTART_QUERY, repoID, repoID)
+		rows, err := i.Database.db.Query(RESTART_QUERY, integration.RepoId, integration.RepoId)
 		if err != nil {
 			utils.AppLog.Error("restart query: ", zap.Error(err))
 		}
@@ -96,7 +69,6 @@ func (i *IngestorServer) Restart() error {
 				Repo:   repo,
 				Client: client,
 			}
-			i.RepoInitializer = RepoInitializer{}
 			i.RepoInitializer.AddRepo(authRepo)
 			return nil
 		}
