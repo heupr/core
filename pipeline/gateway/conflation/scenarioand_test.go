@@ -1,8 +1,9 @@
 package conflation
 
 import (
-	"github.com/google/go-github/github"
 	"testing"
+    
+    "github.com/google/go-github/github"
 )
 
 type TestSubScenario struct{}
@@ -16,7 +17,7 @@ var TestScenarioAND = ScenarioAND{Scenarios: []Scenario{TestSubScenario{}}}
 var (
 	title        = "Let the Wookie win."
 	andIssue     = github.Issue{Title: &title}
-	andTestIssue = &ExpandedIssue{Issue: CRIssue{issue, []int{}, []CRPullRequest{}}}
+	andTestIssue = &ExpandedIssue{Issue: CRIssue{issue, []int{}, []CRPullRequest{}, false}}
 )
 
 func TestFilterAND(t *testing.T) {

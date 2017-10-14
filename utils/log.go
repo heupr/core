@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/johntdyer/slackrus"
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	"go.uber.org/zap"
 )
 

@@ -1,13 +1,14 @@
 package conflation
 
 import (
-	"github.com/google/go-github/github"
 	"testing"
+
+    "github.com/google/go-github/github"
 )
 
 var TestScenario2 = Scenario2{}
 
-// DOC: this is the variable contruction for the dummy pure GitHub issue.
+// This is the variable contruction for the dummy pure GitHub issue.
 var (
 	number    = 1187
 	noNumber  = 0
@@ -17,19 +18,19 @@ var (
 	nonIssue  = github.Issue{Number: &noNumber}
 )
 
-// DOC: below is the empty test GitHub pull request; no values are needed.
+// Below is the empty test GitHub pull request; no values are needed.
 var (
 	prTitle         = "We have been expecting you."
 	testPullRequest = github.PullRequest{Title: &prTitle}
 )
 
 var TestWithIssue = &ExpandedIssue{
-	Issue:       CRIssue{testIssue, []int{}, []CRPullRequest{}},
+	Issue:       CRIssue{testIssue, []int{}, []CRPullRequest{}, false},
 	PullRequest: CRPullRequest{testPullRequest, []int{}, []CRIssue{}},
 }
 
 var TestWithoutIssue = &ExpandedIssue{
-	Issue:       CRIssue{nonIssue, []int{}, []CRPullRequest{}},
+	Issue:       CRIssue{nonIssue, []int{}, []CRPullRequest{}, false},
 	PullRequest: CRPullRequest{testPullRequest, []int{}, []CRIssue{}},
 }
 

@@ -1,11 +1,7 @@
 package conflation
 
-import (
-	"github.com/google/go-github/github"
-)
+import "github.com/google/go-github/github"
 
-// TODO: Repair erroneous "Ids" naming convention.
-// TODO: Rename fields to "Numbers" instead of "IDs"
 type CRPullRequest struct {
 	github.PullRequest
 	RefIssueIds []int
@@ -23,7 +19,7 @@ type ExpandedIssue struct {
 	PullRequest CRPullRequest
 	Issue       CRIssue
 	Conflate    bool
-	IsTrained		bool
+	IsTrained   bool
 }
 
 func (cr *CRPullRequest) ReferencesIssues() bool {

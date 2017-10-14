@@ -11,6 +11,7 @@ type DiskCache struct {
 
 func (d *DiskCache) Set(key string, values interface{}) (err error) {
 	file, err := os.OpenFile(utils.Config.DataCachesPath+key, os.O_WRONLY|os.O_CREATE, 0644)
+	defer file.Close()
 	if err != nil {
 		return err
 	}
@@ -28,6 +29,7 @@ func (d *DiskCache) TryGet(key string, values interface{}) (err error) {
 
 func (d *DiskCache) Get(key string, values interface{}) (err error) {
 	file, err := os.Open(utils.Config.DataCachesPath + key)
+	defer file.Close()
 	if err != nil {
 		return err
 	}

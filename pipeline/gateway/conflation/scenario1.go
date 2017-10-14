@@ -2,9 +2,8 @@ package conflation
 
 type Scenario1 struct{}
 
-// - "Basic" issues
-// - Issue objects without any additional criteria
-// - Only issues (pull requests excluded from filtering)
+// Only Issue objects are collected without any additional criteria; this
+// excludes Pull Requests.
 func (s *Scenario1) Filter(expandedIssue *ExpandedIssue) bool {
-  return expandedIssue.Issue.Number != nil
+	return expandedIssue.Issue.Number != nil
 }

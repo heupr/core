@@ -13,7 +13,7 @@ type Gateway struct {
 
 func (c *Gateway) GetPullRequests(org string, project string) ([]*github.PullRequest, error) {
 	pullsOpt := &github.PullRequestListOptions{
-		State: "all",
+		State: "closed",
 		ListOptions: github.ListOptions{
 			PerPage: 100,
 		},
@@ -37,7 +37,7 @@ func (c *Gateway) GetPullRequests(org string, project string) ([]*github.PullReq
 
 func (c *Gateway) GetIssues(org string, project string) ([]*github.Issue, error) {
 	issuesOpt := &github.IssueListByRepoOptions{
-		State: "all",
+		State: "closed",
 		ListOptions: github.ListOptions{
 			PerPage: 100,
 		},
@@ -58,17 +58,3 @@ func (c *Gateway) GetIssues(org string, project string) ([]*github.Issue, error)
 	}
 	return filteredIssues, nil
 }
-
-/*
-// TODO: this may not be needed if a better mapping alternative is found
-func (c *Gateway) GetPullEvents() ([]*github.PullRequestEvent, error) {
-	pullEvents := []*github.PullRequestEvent{}
-	return pullEvents, nil
-}
-
-// TODO: this may not be needed if a better mapping alternative is found
-func (c *Gateway) GetIssueEvents() ([]*github.Event, error) {
-	issuesEvents, _, _ := c.Client.Activity.ListIssueEventsForRepository("dotnet", "corefx", nil)
-	return issuesEvents, nil
-}
-*/

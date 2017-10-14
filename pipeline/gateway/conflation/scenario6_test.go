@@ -1,8 +1,9 @@
 package conflation
 
 import (
+    "testing"
+    
 	"github.com/google/go-github/github"
-	"testing"
 )
 
 var TestScenario6 = Scenario6{AssigneeCount: 1}
@@ -13,7 +14,7 @@ func TestFilter6(t *testing.T) {
 	issue := github.Issue{Assignees: []*github.User{&user}}
 	pull := github.PullRequest{}
 
-	ei1 := &ExpandedIssue{Issue: CRIssue{issue, []int{}, []CRPullRequest{}}}
+	ei1 := &ExpandedIssue{Issue: CRIssue{issue, []int{}, []CRPullRequest{}, false}}
 	ei2 := &ExpandedIssue{}
 	ei3 := &ExpandedIssue{PullRequest: CRPullRequest{pull, []int{}, []CRIssue{}}}
 
