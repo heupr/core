@@ -51,7 +51,7 @@ func (bs *BackendServer) NewArchRepo(repoID int, limit time.Time) {
 	bs.Repos.Actives[repoID].Limit = limit
 }
 
-func (bs *BackendServer) NewClient(repoId int, appId int, installationId int) {
+func (bs *BackendServer) NewClient(repoId, appId, installationId int) {
 	bs.Repos.Lock()
 	defer bs.Repos.Unlock()
 
@@ -193,23 +193,3 @@ func (b *Blender) AllModelsBootstrapped() bool {
 	}
 	return true
 }
-
-/*
-func (a *ArchRepo) TuneConflationScenarios() {
-	//This method will iterate over all models in the hive and call either Learn or OnlineLearn
-}
-
-func (a *ArchRepo) GetModelBenchmark() {
- //Call this method before calling TriageOpenIssues.
-}
-
-//Every week we can generate a report that shows tossing graphs(pre) vs post signup
-func (a *ArchRepo) PreHeuprTossingGraphDepth() {
-	//For all Pre-Heupr assigned issues
-	//Calcuate avg,min,max tossing graph depth for each developer
-}
-
-func (a *ArchRepo) TossingGraphDepth() {
-	//For all Heupr assigned issues
-	//Calcuate avg,min,max tossing graph depth for each developer
-} */

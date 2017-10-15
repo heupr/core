@@ -3,8 +3,6 @@ package backend
 import (
 	"testing"
 	"time"
-
-	"golang.org/x/oauth2"
 )
 
 const repoID = 66
@@ -18,13 +16,5 @@ func TestNewArchRepo(t *testing.T) {
 	testBS.NewArchRepo(repoID, testTime)
 	if testBS.Repos.Actives[repoID] == nil {
 		t.Error("failure generating new arch repo")
-	}
-}
-
-func TestNewClient(t *testing.T) {
-	testToken := oauth2.Token{AccessToken: "test-token"}
-	testBS.NewClient(repoID, &testToken)
-	if testBS.Repos.Actives[repoID].Client == nil {
-		t.Error("failure generating client for arch repo")
 	}
 }

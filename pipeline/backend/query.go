@@ -4,22 +4,13 @@ import (
 	"bytes"
 	"core/utils"
 	"encoding/json"
-	"github.com/google/go-github/github"
 	"reflect"
 	"strings"
+
+	"github.com/google/go-github/github"
 )
 
 var maxID = 0
-
-//const ISSUE_QUERY = `SELECT id, repo_id, is_pull, payload FROM github_events WHERE id > ?`
-const ISSUE_QUERY = `select g.id, g.repo_id, g.is_pull, g.payload from github_events g
-join (
-SELECT max(id) id
-FROM github_events
-WHERE id > ?
-group by repo_id, issues_id, number
-) T
-on T.id = g.id and g.action in ('opened', 'closed')` //MVP Workaround.
 
 type RepoData struct {
 	RepoID              int
@@ -27,15 +18,32 @@ type RepoData struct {
 	Closed              []*github.Issue
 	Pulls               []*github.PullRequest
 	AssigneeAllocations map[string]int
-	EligibleAssignees   map[string]int //Assignees Active in the Past Year + Whitelist
+	EligibleAssignees   map[string]int
 }
 
 func (m *MemSQL) ReadAssigneeAllocations(repos []interface{}) (map[int]map[string]int, error) {
 	if len(repos) == 0 {
 		return nil, nil
 	}
-  //select T2.repo_id, lk.assignee, count(*) as cnt from ( select g.id, g.repo_id from github_event_assignees g join (SELECT max(id) id FROM github_event_assignees group by repo_id, issues_id, number) T on T.id = g.id and g.is_closed = false) T2 join github_event_assignees_lk lk on lk.github_event_assignees_fk = T2.id and lk.assignee is not null group by T2.repo_id, lk.assignee
-	ASSIGNEE_ALLOCATIONS_QUERY := "select T2.repo_id, lk.assignee, count(*) as cnt from ( select g.id, g.repo_id from github_event_assignees g join (SELECT max(id) id FROM github_event_assignees where repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ") " + " group by repo_id, issues_id, number) T on T.id = g.id and g.is_closed = false) T2 join github_event_assignees_lk lk on lk.github_event_assignees_fk = T2.id and lk.assignee is not null group by T2.repo_id, lk.assignee"
+
+	// Identifies how many Issues are assigned to the contributors on a given repo
+	ASSIGNEE_ALLOCATIONS_QUERY := `
+    SELECT T2.repo_id, lk.assignee, COUNT(*) AS cnt
+    FROM (
+        SELECT g.id, g.repo_id
+        FROM github_event_assignees g
+        JOIN (
+            SELECT MAX(id) id
+            FROM github_event_assignees
+            WHERE repo_id IN (?` + strings.Repeat(",?", len(repos)-1) + `)
+            GROUP BY repo_id, issues_id, number
+        ) T
+        ON T.id = g.id AND g.is_closed = false
+    ) T2
+    JOIN github_event_assignees_lk lk
+    ON lk.github_event_assignees_fk = T2.id AND lk.assignee IS NOT NULL
+    GROUP BY T2.repo_id, lk.assignee
+    `
 
 	results, err := m.db.Query(ASSIGNEE_ALLOCATIONS_QUERY, repos...)
 	if err != nil {
@@ -67,26 +75,30 @@ func (m *MemSQL) ReadEligibleAssignees(repos []interface{}) (map[int]map[string]
 	if len(repos) == 0 {
 		return nil, nil
 	}
-	/*
-	   select distinct T3.repo_id, T3.assignee from github_events
-	   JOIN (
-	   select T2.repo_id, T2.issues_id, lk.assignee
-	   from (
-	   	select g.id, g.repo_id, g.issues_id from github_event_assignees g
-	   	join (
-	   		SELECT max(id) id
-	   		FROM github_event_assignees
-	   		where is_closed = true` + " and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" + `
-	   		 group by repo_id, issues_id, number
-	   	) T
-	   	on T.id = g.id
-	   ) T2
-	   join github_event_assignees_lk lk on lk.github_event_assignees_fk = T2.id and lk.assignee is not null
-	   ) T3
-	   on T3.issues_id = github_events.issues_id
-	   where closed_at > DATE_SUB(curdate(), INTERVAL 1 YEAR)
-	*/
-	RECENT_ASSIGNEES_QUERY := "select distinct T3.repo_id, T3.assignee from github_events JOIN (select T2.repo_id, T2.issues_id, lk.assignee from (select g.id, g.repo_id, g.issues_id from github_event_assignees g join (SELECT max(id) id FROM github_event_assignees where is_closed = true" + " and repo_id in (?" + strings.Repeat(",?", len(repos)-1) + ")" + "group by repo_id, issues_id, number) T on T.id = g.id) T2 join github_event_assignees_lk lk on lk.github_event_assignees_fk = T2.id and lk.assignee is not null) T3 on T3.issues_id = github_events.issues_id where closed_at > DATE_SUB(curdate(), INTERVAL 1 YEAR)"
+
+	// Finds which Contributors in a Repository have been active in the past year.
+	RECENT_ASSIGNEES_QUERY := `
+    SELECT DISTINCT T3.repo_id, T3.assignee
+    FROM github_events
+    JOIN (
+        SELECT T2.repo_id, T2.issues_id, lk.assignee
+        FROM (
+            SELECT g.id, g.repo_id, g.issues_id
+            FROM github_event_assignees g
+            JOIN (
+                SELECT MAX(id) id
+                FROM github_event_assignees
+                WHERE is_closed = true AND repo_id IN (?` + strings.Repeat(",?", len(repos)-1) + `)
+                GROUP BY repo_id, issues_id, number
+            ) T
+            ON T.id = g.id
+        ) T2
+        JOIN github_event_assignees_lk lk
+        ON lk.github_event_assignees_fk = T2.id AND lk.assignee IS NOT NULL
+    ) T3
+    ON T3.issues_id = github_events.issues_id
+    WHERE closed_at > DATE_SUB(curdate(), INTERVAL 1 YEAR)
+    `
 
 	results, err := m.db.Query(RECENT_ASSIGNEES_QUERY, repos...)
 	if err != nil {
@@ -111,6 +123,19 @@ func (m *MemSQL) ReadEligibleAssignees(repos []interface{}) (map[int]map[string]
 }
 
 func (m *MemSQL) Read() (map[int]*RepoData, error) {
+	// Current state of the Issue object (equivalent to any GitHub Event)
+	ISSUE_QUERY := `
+    SELECT g.id, g.repo_id, g.is_pull, g.payload
+    FROM github_events g
+    JOIN (
+        SELECT max(id) id
+        FROM github_events
+        WHERE id > ?
+        GROUP BY repo_id, issues_id, number
+    ) T
+    ON T.id = g.id AND g.action IN ('opened', 'closed')
+    `
+
 	results, err := m.db.Query(ISSUE_QUERY, maxID)
 	if err != nil {
 		return nil, err
@@ -169,12 +194,12 @@ func (m *MemSQL) Read() (map[int]*RepoData, error) {
 	}
 	allocations, err := m.ReadAssigneeAllocations(interfaceKeys)
 	if err != nil {
-		utils.AppLog.Error("Database read failure. ReadAssigneeAllocations()")
+		utils.AppLog.Error("database read failure - ReadAssigneeAllocations()")
 		return nil, err
 	}
 	eligibleAssignees, err := m.ReadEligibleAssignees(interfaceKeys)
 	if err != nil {
-		utils.AppLog.Error("Database read failure. ReadEligibleAssignees()")
+		utils.AppLog.Error("database read failure - ReadEligibleAssignees()")
 		return nil, err
 	}
 	for i := 0; i < len(intKeys); i++ {
