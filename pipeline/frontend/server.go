@@ -24,7 +24,7 @@ var mainHandler = http.StripPrefix("/", http.FileServer(http.Dir("../website/"))
 func (fs *FrontendServer) routes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("/", mainHandler)
-	mux.HandleFunc("/github_oauth_cb", fs.githubCallbackHandler)
+	mux.HandleFunc("/setup_complete", fs.setupCompleteHandler)
 	return mux
 }
 

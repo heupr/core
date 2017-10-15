@@ -46,7 +46,7 @@ func (i *IngestorServer) continuityCheck() ([]*github.Issue, []*github.PullReque
 			return nil, nil, err
 		}
 
-		integration, err := i.Database.ReadIntegrationById(*repoId)
+		integration, err := i.Database.ReadIntegrationByRepoId(*repoId)
 		if err != nil {
 			utils.AppLog.Error("retrieve token continuity check", zap.Error(err))
 		}

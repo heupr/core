@@ -48,33 +48,9 @@ func (w *Worker) Start() {
 					//v.PullRequest.Base.Repo = v.Repo //TODO: Confirm
 					w.Database.InsertPullRequest(*v.PullRequest, v.Action)
 				case HeuprInstallationEvent:
-					//TODO: Check for duped events
-					go func(e HeuprInstallationEvent) {
-						switch *e.Action {
-						case "created":
-							w.RepoInitializer.ActivateBackend(ActivationParams{InstallationEvent: e})
-							// Wrap the shared transport for use with the Github Installation.
-							itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID, "heupr.2017-10-04.private-key.pem")
-							if err != nil {
-								utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
-								return
-							}
-							// Use installation transport with client.
-							client := github.NewClient(&http.Client{Transport: itr})
-							for i := 0; i < len(e.Repositories); i++ {
-								githubRepo, _, err := client.Repositories.GetByID(context.Background(), *e.Repositories[i].ID)
-								if err != nil {
-									utils.AppLog.Error("ingestor get by id", zap.Error(err))
-									return
-								}
-								repo := AuthenticatedRepo{Repo: githubRepo, Client: client}
-								go w.RepoInitializer.AddRepo(repo)
-								go w.RepoInitializer.AddRepositoryIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
-							}
-						case "deleted":
-							//TODO
-						}
-					}(v)
+					w.ProcessHeuprInstallationEvent(v)
+				case HeuprInstallationRepositoriesEvent:
+					w.ProcessHeuprInstallationRepositoriesEvent(v)
 				default:
 					utils.AppLog.Error("Unknown", zap.Any("GithubEvent", v))
 				}
@@ -83,6 +59,78 @@ func (w *Worker) Start() {
 			}
 		}
 	}()
+}
+
+func (w *Worker) ProcessHeuprInstallationEvent(event HeuprInstallationEvent) {
+	go func(e HeuprInstallationEvent) {
+		switch *e.Action {
+		case "created":
+			w.RepoInitializer.ActivateBackend(ActivationParams{InstallationEvent: e})
+			// Wrap the shared transport for use with the Github Installation.
+			itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID, "heupr.2017-10-04.private-key.pem")
+			if err != nil {
+				utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
+				return
+			}
+			// Use installation transport with client.
+			client := github.NewClient(&http.Client{Transport: itr})
+			for i := 0; i < len(e.Repositories); i++ {
+				githubRepo, _, err := client.Repositories.GetByID(context.Background(), *e.Repositories[i].ID)
+				if err != nil {
+					utils.AppLog.Error("ingestor get by id", zap.Error(err))
+					return
+				}
+				repo := AuthenticatedRepo{Repo: githubRepo, Client: client}
+				if w.RepoInitializer.RepositoryIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {
+					return
+				}
+				go w.RepoInitializer.AddRepo(repo)
+				go w.RepoInitializer.AddRepositoryIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+			}
+		case "deleted":
+			w.RepoInitializer.ObliterateIntegration(*e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+		}
+	}(event)
+}
+
+func (w *Worker) ProcessHeuprInstallationRepositoriesEvent(event HeuprInstallationRepositoriesEvent) {
+	go func(e HeuprInstallationRepositoriesEvent) {
+		switch *e.Action {
+		case "added":
+			// Wrap the shared transport for use with the Github Installation.
+			itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID, "heupr.2017-10-04.private-key.pem")
+			if err != nil {
+				utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
+				return
+			}
+			// Use installation transport with client.
+			client := github.NewClient(&http.Client{Transport: itr})
+			for i := 0; i < len(e.RepositoriesAdded); i++ {
+				repo := AuthenticatedRepo{Repo: e.RepositoriesAdded[i], Client: client}
+				if w.RepoInitializer.RepositoryIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {
+					return
+				}
+				go w.RepoInitializer.AddRepo(repo)
+				go w.RepoInitializer.AddRepositoryIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+			}
+		case "removed":
+			// Wrap the shared transport for use with the Github Installation.
+			itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID, "heupr.2017-10-04.private-key.pem")
+			if err != nil {
+				utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
+				return
+			}
+			// Use installation transport with client.
+			client := github.NewClient(&http.Client{Transport: itr})
+			for i := 0; i < len(e.RepositoriesRemoved); i++ {
+				repo := AuthenticatedRepo{Repo: e.RepositoriesRemoved[i], Client: client}
+				if !w.RepoInitializer.RepositoryIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {
+					return
+				}
+				go w.RepoInitializer.RemoveRepositoryIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+			}
+		}
+	}(event)
 }
 
 func (w *Worker) Stop() {

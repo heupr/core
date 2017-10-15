@@ -31,9 +31,11 @@ func httpRedirect(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (fs *FrontendServer) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
+func (fs *FrontendServer) setupCompleteHandler(w http.ResponseWriter, r *http.Request) {
 	utils.AppLog.Info("Completed user signed up")
-	utils.SlackLog.Info("Completed user signed up")
+	if PROD {
+		utils.SlackLog.Info("Completed user signed up")
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(setup))

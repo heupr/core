@@ -2,10 +2,13 @@ package ingestor
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"time"
 
+	"github.com/google/go-github/github"
 	"go.uber.org/zap"
 
 	"core/pipeline/gateway"
@@ -43,18 +46,33 @@ func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
 		utils.AppLog.Error(err.Error())
 	}
 	r.Database.BulkInsertIssuesPullRequests(githubIssues, githubPulls)
+	welcomeScreen := &github.IssueRequest{Title: github.String("Hello, I am Heupr"), Body: github.String("Darth")}
+	authRepo.Client.Issues.Create(context.Background(), *authRepo.Repo.Owner.Login, *authRepo.Repo.Name, welcomeScreen)
+}
+
+func (r *RepoInitializer) RepositoryIntegrationExists(repoId int, appId int, installationId int) bool {
+	_, err := r.Database.ReadIntegrationByRepoId(repoId)
+	switch {
+	case err == sql.ErrNoRows:
+		return false
+	case err != nil:
+		utils.AppLog.Error("integration read error", zap.Error(err))
+		return false
+	default:
+		return true
+	}
 }
 
 func (r *RepoInitializer) AddRepositoryIntegration(repoId int, appId int, installationId int) {
-	r.Database.InsertIntegration(repoId, appId, installationId)
+	r.Database.InsertRepositoryIntegration(repoId, appId, installationId)
 }
 
 func (r *RepoInitializer) RemoveRepositoryIntegration(repoId int, appId int, installationId int) {
-	//TODO:
+	r.Database.DeleteRepositoryIntegration(repoId, appId, installationId)
 }
 
-func (r *RepoInitializer) ObliterateIntegration(repoId int, appId int, installationId int) {
-	//TODO:
+func (r *RepoInitializer) ObliterateIntegration(appId int, installationId int) {
+	r.Database.ObliterateIntegration(appId, installationId)
 }
 
 func (r *RepoInitializer) ActivateBackend(params ActivationParams) {

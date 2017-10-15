@@ -36,6 +36,15 @@ type HeuprRepository struct {
 	FullName *string `json:"full_name,omitempty"`
 }
 
+type HeuprInstallationRepositoriesEvent struct {
+	// The action that was performed. Can be either "added" or "removed".
+	Action              *string              `json:"action,omitempty"`
+	RepositoriesAdded   []*github.Repository `json:"repositories_added,omitempty"`
+	RepositoriesRemoved []*github.Repository `json:"repositories_removed,omitempty"`
+	Sender              *github.User         `json:"sender,omitempty"`
+	HeuprInstallation   *HeuprInstallation   `json:"installation,omitempty"`
+}
+
 const secretKey = "figrin-dan-and-the-modal-nodes"
 
 var Workload = make(chan interface{}, 100)
@@ -64,6 +73,14 @@ func collectorHandler() http.Handler {
 			Workload <- *v
 		case *github.InstallationEvent:
 			e := &HeuprInstallationEvent{}
+			err := json.Unmarshal(payload, &e)
+			if err != nil {
+				utils.AppLog.Error("could not parse webhook", zap.Error(err))
+				return
+			}
+			Workload <- *e
+		case *github.InstallationRepositoriesEvent:
+			e := &HeuprInstallationRepositoriesEvent{}
 			err := json.Unmarshal(payload, &e)
 			if err != nil {
 				utils.AppLog.Error("could not parse webhook", zap.Error(err))

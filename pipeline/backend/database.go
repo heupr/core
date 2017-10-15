@@ -55,11 +55,11 @@ func (d *MemSQL) ReadIntegrations() ([]Integration, error) {
 	return integrations, nil
 }
 
-func (d *MemSQL) ReadIntegrationById(repoId int) (*Integration, error) {
+func (d *MemSQL) ReadIntegrationByRepoId(repoId int) (*Integration, error) {
 	integration := new(Integration)
 	err := d.db.QueryRow("select repo_id, app_id, installation_id from integrations where repo_id = ?", repoId).Scan(&integration.RepoId, &integration.AppId, &integration.InstallationId)
 	if err != nil {
-		utils.AppLog.Error("ReadIntegrationById Database Read Failure", zap.Error(err))
+		utils.AppLog.Error("ReadIntegrationByRepoId Database Read Failure", zap.Error(err))
 		return nil, err
 	}
 	return integration, nil

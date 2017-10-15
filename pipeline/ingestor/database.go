@@ -87,7 +87,7 @@ func (d *Database) EnableRepo(repoId int) {
 	}
 }
 
-func (d *Database) InsertIntegration(repoId int, appId int, installationId int) {
+func (d *Database) InsertRepositoryIntegration(repoId int, appId int, installationId int) {
 	var buffer bytes.Buffer
 	integrationsInsert := "INSERT INTO integrations(repo_id, app_id, installation_id) VALUES"
 	valuesFmt := "(?,?,?)"
@@ -100,6 +100,26 @@ func (d *Database) InsertIntegration(repoId int, appId int, installationId int) 
 	} else {
 		rows, _ := result.RowsAffected()
 		utils.AppLog.Info("Database Insert Success", zap.Int64("Rows", rows))
+	}
+}
+
+func (d *Database) DeleteRepositoryIntegration(repoId int, appId int, installationId int) {
+	result, err := d.db.Exec("DELETE FROM integrations where repo_id = ? and app_id = ? and installation_id = ?", repoId, appId, installationId)
+	if err != nil {
+		utils.AppLog.Error("Database Delete Failure", zap.Error(err))
+	} else {
+		rows, _ := result.RowsAffected()
+		utils.AppLog.Info("Database Delete Success", zap.Int64("Rows", rows))
+	}
+}
+
+func (d *Database) ObliterateIntegration(appId int, installationId int) {
+	result, err := d.db.Exec("DELETE FROM integrations where app_id = ? and installation_id = ?", appId, installationId)
+	if err != nil {
+		utils.AppLog.Error("Database Delete Failure", zap.Error(err))
+	} else {
+		rows, _ := result.RowsAffected()
+		utils.AppLog.Info("Database Delete Success", zap.Int64("Rows", rows))
 	}
 }
 
@@ -126,11 +146,11 @@ func (d *Database) ReadIntegrations() ([]Integration, error) {
 	return integrations, nil
 }
 
-func (d *Database) ReadIntegrationById(repoId int) (*Integration, error) {
+func (d *Database) ReadIntegrationByRepoId(repoId int) (*Integration, error) {
 	integration := new(Integration)
 	err := d.db.QueryRow("select repo_id, app_id, installation_id from integrations where repo_id = ?", repoId).Scan(&integration.RepoId, &integration.AppId, &integration.InstallationId)
 	if err != nil {
-		utils.AppLog.Error("ReadIntegrationById Database Read Failure", zap.Error(err))
+		utils.AppLog.Error("ReadIntegrationByRepoId Database Read Failure", zap.Error(err))
 		return nil, err
 	}
 	return integration, nil
