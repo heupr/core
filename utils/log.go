@@ -4,26 +4,31 @@ import (
 	"log"
 	"sync"
 
-	"github.com/johntdyer/slackrus"
 	"github.com/Sirupsen/logrus"
+	"github.com/johntdyer/slackrus"
 	"go.uber.org/zap"
 )
 
-var AppLog *zap.Logger
-var ModelLog *zap.Logger
-var SlackLog *logrus.Logger
+var (
+	// AppLog is a public application-focused logger
+	AppLog *zap.Logger
+	// ModelLog is a public model-focused logger
+	ModelLog *zap.Logger
+	// SlackLog is a public Slack channel log poster
+	SlackLog *logrus.Logger
+)
 
 var initOnceLog sync.Once
 
 func init() {
 	initOnceLog.Do(func() {
-		AppLog = IntializeLog(Config.AppLogPath)
-		ModelLog = IntializeLog(Config.ModelLogPath)
-		SlackLog = InitializeSlackLog()
+		AppLog = intializeLog(Config.AppLogPath)
+		ModelLog = intializeLog(Config.ModelLogPath)
+		SlackLog = initializeSlackLog()
 	})
 }
 
-func IntializeLog(logPath string) *zap.Logger {
+func intializeLog(logPath string) *zap.Logger {
 	logConfig := zap.NewProductionConfig()
 	logConfig.OutputPaths = []string{logPath}
 	logConfig.Sampling = nil
@@ -34,7 +39,7 @@ func IntializeLog(logPath string) *zap.Logger {
 	return logger
 }
 
-func InitializeSlackLog() *logrus.Logger {
+func initializeSlackLog() *logrus.Logger {
 	logInstance := logrus.New()
 	logInstance.Formatter = new(logrus.TextFormatter)
 	logInstance.Hooks.Add(&slackrus.SlackrusHook{
