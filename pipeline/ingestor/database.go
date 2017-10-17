@@ -80,10 +80,10 @@ func (d *Database) EnableRepo(repoId int) {
 	buffer.WriteString(valuesFmt)
 	result, err := d.db.Exec(buffer.String(), repoId, true)
 	if err != nil {
-		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+		utils.AppLog.Error("database repo insert failure", zap.Error(err))
 	} else {
 		rows, _ := result.RowsAffected()
-		utils.AppLog.Info("Database Insert Success", zap.Int64("Rows", rows))
+		utils.AppLog.Info("database repo insert success", zap.Int64("rows", rows))
 	}
 }
 
@@ -96,36 +96,36 @@ func (d *Database) InsertRepositoryIntegration(repoId int, appId int, installati
 	buffer.WriteString(valuesFmt)
 	result, err := d.db.Exec(buffer.String(), repoId, appId, installationId)
 	if err != nil {
-		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+		utils.AppLog.Error("database integration insert failure", zap.Error(err))
 	} else {
 		rows, _ := result.RowsAffected()
-		utils.AppLog.Info("Database Insert Success", zap.Int64("Rows", rows))
+		utils.AppLog.Info("database integration insert success", zap.Int64("rows", rows))
 	}
 }
 
 func (d *Database) DeleteRepositoryIntegration(repoId int, appId int, installationId int) {
 	result, err := d.db.Exec("DELETE FROM integrations where repo_id = ? and app_id = ? and installation_id = ?", repoId, appId, installationId)
 	if err != nil {
-		utils.AppLog.Error("Database Delete Failure", zap.Error(err))
+		utils.AppLog.Error("database integration delete failure", zap.Error(err))
 	} else {
 		rows, _ := result.RowsAffected()
-		utils.AppLog.Info("Database Delete Success", zap.Int64("Rows", rows))
+		utils.AppLog.Info("database integration delete success", zap.Int64("rows", rows))
 	}
 }
 
 func (d *Database) ObliterateIntegration(appId int, installationId int) {
 	result, err := d.db.Exec("DELETE FROM integrations where app_id = ? and installation_id = ?", appId, installationId)
 	if err != nil {
-		utils.AppLog.Error("Database Delete Failure", zap.Error(err))
+		utils.AppLog.Error("database integration obliterate failure", zap.Error(err))
 	} else {
 		rows, _ := result.RowsAffected()
-		utils.AppLog.Info("Database Delete Success", zap.Int64("Rows", rows))
+		utils.AppLog.Info("database integration obliterate success", zap.Int64("rows", rows))
 	}
 }
 
 func (d *Database) ReadIntegrations() ([]Integration, error) {
 	integrations := []Integration{}
-	results, err := d.db.Query("select repo_id, app_id, installation_id from integrations")
+	results, err := d.db.Query("SELECT repo_id, app_id, installation_id FROM integrations")
 	if err != nil {
 		return nil, err
 	}
@@ -148,9 +148,9 @@ func (d *Database) ReadIntegrations() ([]Integration, error) {
 
 func (d *Database) ReadIntegrationByRepoId(repoId int) (*Integration, error) {
 	integration := new(Integration)
-	err := d.db.QueryRow("select repo_id, app_id, installation_id from integrations where repo_id = ?", repoId).Scan(&integration.RepoId, &integration.AppId, &integration.InstallationId)
+	err := d.db.QueryRow("SELECT repo_id, app_id, installation_id FROM integrations WHERE repo_id = ?", repoId).Scan(&integration.RepoId, &integration.AppId, &integration.InstallationId)
 	if err != nil {
-		utils.AppLog.Error("ReadIntegrationByRepoId Database Read Failure", zap.Error(err))
+		utils.AppLog.Error("database read failure - ReadIntegrationByRepoId()", zap.Error(err))
 		return nil, err
 	}
 	return integration, nil
@@ -193,7 +193,7 @@ func (d *Database) BulkInsertBacktestEvents(events []*Event) {
 		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
 	} else {
 		rows, _ := result.RowsAffected()
-		utils.AppLog.Info("Database Insert Success", zap.Int64("Rows", rows))
+		utils.AppLog.Info("database insert success", zap.Int64("rows", rows))
 	}
 	sqlBuffer.Reset()
 }

@@ -23,6 +23,31 @@ type BackendServer struct {
 	Repos    *ActiveRepos
 }
 
+// Workaround Github API limitation. This is required to wrap HeuprInstallation
+type HeuprInstallationEvent struct {
+	// The action that was performed. Can be either "created" or "deleted".
+	Action            *string            `json:"action,omitempty"`
+	Sender            *github.User       `json:"sender,omitempty"`
+	HeuprInstallation *HeuprInstallation `json:"installation,omitempty"`
+	Repositories      []HeuprRepository  `json:"repositories,omitempty"`
+}
+
+// Workaround Github API limitation. go-github is missing repositories field
+type HeuprInstallation struct {
+	ID              *int         `json:"id,omitempty"`
+	Account         *github.User `json:"account,omitempty"`
+	AppID           *int         `json:"app_id,omitempty"`
+	AccessTokensURL *string      `json:"access_tokens_url,omitempty"`
+	RepositoriesURL *string      `json:"repositories_url,omitempty"`
+	HTMLURL         *string      `json:"html_url,omitempty"`
+}
+
+type HeuprRepository struct {
+	ID       *int    `json:"id,omitempty"`
+	Name     *string `json:"name,omitempty"`
+	FullName *string `json:"full_name,omitempty"`
+}
+
 func (bs *BackendServer) activateHandler(w http.ResponseWriter, r *http.Request) {
 	var activationParams struct {
 		InstallationEvent HeuprInstallationEvent `json:"installation_event,omitempty"`
@@ -30,7 +55,7 @@ func (bs *BackendServer) activateHandler(w http.ResponseWriter, r *http.Request)
 	}
 	err := json.NewDecoder(r.Body).Decode(&activationParams)
 	if err != nil {
-		utils.AppLog.Error("unable to decode json message. ", zap.Error(err))
+		utils.AppLog.Error("unable to decode json message", zap.Error(err))
 	}
 	integration := activationParams.InstallationEvent
 	limit := time.Now().AddDate(0, 0, -30) //activationParams.Limit
@@ -57,7 +82,7 @@ func (bs *BackendServer) Start() {
 
 	integrations, err := bs.Database.ReadIntegrations()
 	if err != nil {
-		utils.AppLog.Error("Retrieve bulk tokens on ingestor restart", zap.Error(err))
+		utils.AppLog.Error("retrieve bulk tokens on ingestor restart", zap.Error(err))
 	}
 
 	for _, integration := range integrations {
@@ -96,7 +121,7 @@ func (bs *BackendServer) Timer(ender chan bool) {
 			case <-ticker.C:
 				data, err := bs.Database.Read()
 				if err != nil {
-					utils.AppLog.Error("backend timer: ", zap.Error(err))
+					utils.AppLog.Error("backend timer", zap.Error(err))
 				}
 				Collector(data)
 			case <-ender:
@@ -106,29 +131,4 @@ func (bs *BackendServer) Timer(ender chan bool) {
 			}
 		}
 	}()
-}
-
-// Workaround Github API limitation. This is required to wrap HeuprInstallation
-type HeuprInstallationEvent struct {
-	// The action that was performed. Can be either "created" or "deleted".
-	Action            *string            `json:"action,omitempty"`
-	Sender            *github.User       `json:"sender,omitempty"`
-	HeuprInstallation *HeuprInstallation `json:"installation,omitempty"`
-	Repositories      []HeuprRepository  `json:"repositories,omitempty"`
-}
-
-// Workaround Github API limitation. go-github is missing repositories field
-type HeuprInstallation struct {
-	ID              *int         `json:"id,omitempty"`
-	Account         *github.User `json:"account,omitempty"`
-	AppID           *int         `json:"app_id,omitempty"`
-	AccessTokensURL *string      `json:"access_tokens_url,omitempty"`
-	RepositoriesURL *string      `json:"repositories_url,omitempty"`
-	HTMLURL         *string      `json:"html_url,omitempty"`
-}
-
-type HeuprRepository struct {
-	ID       *int    `json:"id,omitempty"`
-	Name     *string `json:"name,omitempty"`
-	FullName *string `json:"full_name,omitempty"`
 }

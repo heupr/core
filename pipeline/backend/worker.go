@@ -1,8 +1,9 @@
 package backend
 
 import (
-	"core/utils"
 	"go.uber.org/zap"
+
+	"core/utils"
 )
 
 type Worker struct {
