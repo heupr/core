@@ -22,13 +22,14 @@ var initOnceLog sync.Once
 
 func init() {
 	initOnceLog.Do(func() {
-		AppLog = intializeLog(Config.AppLogPath)
-		ModelLog = intializeLog(Config.ModelLogPath)
-		SlackLog = initializeSlackLog()
+		AppLog = IntializeLog(Config.AppLogPath)
+		ModelLog = IntializeLog(Config.ModelLogPath)
+		SlackLog = InitializeSlackLog()
 	})
 }
 
-func intializeLog(logPath string) *zap.Logger {
+// IntializeLog sets a file logger; only called in testing currently
+func IntializeLog(logPath string) *zap.Logger {
 	logConfig := zap.NewProductionConfig()
 	logConfig.OutputPaths = []string{logPath}
 	logConfig.Sampling = nil
@@ -39,7 +40,8 @@ func intializeLog(logPath string) *zap.Logger {
 	return logger
 }
 
-func initializeSlackLog() *logrus.Logger {
+// InitializeSlackLog sets a Slack reporter
+func InitializeSlackLog() *logrus.Logger {
 	logInstance := logrus.New()
 	logInstance.Formatter = new(logrus.TextFormatter)
 	logInstance.Hooks.Add(&slackrus.SlackrusHook{
