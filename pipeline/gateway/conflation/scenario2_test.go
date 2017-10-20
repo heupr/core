@@ -3,7 +3,7 @@ package conflation
 import (
 	"testing"
 
-    "github.com/google/go-github/github"
+	"github.com/google/go-github/github"
 )
 
 var TestScenario2 = Scenario2{}

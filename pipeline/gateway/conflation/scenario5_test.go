@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-    "github.com/google/go-github/github"
+	"github.com/google/go-github/github"
 )
 
 // These are the necessary initiation and test variables.

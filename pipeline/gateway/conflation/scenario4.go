@@ -8,7 +8,6 @@ type Scenario4 struct {
 func (s *Scenario4) Filter(expandedIssue *ExpandedIssue) bool {
 	if expandedIssue.PullRequest.RefIssueIds == nil {
 		return true
-	} else {
-		return false
 	}
+	return false
 }
