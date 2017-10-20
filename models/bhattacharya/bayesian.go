@@ -1,14 +1,18 @@
 package bhattacharya
 
 import (
-	"core/utils"
 	"encoding/gob"
 	"errors"
 	"io"
 	"math"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync/atomic"
+
+	"go.uber.org/zap"
+
+	"core/utils"
 )
 
 const defaultProb = 0.00000000001
@@ -17,7 +21,7 @@ var ErrUnderflow = errors.New("possible underflow detected")
 
 type NBClass string
 
-// DOC: Classifier implements the Naive Bayesian Classifier.
+// NBClassifier implements the Naive Bayesian Classifier.
 type NBClassifier struct {
 	Classes         []NBClass
 	learned         int
@@ -453,4 +457,28 @@ func findMax(scores []float64) (inx int, strict bool) {
 		}
 	}
 	return
+}
+
+func (c *NBClassifier) LogClassWords() {
+	for class, words := range c.datas {
+		utils.ModelLog.Info("---------", zap.String("Class", string(class)))
+		type wordCount struct {
+			word  string
+			count int
+		}
+		temp := []wordCount{}
+		for k, v := range words.Freqs {
+			temp = append(temp, wordCount{k, int(v)})
+		}
+		sort.Slice(temp, func(i, j int) bool {
+			return temp[i].count > temp[j].count
+		})
+		limit := 9
+		if len(temp) < limit {
+			limit = len(temp)
+		}
+		for _, kv := range temp[:limit] {
+			utils.ModelLog.Info("", zap.String("Word", string(kv.word)), zap.Int("Count", int(kv.count)))
+		}
+	}
 }

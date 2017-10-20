@@ -2,9 +2,16 @@ package models
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"time"
+
+	strftime "github.com/lestrrat/go-strftime"
+	"go.uber.org/zap"
+
 	"core/pipeline/gateway/conflation"
 	"core/utils"
-	"go.uber.org/zap"
 )
 
 func (m *Model) TrainFold(train []conflation.ExpandedIssue, test []conflation.ExpandedIssue) float64 {
@@ -27,12 +34,17 @@ func (m *Model) JohnFold(issues []conflation.ExpandedIssue) float64 {
 	var score float64
 	var mat matrix
 	var distinct []string
-	for i := 0.1; i < 0.9; i += 0.1 {
+	for i := 0.8; i <= 0.9; i += 0.1 {
+		p, _ := strftime.New("$GOPATH/src/core/data/backtests/model-%Y%m%d%H%M-fold-" + strconv.Itoa(int(i*10.0)) + ".log")
+		f := p.FormatString(time.Now())
+		o := filepath.Join(os.Getenv("GOPATH"), f[7:])
+		utils.ModelLog = utils.IntializeLog(o)
+
 		split := int(Round(i * float64(len(issues))))
 		if i < 0.8 {
 			score, mat, distinct = m.Fold(issues[:split], issues[split:])
 		} else {
-			score, mat, distinct = m.OnlineFold(issues[:split], issues[split:])
+			score, mat, distinct = m.Fold(issues[:split], issues[split:])
 		}
 		modelRecoveryFile := utils.Config.DataCachesPath + "/JFold" + ToString(i*10.0) + ".model"
 		m.GenerateRecoveryFile(modelRecoveryFile)
@@ -45,6 +57,7 @@ func (m *Model) JohnFold(issues []conflation.ExpandedIssue) float64 {
 	}
 	finalScore = Round(finalScore / 9.00)
 	utils.ModelLog.Info("John Fold", zap.Float64("Score", finalScore))
+	m.LogClassWords() // TEMPORARY
 	return finalScore
 }
 
@@ -137,6 +150,7 @@ func (m *Model) FoldImplementation(test []conflation.ExpandedIssue) (float64, ma
 
 func (m *Model) Fold(train, test []conflation.ExpandedIssue) (float64, matrix, []string) {
 	m.Learn(train)
+	// m.LogClassWords() // TEMPORARY
 	return m.FoldImplementation(test)
 }
 

@@ -28,7 +28,7 @@ func TestConverter(t *testing.T) {
 		ClosedAt:  &resolved,
 		Labels:    labels,
 	}
-	crIssue := conflation.CRIssue{githubIssue, []int{}, []conflation.CRPullRequest{}}
+	crIssue := conflation.CRIssue{githubIssue, []int{}, []conflation.CRPullRequest{}, false}
 	testIssue := conflation.ExpandedIssue{Issue: crIssue}
 
 	convertedIssue := nbc.converter(testIssue)

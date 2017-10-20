@@ -147,3 +147,7 @@ func convertClassToString(assignees []NBClass) []string {
 	}
 	return result
 }
+
+func (n *NBModel) LogClassWords() {
+	n.classifier.LogClassWords()
+}
