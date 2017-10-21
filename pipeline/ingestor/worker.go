@@ -43,10 +43,19 @@ func (w *Worker) Start() {
 				case github.IssuesEvent:
 					//The Action that was performed. Can be one of "assigned", "unassigned", "labeled", "unlabeled", "opened", "edited", "milestoned", "demilestoned", "closed", or "reopened".
 					v.Issue.Repository = v.Repo
+					if *v.Issue.User.Login == "heupr[bot]" || *v.Issue.Assignee.Login == "heupr[bot]" {
+						go w.ProcessHeuprInteractionEvent(v)
+						continue
+					}
 					w.Database.InsertIssue(*v.Issue, v.Action)
 				case github.PullRequestEvent:
 					//v.PullRequest.Base.Repo = v.Repo //TODO: Confirm
 					w.Database.InsertPullRequest(*v.PullRequest, v.Action)
+				case github.IssueCommentEvent:
+					if *v.Issue.User.Login == "heupr[bot]" || *v.Issue.Assignee.Login == "heupr[bot]" {
+						//TODO: Handle User Reply Event
+						continue
+					}
 				case HeuprInstallationEvent:
 					w.ProcessHeuprInstallationEvent(v)
 				case HeuprInstallationRepositoriesEvent:
@@ -85,7 +94,8 @@ func (w *Worker) ProcessHeuprInstallationEvent(event HeuprInstallationEvent) {
 					return
 				}
 				go w.RepoInitializer.AddRepo(repo)
-				go w.RepoInitializer.AddRepositoryIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+				w.RepoInitializer.AddRepositoryIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+				w.RepoInitializer.RaiseRepositoryWelcomeIssue(repo, *event.Sender.Login)
 			}
 		case "deleted":
 			w.RepoInitializer.ObliterateIntegration(*e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
@@ -111,7 +121,8 @@ func (w *Worker) ProcessHeuprInstallationRepositoriesEvent(event HeuprInstallati
 					return
 				}
 				go w.RepoInitializer.AddRepo(repo)
-				go w.RepoInitializer.AddRepositoryIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+				w.RepoInitializer.AddRepositoryIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+				w.RepoInitializer.RaiseRepositoryWelcomeIssue(repo, *event.Sender.Login)
 			}
 		case "removed":
 			// Wrap the shared transport for use with the Github Installation.
@@ -127,7 +138,7 @@ func (w *Worker) ProcessHeuprInstallationRepositoriesEvent(event HeuprInstallati
 				if !w.RepoInitializer.RepositoryIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {
 					return
 				}
-				go w.RepoInitializer.RemoveRepositoryIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+				w.RepoInitializer.RemoveRepositoryIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
 			}
 		}
 	}(event)

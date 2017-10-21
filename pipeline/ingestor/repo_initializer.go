@@ -46,8 +46,6 @@ func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
 		utils.AppLog.Error(err.Error())
 	}
 	r.Database.BulkInsertIssuesPullRequests(githubIssues, githubPulls)
-	welcomeScreen := &github.IssueRequest{Title: github.String("Hello, I am Heupr"), Body: github.String("Darth")}
-	authRepo.Client.Issues.Create(context.Background(), *authRepo.Repo.Owner.Login, *authRepo.Repo.Name, welcomeScreen)
 }
 
 func (r *RepoInitializer) RepositoryIntegrationExists(repoId int, appId int, installationId int) bool {
@@ -73,6 +71,11 @@ func (r *RepoInitializer) RemoveRepositoryIntegration(repoId int, appId int, ins
 
 func (r *RepoInitializer) ObliterateIntegration(appId int, installationId int) {
 	r.Database.ObliterateIntegration(appId, installationId)
+}
+
+func (r *RepoInitializer) RaiseRepositoryWelcomeIssue(authRepo AuthenticatedRepo, assignee string) {
+	welcomeScreen := &github.IssueRequest{Title: github.String(WelcomeTitle), Body: github.String(WelcomeBody), Assignees: &[]string{assignee}}
+	authRepo.Client.Issues.Create(context.Background(), *authRepo.Repo.Owner.Login, *authRepo.Repo.Name, welcomeScreen)
 }
 
 func (r *RepoInitializer) ActivateBackend(params ActivationParams) {
