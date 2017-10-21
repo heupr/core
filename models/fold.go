@@ -10,93 +10,22 @@ import (
 	strftime "github.com/lestrrat/go-strftime"
 	"go.uber.org/zap"
 
+	"core/models/bhattacharya"
 	"core/pipeline/gateway/conflation"
 	"core/utils"
 )
 
-func (m *Model) TrainFold(train []conflation.ExpandedIssue, test []conflation.ExpandedIssue) float64 {
-	utils.ModelLog.Info("Train Fold", zap.Int("Issues#", len(test)))
-	var score float64
-	var mat matrix
-	var distinct []string
-
-	score, mat, distinct = m.Fold(train, test)
-	utils.ModelLog.Info("Train Fold", zap.Float64("Accuracy", score))
-	mat.classesEvaluation(distinct)
-	utils.ModelLog.Info("Train Fold", zap.Float64("Score", score))
-	return score
+func (m *Model) fold(train, test []conflation.ExpandedIssue) (float64, matrix, []string) {
+	m.Learn(train)
+	return m.foldImplementation(test)
 }
 
-// DOC: JohnFold gradually increases the training data by increments of 1/10th.
-func (m *Model) JohnFold(issues []conflation.ExpandedIssue) float64 {
-	utils.ModelLog.Info("John Fold", zap.Int("Issues#", len(issues)))
-	finalScore := 0.00
-	var score float64
-	var mat matrix
-	var distinct []string
-	for i := 0.8; i <= 0.9; i += 0.1 {
-		p, _ := strftime.New("$GOPATH/src/core/data/backtests/model-%Y%m%d%H%M-fold-" + strconv.Itoa(int(i*10.0)) + ".log")
-		f := p.FormatString(time.Now())
-		o := filepath.Join(os.Getenv("GOPATH"), f[7:])
-		utils.ModelLog = utils.IntializeLog(o)
-
-		split := int(Round(i * float64(len(issues))))
-		if i < 0.8 {
-			score, mat, distinct = m.Fold(issues[:split], issues[split:])
-		} else {
-			score, mat, distinct = m.Fold(issues[:split], issues[split:])
-		}
-		modelRecoveryFile := utils.Config.DataCachesPath + "/JFold" + ToString(i*10.0) + ".model"
-		m.GenerateRecoveryFile(modelRecoveryFile)
-		fmt.Println("John Fold Loop#", (int)(Round(i)*10.0), "Accuracy", score)
-		utils.ModelLog.Info("John Fold", zap.Int("Loop#", (int)(Round(i)*10.0)), zap.Float64("Accuracy", score))
-		distinct = distinct
-		mat = mat
-		//mat.classesEvaluation(distinct)
-		finalScore += score
-	}
-	finalScore = Round(finalScore / 9.00)
-	utils.ModelLog.Info("John Fold", zap.Float64("Score", finalScore))
-	m.LogClassWords() // TEMPORARY
-	return finalScore
+func (m *Model) OnlineFold(train, test []conflation.ExpandedIssue) (float64, matrix, []string) {
+	m.OnlineLearn(train)
+	return m.foldImplementation(test)
 }
 
-// DOC: TwoFold splits data in half - alternating training on each half.
-func (m *Model) TwoFold(issues []conflation.ExpandedIssue) string {
-	//TODO: Fix log
-	//utils.ModelSummary.Info("Two Fold issues count: ", len(issues))
-	split := int(0.50 * float64(len(issues)))
-	firstScore, firstMatrix, firstDistinct := m.Fold(issues[:split], issues[split:])
-	//utils.ModelSummary.Info("First half, Accuracy: " + ToString(firstScore))
-	firstMatrix.classesEvaluation(firstDistinct)
-	secondScore, secondMatrix, secondDistinct := m.Fold(issues[split:], issues[:split])
-	//utils.ModelSummary.Info("Second half, Accuracy: " + ToString(secondScore))
-	secondMatrix.classesEvaluation(secondDistinct)
-	score := firstScore + secondScore
-	return ToString(Round(score / 2.00))
-}
-
-// DOC: TenFold trains on a rolling 1/10th chunk of the input data.
-func (m *Model) TenFold(issues []conflation.ExpandedIssue) string {
-	//TODO: Fix log
-	//utils.ModelSummary.Info("Ten Fold issues count: ", len(issues))
-	finalScore := 0.00
-	start := 0
-	for i := 0.10; i <= 1.00; i += 0.10 {
-		end := int(Round(i * float64(len(issues))))
-		segment := issues[start:end]
-		remainder := []conflation.ExpandedIssue{}
-		remainder = append(issues[:start], issues[end:]...)
-		score, matrix, distinct := m.Fold(segment, remainder)
-		//utils.ModelSummary.Info("Loop: " + ToString(i*10.0) + ", Accuracy: " + ToString(score))
-		matrix.classesEvaluation(distinct)
-		finalScore += score
-		start = end
-	}
-	return ToString(Round(finalScore / 10.00))
-}
-
-func (m *Model) FoldImplementation(test []conflation.ExpandedIssue) (float64, matrix, []string) {
+func (m *Model) foldImplementation(test []conflation.ExpandedIssue) (float64, matrix, []string) {
 	expected := []string{}
 	predicted := []string{}
 
@@ -148,13 +77,84 @@ func (m *Model) FoldImplementation(test []conflation.ExpandedIssue) (float64, ma
 	return float64(correct) / float64(len(test)), mat, dist
 }
 
-func (m *Model) Fold(train, test []conflation.ExpandedIssue) (float64, matrix, []string) {
-	m.Learn(train)
-	// m.LogClassWords() // TEMPORARY
-	return m.FoldImplementation(test)
+func (m *Model) TrainFold(train []conflation.ExpandedIssue, test []conflation.ExpandedIssue) float64 {
+	utils.ModelLog.Info("Train Fold", zap.Int("Issues#", len(test)))
+	var score float64
+	var mat matrix
+	var distinct []string
+
+	score, mat, distinct = m.fold(train, test)
+	utils.ModelLog.Info("Train Fold", zap.Float64("Accuracy", score))
+	mat.classesEvaluation(distinct)
+	utils.ModelLog.Info("Train Fold", zap.Float64("Score", score))
+	return score
 }
 
-func (m *Model) OnlineFold(train, test []conflation.ExpandedIssue) (float64, matrix, []string) {
-	m.OnlineLearn(train)
-	return m.FoldImplementation(test)
+// JohnFold gradually increases the training data by increments of 1/10th.
+func (m *Model) JohnFold(issues []conflation.ExpandedIssue) float64 {
+	utils.ModelLog.Info("John Fold", zap.Int("Issues#", len(issues)))
+	finalScore := 0.00
+	var score float64
+	var mat matrix
+	var distinct []string
+	for i := 0.8; i <= 0.9; i += 0.1 {
+		p, _ := strftime.New("$GOPATH/src/core/data/backtests/model-%Y%m%d%H%M-fold-" + strconv.Itoa(int(i*10.0)) + ".log")
+		f := p.FormatString(time.Now())
+		o := filepath.Join(os.Getenv("GOPATH"), f[7:])
+		utils.ModelLog = utils.IntializeLog(o)
+
+		split := int(Round(i * float64(len(issues))))
+		if i < 0.8 {
+			score, mat, distinct = m.fold(issues[:split], issues[split:])
+		} else {
+			score, mat, distinct = m.fold(issues[:split], issues[split:])
+		}
+		modelRecoveryFile := utils.Config.DataCachesPath + "/JFold" + ToString(i*10.0) + ".model"
+		m.GenerateRecoveryFile(modelRecoveryFile)
+		fmt.Println("John Fold Loop#", (int)(Round(i)*10.0), "Accuracy", score)
+		utils.ModelLog.Info("John Fold", zap.Int("Loop#", (int)(Round(i)*10.0)), zap.Float64("Accuracy", score))
+		distinct = distinct
+		mat = mat
+		finalScore += score
+		nbm := m.Algorithm.(*bhattacharya.NBModel)
+		nbm.LogClassWords()
+	}
+	finalScore = Round(finalScore / 9.00)
+	utils.ModelLog.Info("John Fold", zap.Float64("Score", finalScore))
+	return finalScore
+}
+
+// TwoFold splits data in half - alternating training on each half.
+func (m *Model) TwoFold(issues []conflation.ExpandedIssue) string {
+	//TODO: Fix log
+	//utils.ModelSummary.Info("Two Fold issues count: ", len(issues))
+	split := int(0.50 * float64(len(issues)))
+	firstScore, firstMatrix, firstDistinct := m.fold(issues[:split], issues[split:])
+	//utils.ModelSummary.Info("First half, Accuracy: " + ToString(firstScore))
+	firstMatrix.classesEvaluation(firstDistinct)
+	secondScore, secondMatrix, secondDistinct := m.fold(issues[split:], issues[:split])
+	//utils.ModelSummary.Info("Second half, Accuracy: " + ToString(secondScore))
+	secondMatrix.classesEvaluation(secondDistinct)
+	score := firstScore + secondScore
+	return ToString(Round(score / 2.00))
+}
+
+// TenFold trains on a rolling 1/10th chunk of the input data.
+func (m *Model) TenFold(issues []conflation.ExpandedIssue) string {
+	//TODO: Fix log
+	//utils.ModelSummary.Info("Ten Fold issues count: ", len(issues))
+	finalScore := 0.00
+	start := 0
+	for i := 0.10; i <= 1.00; i += 0.10 {
+		end := int(Round(i * float64(len(issues))))
+		segment := issues[start:end]
+		remainder := []conflation.ExpandedIssue{}
+		remainder = append(issues[:start], issues[end:]...)
+		score, matrix, distinct := m.fold(segment, remainder)
+		//utils.ModelSummary.Info("Loop: " + ToString(i*10.0) + ", Accuracy: " + ToString(score))
+		matrix.classesEvaluation(distinct)
+		finalScore += score
+		start = end
+	}
+	return ToString(Round(finalScore / 10.00))
 }

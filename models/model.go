@@ -13,7 +13,6 @@ type Algorithm interface {
 	Predict(input conflation.ExpandedIssue) []string
 	GenerateRecoveryFile(path string) error
 	RecoverModelFromFile(path string) error
-	LogClassWords()
 }
 
 func (m *Model) IsBootstrapped() bool {
@@ -38,8 +37,4 @@ func (m *Model) GenerateRecoveryFile(path string) error {
 
 func (m *Model) RecoverModelFromFile(path string) error {
 	return m.Algorithm.RecoverModelFromFile(path)
-}
-
-func (m *Model) LogClassWords() {
-	m.Algorithm.LogClassWords()
 }

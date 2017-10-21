@@ -1,13 +1,15 @@
 package bhattacharya
 
 import (
-	"core/pipeline/gateway/conflation"
-	"core/utils"
-	"go.uber.org/zap"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
+
+	"go.uber.org/zap"
+
+	"core/pipeline/gateway/conflation"
+	"core/utils"
 )
 
 // DOC: NBClassifier is the struct implemented as the model algorithm.

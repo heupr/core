@@ -1,28 +1,19 @@
 package main
 
 import (
+	"github.com/pkg/profile"
+
 	"core/models"
 	"core/models/bhattacharya"
-	"github.com/pkg/profile"
 )
 
+// Here is a collected list of repositories that can be plugged into the test:
+// https://paper.dropbox.com/doc/Targeted-Repo-List-P22Hovh0G8ckJkanLE7nW
 func main() {
 	defer profile.Start().Stop()
-	nbModel := models.Model{Algorithm: &bhattacharya.NBModel{}}
-	testContext := TestContext{Model: nbModel}
+	nbModel := bhattacharya.NBModel{}
+	model := models.Model{Algorithm: &nbModel}
+	testContext := TestContext{Model: model}
 	testRunner := BackTestRunner{Context: testContext}
-	//testRunner.Run("golang/go")
-	//testRunner.Run("docker/docker")
-	//testRunner.Run("dotnet/roslyn")
-	//testRunner.Run("openSUSE/osem")
-	testRunner.Run("dotnet/corefx")
-	//testRunner.Run("kubernetes/kubernetes")
-	//testRunner.Run("dotnet/coreclr")
-
-	//testRunner.Run("fabric8io/fabric8")
-	//testRunner.Run("systemd/systemd")
-	//testRunner.Run("checkstyle/checkstyle")
-	//testRunner.Run("twosigma/beaker-notebook")
-	//testRunner.Run("HabitRPG/habitrpg")
-	//testRunner.Run("grafana/grafana")
+	testRunner.Run("grafana/grafana")
 }
