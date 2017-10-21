@@ -4,8 +4,8 @@ import (
 	"log"
 	"sync"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/johntdyer/slackrus"
+	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 )
 
