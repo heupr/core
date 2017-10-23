@@ -43,6 +43,13 @@ func (m *Model) foldImplementation(test []conflation.ExpandedIssue) (float64, ma
 		//utils.ModelSummary.Debug("Actual Assignee: ", *test[i].Issue.Assignees[0].Login)
 		predictions := m.Predict(test[i])
 		//utils.ModelSummary.Debug("Predicted: ", predictions)
+		nbm := m.Algorithm.(*bhattacharya.NBModel)
+		nbm.GenerateProbabilityTable(
+			*test[i].Issue.ID,
+			*test[i].Issue.Body,
+			predictions,
+			"closed",
+		)
 		length := 5
 		if len(predictions) < length {
 			length = len(predictions)
@@ -72,7 +79,7 @@ func (m *Model) foldImplementation(test []conflation.ExpandedIssue) (float64, ma
 
 	mat, dist, err := m.BuildMatrix(expected, predicted)
 	if err != nil {
-		utils.ModelLog.Panic("", zap.Error(err))
+		utils.ModelLog.Panic("build matrix error", zap.Error(err))
 	}
 	return float64(correct) / float64(len(test)), mat, dist
 }

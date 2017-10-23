@@ -12,7 +12,7 @@ func generateRandomIssues() []conflation.ExpandedIssue {
 	list := []conflation.ExpandedIssue{}
 	for _, letter := range letters {
 		githubIssue := github.Issue{Body: &letter}
-		crIssue := conflation.CRIssue{githubIssue, []int{}, []conflation.CRPullRequest{}}
+		crIssue := conflation.CRIssue{githubIssue, []int{}, []conflation.CRPullRequest{}, false}
 		list = append(list, conflation.ExpandedIssue{Issue: crIssue})
 	}
 	return list

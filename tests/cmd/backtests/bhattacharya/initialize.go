@@ -1,9 +1,7 @@
 package main
 
 import (
-	//"bytes"
 	"fmt"
-	//"runtime/debug"
 	"strings"
 
 	. "github.com/ahmetalpbalkan/go-linq"
@@ -12,6 +10,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"core/models"
+	"core/models/bhattacharya"
 	"core/pipeline/gateway"
 	conf "core/pipeline/gateway/conflation"
 	"core/utils"
@@ -27,9 +26,9 @@ type BackTestRunner struct {
 
 func (t *BackTestRunner) Run(repo string) {
 
-	defer func() {
-		//utils.Log.Error("Panic Recovered: ", recover(), bytes.NewBuffer(debug.Stack()).String())
-	}()
+	// defer func() {
+	// 	//utils.Log.Error("Panic Recovered: ", recover(), bytes.NewBuffer(debug.Stack()).String())
+	// }()
 
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "c813d7dab123d3c4813618bf64503a7a1efa540f"})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
@@ -48,7 +47,9 @@ func (t *BackTestRunner) Run(repo string) {
 
 	context := &conf.Context{}
 
-	scenarios := []conf.Scenario{&conf.Scenario3{}}
+	// NOTE: Changing the scenarios will allow different objects in.
+	// NOTE: THIS CAN BE MANIPULATED
+	scenarios := []conf.Scenario{&conf.Scenario3{}, &conf.Scenario4{}}
 
 	conflationAlgorithms := []conf.ConflationAlgorithm{&conf.ComboAlgorithm{Context: context}}
 	normalizer := conf.Normalizer{Context: context}
@@ -61,14 +62,25 @@ func (t *BackTestRunner) Run(repo string) {
 
 	trainingSet := []conf.ExpandedIssue{}
 
+	fmt.Println(len(conflator.Context.Issues)) // TEMPORARY
 	for i := 0; i < len(conflator.Context.Issues); i++ {
 		expandedIssue := conflator.Context.Issues[i]
 		if expandedIssue.Conflate {
-			if expandedIssue.Issue.Assignees != nil || expandedIssue.PullRequest.User != nil {
+			if expandedIssue.Issue.Assignees != nil && len(expandedIssue.Issue.Assignees) > 0 || expandedIssue.PullRequest.User != nil {
 				trainingSet = append(trainingSet, conflator.Context.Issues[i])
 			}
 		}
 	}
+
+	openSet := []conf.ExpandedIssue{}
+	for i := range trainingSet {
+		if trainingSet[i].Issue.ID != nil {
+			if *trainingSet[i].Issue.State == "open" {
+				openSet = append(openSet, trainingSet[i])
+			}
+		}
+	}
+
 	utils.ModelLog.Info("Training set size (before Linq): ", zap.Int("TrainingSetSize", len(trainingSet)))
 	fmt.Println("Training set size (before Linq): ", len(trainingSet))
 	processedTrainingSet := []conf.ExpandedIssue{}
@@ -76,10 +88,22 @@ func (t *BackTestRunner) Run(repo string) {
 	excludeAssignees := From(trainingSet).Where(func(exclude interface{}) bool {
 		if exclude.(conf.ExpandedIssue).Issue.Assignee != nil {
 			assignee := *exclude.(conf.ExpandedIssue).Issue.Assignee.Login
-			return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b"
-		} else {
-			return true
+
+			switch assignee {
+			case
+				"forstmeier",
+				"fishera123",
+				"irJERAD",
+				"konstantinTarletskis",
+				"hadim":
+				return false
+			}
 		}
+		// NOTE: THIS CAN BE MANIPULATED
+		// return assignee != "AndyAyersMS" && assignee != "CarolEidt" && assignee != "mikedn" && assignee != "pgavlin" && assignee != "BruceForstall" && assignee != "RussKeldorph" && assignee != "sdmaclea"
+		// return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b"
+		// return assignee != "forstmeier" && assignee != "fishera123" && assignee != "irJERAD" && assignee != "konstantinTarletskis" && assignee != "hadim"
+		return true
 	})
 
 	groupby := excludeAssignees.GroupBy(
@@ -94,7 +118,8 @@ func (t *BackTestRunner) Run(repo string) {
 		})
 
 	where := groupby.Where(func(groupby interface{}) bool {
-		return len(groupby.(Group).Group) >= 30
+		// NOTE: THIS CAN BE MANIPULATED (between 10-15 max so far)
+		return len(groupby.(Group).Group) >= 10
 	})
 
 	orderby := where.OrderByDescending(func(where interface{}) interface{} {
@@ -116,20 +141,33 @@ func (t *BackTestRunner) Run(repo string) {
 
 	Shuffle(processedTrainingSet, int64(5))
 
-	//utils.ModelSummary.Info("Backtest model training...")
+	for i := range processedTrainingSet {
+		replace := ""
+		if processedTrainingSet[i].Issue.ID != nil {
+			if processedTrainingSet[i].Issue.Body == nil {
+				processedTrainingSet[i].Issue.Body = &replace
+			}
+		} else {
+			if processedTrainingSet[i].PullRequest.Body == nil {
+				processedTrainingSet[i].PullRequest.Body = &replace
+			}
+		}
+	}
+
 	utils.ModelLog.Info("Backtest model training...")
 	fmt.Println("Training set size: ", len(processedTrainingSet))
-	//utils.ModelSummary.Info("Training set size: ", len(processedTrainingSet))
-
-	//scoreTwo := t.Context.Model.TwoFold(processedTrainingSet)
-	//utils.ModelSummary.Info("TWO FOLD:", scoreTwo)
-
-	//scoreTen := t.Context.Model.TenFold(processedTrainingSet)
-	//utils.ModelSummary.Info"TEN FOLD:", scoreTen)
 
 	scoreJohn := t.Context.Model.JohnFold(processedTrainingSet)
 	fmt.Println("John Fold:", scoreJohn)
 
-	//scoreTrain := t.Context.Model.TrainFold(processedTrainingSet, testIssues)
-	//fmt.Println("Train Fold:", scoreTrain)
+	for i := range openSet {
+		predictions := t.Context.Model.Predict(openSet[i])
+		nbm := t.Context.Model.Algorithm.(*bhattacharya.NBModel)
+		nbm.GenerateProbabilityTable(
+			*openSet[i].Issue.ID,
+			*openSet[i].Issue.Body,
+			predictions,
+			"open",
+		)
+	}
 }

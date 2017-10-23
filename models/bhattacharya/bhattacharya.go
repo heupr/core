@@ -18,7 +18,6 @@ type NBModel struct {
 	assignees  []NBClass
 }
 
-// TODO: remove assets into separate file
 type Result struct {
 	id    int
 	score float64
@@ -152,4 +151,8 @@ func convertClassToString(assignees []NBClass) []string {
 
 func (n *NBModel) LogClassWords() {
 	n.classifier.LogClassWords()
+}
+
+func (n *NBModel) GenerateProbabilityTable(issueID int, content string, assignees []string, status string) {
+	n.classifier.GenerateProbabilityTable(issueID, content, assignees, status)
 }

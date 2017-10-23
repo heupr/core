@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -10,7 +9,7 @@ type matrix map[string]map[string]int
 
 func (m *Model) BuildMatrix(expected, predicted []string) (matrix, []string, error) {
 	if len(expected) != len(predicted) {
-		return nil, nil, errors.New("Input slices are not equal length; expected: " + string(len(expected)) + ", predicted: " + string(len(predicted)))
+		return nil, nil, fmt.Errorf("Input slices are not equal length; expected length: %v, predicted length: %v", len(expected), len(predicted))
 	}
 
 	all := append(expected, predicted...)

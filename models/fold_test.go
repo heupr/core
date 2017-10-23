@@ -1,12 +1,14 @@
 package models
 
 import (
-	"core/models/bhattacharya"
-	"core/pipeline/gateway/conflation"
-	"github.com/google/go-github/github"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/google/go-github/github"
+
+	"core/models/bhattacharya"
+	"core/pipeline/gateway/conflation"
 )
 
 func buildTestIssues() []conflation.ExpandedIssue {
@@ -39,7 +41,7 @@ func buildTestIssues() []conflation.ExpandedIssue {
 			ClosedAt:  &resolved,
 			Labels:    labels,
 		}
-		crIssue := conflation.CRIssue{githubIssue, []int{}, []conflation.CRPullRequest{}}
+		crIssue := conflation.CRIssue{githubIssue, []int{}, []conflation.CRPullRequest{}, false}
 		issues = append(issues, conflation.ExpandedIssue{Issue: crIssue})
 	}
 	return issues
@@ -49,11 +51,10 @@ func TestJohnFold(t *testing.T) {
 	nbModel := Model{Algorithm: &bhattacharya.NBModel{}}
 	testingIssues := buildTestIssues()
 	result := nbModel.JohnFold(testingIssues)
-	number, _ := strconv.ParseFloat(result, 64)
-	if number < 0.00 && number > 1.00 {
+	if result < 0.00 && result > 1.00 {
 		t.Error(
 			"\nRESULT IS OUTSIDE ACCEPTABLE RANGE - JOHN FOLD",
-			"\nEXPECTED BETWEEN 0.00 AND 1.00 - ACTUAL: %f", number,
+			"\nEXPECTED BETWEEN 0.00 AND 1.00 - ACTUAL: %f", result,
 		)
 	}
 }

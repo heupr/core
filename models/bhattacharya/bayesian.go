@@ -1,13 +1,16 @@
 package bhattacharya
 
 import (
+	"encoding/csv"
 	"encoding/gob"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync/atomic"
 
 	"go.uber.org/zap"
@@ -480,5 +483,35 @@ func (c *NBClassifier) LogClassWords() {
 		for _, kv := range temp[:limit] {
 			utils.ModelLog.Info("", zap.String("Word", string(kv.word)), zap.Int("Count", int(kv.count)))
 		}
+	}
+}
+
+func (c *NBClassifier) GenerateProbabilityTable(issueID int, content string, assignees []string, status string) {
+	// set up empty matrix
+	words := strings.Split(content, " ")
+	results := make([][]string, (len(words) + 1))
+	for i := range results {
+		results[i] = make([]string, (len(assignees) + 1))
+	}
+
+	// fill out column headers
+	results[0][0] = "words"
+	copy(results[0][1:], assignees)
+
+	// populate matrix values
+	for i := range words {
+		results[i+1][0] = words[i]
+		for j := range assignees {
+			data := c.datas[NBClass(assignees[j])]
+			results[i+1][j+1] = fmt.Sprintf("%f", math.Log(data.getWordProb(words[i])))
+		}
+	}
+
+	file, _ := os.Create(fmt.Sprintf("../../../../data/backtests/%v-results-issue-%d.csv", status, issueID))
+	defer file.Close()
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+	for _, value := range results {
+		writer.Write(value)
 	}
 }
