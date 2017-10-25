@@ -22,7 +22,7 @@ func TestGateway(t *testing.T) {
 		fmt.Fprint(w, `[{"id":321}]`)
 	})
 	server := httptest.NewServer(mux)
-	url, _ := url.Parse(server.URL)
+	url, _ := url.Parse(server.URL + "/")
 
 	client := github.NewClient(nil)
 	client.BaseURL = url
@@ -30,35 +30,19 @@ func TestGateway(t *testing.T) {
 
 	testGateway := Gateway{
 		Client:      client,
-		UnitTesting: false,
+		UnitTesting: true,
 	}
 
 	t.Run("issues", func(t *testing.T) {
-		_, err := testGateway.GetIssues(owner, repo)
+		_, err := testGateway.getIssues(owner, repo, "closed")
 		if err != nil {
-			t.Errorf("failued retrieving issues, %v", err)
+			t.Errorf("failed retrieving issues: %v", err)
 		}
 	})
-	t.Run("pull request", func(t *testing.T) {
-		_, err := testGateway.GetPullRequests(owner, repo)
+	t.Run("pulls", func(t *testing.T) {
+		_, err := testGateway.getPulls(owner, repo, "closed")
 		if err != nil {
-			t.Errorf("failued retrieving issues, %v", err)
+			t.Errorf("failed retrieving pulls: %v", err)
 		}
 	})
-}
-
-func TestCachedGateway(t *testing.T) {
-	client := github.NewClient(nil)
-	gateway := CachedGateway{Gateway: &Gateway{Client: client, UnitTesting: true}, DiskCache: &DiskCache{}}
-
-	pulls, _ := gateway.GetPullRequests("dotnet", "corefx")
-	issues, _ := gateway.GetIssues("dotnet", "corefx")
-
-	if pulls == nil {
-		t.Error("failed cached gateway pull request fetch")
-	}
-
-	if issues == nil {
-		t.Error("failed cached gateway issue fetch")
-	}
 }

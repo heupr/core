@@ -11,50 +11,66 @@ type Gateway struct {
 	UnitTesting bool
 }
 
-func (c *Gateway) GetPullRequests(org string, project string) ([]*github.PullRequest, error) {
-	pullsOpt := &github.PullRequestListOptions{
-		State: "closed",
+func (g *Gateway) getPulls(owner, repo, state string) ([]*github.PullRequest, error) {
+	opt := &github.PullRequestListOptions{
+		State: state,
 		ListOptions: github.ListOptions{
 			PerPage: 100,
 		},
 	}
-	pulls := []*github.PullRequest{}
+	output := []*github.PullRequest{}
+
 	for {
-		pullRequests, resp, err := c.Client.PullRequests.List(context.Background(), org, project, pullsOpt)
+		pulls, resp, err := g.Client.PullRequests.List(context.Background(), owner, repo, opt)
 		if err != nil {
 			return nil, err
 		}
-		pulls = append(pulls, pullRequests...)
+		output = append(output, pulls...)
 
-		if resp.NextPage == 0 || c.UnitTesting {
+		if resp.NextPage == 0 || g.UnitTesting {
 			break
 		} else {
-			pullsOpt.ListOptions.Page = resp.NextPage
+			opt.ListOptions.Page = resp.NextPage
 		}
 	}
-	return pulls, nil
+	return output, nil
 }
 
-func (c *Gateway) GetIssues(org string, project string) ([]*github.Issue, error) {
-	issuesOpt := &github.IssueListByRepoOptions{
-		State: "closed",
+func (g *Gateway) getIssues(owner, repo, state string) ([]*github.Issue, error) {
+	opt := &github.IssueListByRepoOptions{
+		State: state,
 		ListOptions: github.ListOptions{
 			PerPage: 100,
 		},
 	}
-	filteredIssues := []*github.Issue{}
+	output := []*github.Issue{}
 	for {
-		issues, resp, err := c.Client.Issues.ListByRepo(context.Background(), org, project, issuesOpt)
+		issues, resp, err := g.Client.Issues.ListByRepo(context.Background(), owner, repo, opt)
 		if err != nil {
 			return nil, err
 		}
-		filteredIssues = append(filteredIssues, issues...)
-
-		if resp.NextPage == 0 || c.UnitTesting {
+		output = append(output, issues...)
+		if resp.NextPage == 0 || g.UnitTesting {
 			break
 		} else {
-			issuesOpt.ListOptions.Page = resp.NextPage
+			opt.ListOptions.Page = resp.NextPage
 		}
 	}
-	return filteredIssues, nil
+	return output, nil
+}
+
+func (g *Gateway) GetOpenPulls(owner, repo string) ([]*github.PullRequest, error) {
+	return g.getPulls(owner, repo, "open")
+}
+
+func (g *Gateway) GetClosedPulls(owner, repo string) ([]*github.PullRequest, error) {
+	return g.getPulls(owner, repo, "closed")
+}
+
+func (g *Gateway) GetOpenIssues(owner, repo string) ([]*github.Issue, error) {
+	return g.getIssues(owner, repo, "open")
+}
+
+func (g *Gateway) GetClosedIssues(owner, repo string) ([]*github.Issue, error) {
+	return g.getIssues(owner, repo, "closed")
 }

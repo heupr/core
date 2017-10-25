@@ -1,7 +1,6 @@
 package ingestor
 
 import (
-	// "fmt"
 	"runtime"
 	"testing"
 
@@ -17,8 +16,8 @@ func TestInsert(t *testing.T) {
 	client := github.NewClient(tc)
 	newGateway := gateway.CachedGateway{Gateway: &gateway.Gateway{Client: client}, DiskCache: &gateway.DiskCache{}}
 
-	githubIssues, _ := newGateway.GetIssues("dotnet", "corefx")
-	githubPulls, _ := newGateway.GetPullRequests("dotnet", "corefx")
+	githubIssues, _ := newGateway.GetClosedIssues("dotnet", "corefx")
+	githubPulls, _ := newGateway.GetClosedPulls("dotnet", "corefx")
 
 	bufferPool := NewPool()
 	db := Database{BufferPool: bufferPool}

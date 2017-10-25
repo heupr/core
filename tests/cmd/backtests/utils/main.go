@@ -1,21 +1,23 @@
 package main
 
 import (
+	"core/utils"
+	"flag"
+	"log"
+
+	. "github.com/ahmetalpbalkan/go-linq"
+	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
+
 	"core/models"
 	"core/models/bhattacharya"
 	"core/pipeline/gateway"
 	conf "core/pipeline/gateway/conflation"
-	"core/utils"
-	"flag"
-	. "github.com/ahmetalpbalkan/go-linq"
-	"github.com/google/go-github/github"
-	"golang.org/x/oauth2"
-	"log"
 )
 
-//This program will allow us to reload a backtest trained model and query against the model
-//TODO: Add Model DiskCache (See WriteTo in naive_bayes.go)
-//TODO: Load Cached Model From Disk (See NewClassifierFromReader in naive_bayes.go)
+// This program will allow us to reload a backtest trained model and query against the model
+// TODO: Add Model DiskCache (See WriteTo in naive_bayes.go)
+// TODO: Load Cached Model From Disk (See NewClassifierFromReader in naive_bayes.go)
 func main() {
 	model := flag.String("Model", "", "a string")
 	issueNumber := flag.Int("IssueNumber", 12079, "a int")
@@ -36,11 +38,11 @@ func main() {
 	client := github.NewClient(tc)
 
 	newGateway := gateway.CachedGateway{Gateway: &gateway.Gateway{Client: client}, DiskCache: &gateway.DiskCache{}}
-	githubIssues, err := newGateway.GetIssues("dotnet", "corefx")
+	githubIssues, err := newGateway.GetClosedIssues("dotnet", "corefx")
 	if err != nil {
 		utils.Log.Error("Cannot get Issues from Github Gateway. ", err)
 	}
-	githubPulls, err := newGateway.GetPullRequests("dotnet", "corefx")
+	githubPulls, err := newGateway.GetClosedPulls("dotnet", "corefx")
 	if err != nil {
 		utils.Log.Error("Cannot get PullRequests from Github Gateway. ", err)
 	}

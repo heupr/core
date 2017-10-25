@@ -30,7 +30,7 @@ func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
 		Client:      authRepo.Client,
 		UnitTesting: false,
 	}
-	githubIssues, err := newGateway.GetIssues(*authRepo.Repo.Owner.Login, *authRepo.Repo.Name)
+	githubIssues, err := newGateway.GetClosedIssues(*authRepo.Repo.Owner.Login, *authRepo.Repo.Name)
 	if err != nil {
 		// TODO: Proper error handling should be evaluated for this method;
 		// possibly adjust to return an error variable.
@@ -41,7 +41,7 @@ func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
 	for i := 0; i < len(githubIssues); i++ {
 		githubIssues[i].Repository = authRepo.Repo
 	}
-	githubPulls, err := newGateway.GetPullRequests(*authRepo.Repo.Owner.Login, *authRepo.Repo.Name)
+	githubPulls, err := newGateway.GetClosedPulls(*authRepo.Repo.Owner.Login, *authRepo.Repo.Name)
 	if err != nil {
 		utils.AppLog.Error(err.Error())
 	}

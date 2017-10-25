@@ -36,11 +36,11 @@ func (t *BackTestRunner) Run(repo string) {
 	newGateway := gateway.CachedGateway{Gateway: &gateway.Gateway{Client: client}, DiskCache: &gateway.DiskCache{}}
 
 	r := strings.Split(repo, "/")
-	githubIssues, err := newGateway.GetIssues(r[0], r[1])
+	githubIssues, err := newGateway.GetClosedIssues(r[0], r[1])
 	if err != nil {
 		utils.AppLog.Error("Cannot get Issues from Github Gateway.", zap.Error(err))
 	}
-	githubPulls, err := newGateway.GetPullRequests(r[0], r[1])
+	githubPulls, err := newGateway.GetClosedPulls(r[0], r[1])
 	if err != nil {
 		utils.AppLog.Error("Cannot get PullRequests from Github Gateway.", zap.Error(err))
 	}
