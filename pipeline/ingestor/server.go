@@ -1,6 +1,7 @@
 package ingestor
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -18,7 +19,7 @@ type IngestorServer struct {
 	RepoInitializer RepoInitializer
 }
 
-// This is a global variable for unit testing and stubbing out the client URLs.
+// NewClient is a wrapper fo unit testing and stubbing out the client URLs.
 var NewClient = func(appId int, installationId int) *github.Client {
 	// Wrap the shared transport for use with the Github Installation.
 	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appId, installationId, "heupr.2017-10-04.private-key.pem")
@@ -60,5 +61,8 @@ func (i *IngestorServer) Start() error {
 }
 
 func (i *IngestorServer) Stop() {
-	//TODO: Closing the server down is a needed operation that will be added.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	i.Server.Shutdown(ctx)
+	utils.AppLog.Info("graceful ingestor shutdown")
 }
