@@ -34,7 +34,6 @@ func Test_NewClient(t *testing.T) {
 		}{3, 3}, nil},
 	}
 
-	id := 1
 	owner := "bomarr-order"
 	repo := "bt-16-perimeter-droid"
 	mux := http.NewServeMux()
