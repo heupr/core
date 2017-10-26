@@ -38,9 +38,10 @@ type ArchRepo struct {
 	Limit               time.Time
 	AssigneeAllocations map[string]int
 	EligibleAssignees   map[string]int
+	Settings						HeuprConfigSettings
 }
 
-func (bs *BackendServer) NewArchRepo(repoID int, limit time.Time) {
+func (bs *BackendServer) NewArchRepo(repoID int, settings HeuprConfigSettings) {
 	bs.Repos.Lock()
 	defer bs.Repos.Unlock()
 
@@ -48,14 +49,20 @@ func (bs *BackendServer) NewArchRepo(repoID int, limit time.Time) {
 	bs.Repos.Actives[repoID].Hive = new(ArchHive)
 	bs.Repos.Actives[repoID].Hive.Blender = new(Blender)
 
-	bs.Repos.Actives[repoID].Limit = limit
+	bs.Repos.Actives[repoID].Settings = settings
 }
 
 func (bs *BackendServer) NewClient(repoId, appId, installationId int) {
 	bs.Repos.Lock()
 	defer bs.Repos.Unlock()
 
-	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appId, installationId, "heupr.2017-10-04.private-key.pem")
+	var key string
+	if PROD {
+		key = "heupr.2017-10-04.private-key.pem"
+	} else {
+		key = "heupr.2017-10-04.private-key.pem" //TODO: Change this after deployment to GCP
+	}
+	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appId, installationId, key)
 	if err != nil {
 		utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
 		return
@@ -74,7 +81,8 @@ func (a *ArchRepo) TriageOpenIssues() {
 	openIssues := a.Hive.Blender.GetOpenIssues()
 	utils.AppLog.Info("TriageOpenIssues()", zap.Int("Total", len(openIssues)))
 	for i := 0; i < len(openIssues); i++ {
-		if openIssues[i].Issue.CreatedAt.After(a.Limit) {
+		if openIssues[i].Issue.CreatedAt.After(a.Settings.StartTime) {
+			*openIssues[i].Issue.Triaged = true
 			assignees := a.Hive.Blender.Predict(openIssues[i])
 			var name string
 			if openIssues[i].Issue.Repository.FullName != nil {
@@ -88,11 +96,13 @@ func (a *ArchRepo) TriageOpenIssues() {
 			assigned := false
 			for i := 0; i < len(assignees); i++ {
 				assignee := assignees[i]
+				if _, ok := a.Settings.IgnoreUsers[assignee]; ok {
+					continue
+				}
 				if assignmentsCap, ok := a.EligibleAssignees[assignee]; ok {
 					if fallbackAssignee == "" {
 						fallbackAssignee = assignee
 					}
-
 					if _, ok := a.AssigneeAllocations[assignee]; !ok {
 						a.AssigneeAllocations[assignee] = 0
 					}
@@ -147,10 +157,9 @@ func (b *Blender) GetOpenIssues() []conflation.ExpandedIssue {
 	openIssues := []conflation.ExpandedIssue{}
 	issues := b.Conflator.Context.Issues
 	for i := 0; i < len(issues); i++ {
-		if issues[i].PullRequest.Number == nil && issues[i].Issue.ClosedAt == nil && !issues[i].Issue.Triaged {
+		if issues[i].PullRequest.Number == nil && issues[i].Issue.ClosedAt == nil && !*issues[i].Issue.Triaged && *issues[i].Issue.User.Login != "heupr" {
 			if issues[i].Issue.Assignee == nil && issues[i].Issue.Assignees == nil { //MVP
 				openIssues = append(openIssues, issues[i])
-				issues[i].Issue.Triaged = true
 			}
 		}
 	}
@@ -161,7 +170,7 @@ func (b *Blender) GetClosedIssues() []conflation.ExpandedIssue {
 	closedIssues := []conflation.ExpandedIssue{}
 	issues := b.Conflator.Context.Issues
 	for i := 0; i < len(issues); i++ {
-		if issues[i].Issue.ClosedAt != nil && issues[i].Conflate && !issues[i].IsTrained {
+		if issues[i].Issue.ClosedAt != nil && issues[i].Conflate && !issues[i].IsTrained && *issues[i].Issue.User.Login != "heupr" {
 			closedIssues = append(closedIssues, issues[i])
 			issues[i].IsTrained = true
 		}

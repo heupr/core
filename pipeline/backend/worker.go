@@ -63,6 +63,7 @@ func (w *Worker) Start() {
 
 				repo.AssigneeAllocations = repodata.AssigneeAllocations
 				repo.EligibleAssignees = repodata.EligibleAssignees
+				repo.Settings = repodata.Settings
 
 				utils.AppLog.Info("TriageOpenIssues() - Begin ", zap.Int("RepoID", repodata.RepoID))
 				repo.TriageOpenIssues()

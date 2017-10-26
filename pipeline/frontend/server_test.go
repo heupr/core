@@ -2,7 +2,7 @@ package frontend
 
 import (
 	"io/ioutil"
-    "log"
+	"log"
 	"os"
 	"testing"
 
@@ -10,7 +10,7 @@ import (
 )
 
 func TestLaunchServer(t *testing.T) {
-    log.SetOutput(ioutil.Discard)
+	log.SetOutput(ioutil.Discard)
 	cert, key := "test-cert.pem", "test-key.pem"
 	secure, unsecure := "127.0.0.1:8000", "127.0.0.1:8001"
 	if err := httpscerts.Generate(cert, key, secure); err != nil {

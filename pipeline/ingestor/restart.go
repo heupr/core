@@ -24,7 +24,6 @@ FROM (
 ) g
 ORDER BY g.is_pull`
 
-
 func (i *IngestorServer) Restart() error {
 
 	integrations, err := i.Database.ReadIntegrations()

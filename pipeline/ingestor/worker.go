@@ -3,9 +3,6 @@ package ingestor
 import (
 	"context"
 
-	"net/http"
-
-	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
 
 	"go.uber.org/zap"
@@ -43,8 +40,16 @@ func (w *Worker) Start() {
 				case github.IssuesEvent:
 					//The Action that was performed. Can be one of "assigned", "unassigned", "labeled", "unlabeled", "opened", "edited", "milestoned", "demilestoned", "closed", or "reopened".
 					v.Issue.Repository = v.Repo
-					if *v.Issue.User.Login == "heupr[bot]" || *v.Issue.Assignee.Login == "heupr[bot]" {
-						go w.ProcessHeuprInteractionEvent(v)
+					if *v.Action == "edited" && *v.Issue.User.Login == "heupr[bot]" {
+						//go w.ProcessHeuprInteractionIssuesEvent(v)
+						if *v.Sender.Login != "heupr[bot]" && v.Issue.Assignees != nil {
+							for i := 0; i < len(v.Issue.Assignees); i++ {
+								if *v.Sender.Login == *v.Issue.Assignees[i].Login {
+										go w.ProcessHeuprInteractionIssuesEvent(v)
+										break
+								}
+							}
+						}
 						continue
 					}
 					w.Database.InsertIssue(*v.Issue, v.Action)
@@ -52,9 +57,16 @@ func (w *Worker) Start() {
 					//v.PullRequest.Base.Repo = v.Repo //TODO: Confirm
 					w.Database.InsertPullRequest(*v.PullRequest, v.Action)
 				case github.IssueCommentEvent:
-					if *v.Issue.User.Login == "heupr[bot]" || *v.Issue.Assignee.Login == "heupr[bot]" {
-						//TODO: Handle User Reply Event
-						continue
+					if *v.Action == "created" && *v.Issue.User.Login == "heupr[bot]" {
+						if *v.Sender.Login != "heupr[bot]" && v.Issue.Assignees != nil {
+							for i := 0; i < len(v.Issue.Assignees); i++ {
+								if *v.Sender.Login == *v.Issue.Assignees[i].Login {
+										v.Issue.Repository = v.Repo
+										go w.ProcessHeuprInteractionCommentEvent(v)
+										break
+								}
+							}
+						}
 					}
 				case HeuprInstallationEvent:
 					w.ProcessHeuprInstallationEvent(v)
@@ -75,14 +87,7 @@ func (w *Worker) ProcessHeuprInstallationEvent(event HeuprInstallationEvent) {
 		switch *e.Action {
 		case "created":
 			w.RepoInitializer.ActivateBackend(ActivationParams{InstallationEvent: e})
-			// Wrap the shared transport for use with the Github Installation.
-			itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID, "heupr.2017-10-04.private-key.pem")
-			if err != nil {
-				utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
-				return
-			}
-			// Use installation transport with client.
-			client := github.NewClient(&http.Client{Transport: itr})
+			client := NewClient(*e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
 			for i := 0; i < len(e.Repositories); i++ {
 				githubRepo, _, err := client.Repositories.GetByID(context.Background(), *e.Repositories[i].ID)
 				if err != nil {
@@ -107,14 +112,7 @@ func (w *Worker) ProcessHeuprInstallationRepositoriesEvent(event HeuprInstallati
 	go func(e HeuprInstallationRepositoriesEvent) {
 		switch *e.Action {
 		case "added":
-			// Wrap the shared transport for use with the Github Installation.
-			itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID, "heupr.2017-10-04.private-key.pem")
-			if err != nil {
-				utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
-				return
-			}
-			// Use installation transport with client.
-			client := github.NewClient(&http.Client{Transport: itr})
+			client := NewClient(*e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
 			for i := 0; i < len(e.RepositoriesAdded); i++ {
 				repo := AuthenticatedRepo{Repo: e.RepositoriesAdded[i], Client: client}
 				if w.RepoInitializer.RepositoryIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {
@@ -125,14 +123,7 @@ func (w *Worker) ProcessHeuprInstallationRepositoriesEvent(event HeuprInstallati
 				w.RepoInitializer.RaiseRepositoryWelcomeIssue(repo, *event.Sender.Login)
 			}
 		case "removed":
-			// Wrap the shared transport for use with the Github Installation.
-			itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID, "heupr.2017-10-04.private-key.pem")
-			if err != nil {
-				utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
-				return
-			}
-			// Use installation transport with client.
-			client := github.NewClient(&http.Client{Transport: itr})
+			client := NewClient(*e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
 			for i := 0; i < len(e.RepositoriesRemoved); i++ {
 				repo := AuthenticatedRepo{Repo: e.RepositoriesRemoved[i], Client: client}
 				if !w.RepoInitializer.RepositoryIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {

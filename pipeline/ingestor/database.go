@@ -87,6 +87,74 @@ func (d *Database) EnableRepo(repoId int) {
 	}
 }
 
+func (d *Database) InsertRepositoryIntegrationSettings(settings HeuprConfigSettings) {
+	var settingsID int64
+	var buffer bytes.Buffer
+	settingsInsert := "INSERT INTO integrations_settings(repo_id, start_time, email, twitter) VALUES"
+	valuesFmt := "(?,?,?,?)"
+
+	buffer.WriteString(settingsInsert)
+	buffer.WriteString(valuesFmt)
+	result, err := d.db.Exec(buffer.String(), settings.Integration.RepoId, settings.StartTime, settings.Email, settings.Twitter)
+	if err != nil {
+		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+		return
+	} else {
+		rows, _ := result.RowsAffected()
+		settingsID, _ = result.LastInsertId()
+		utils.AppLog.Debug("Database Insert Success", zap.Int64("Rows", rows))
+	}
+	buffer.Reset()
+
+	if settings.IgnoreUsers != nil && len(settings.IgnoreUsers) > 0 {
+		settingsIgnoreUsersLookupInsert := "INSERT INTO integrations_settings_ignoreusers_lk(integrations_settings_fk, user) VALUES"
+		settingsIgnoreUsersLookupValuesFmt := "(?,?)"
+		settingsIgnoreUsersLookupNumValues := 2 * len(settings.IgnoreUsers)
+		buffer.WriteString(settingsIgnoreUsersLookupInsert)
+		values := make([]interface{}, settingsIgnoreUsersLookupNumValues)
+		delimeter := ""
+		for i := 0; i < len(settings.IgnoreUsers); i++ {
+			buffer.WriteString(delimeter)
+			buffer.WriteString(settingsIgnoreUsersLookupValuesFmt)
+			values[i+i+0] = settingsID
+			values[i+i+1] = settings.IgnoreUsers[i]
+			delimeter = ","
+		}
+		result, err = d.db.Exec(buffer.String(), values...)
+		if err != nil {
+			utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+		} else {
+			rows, _ := result.RowsAffected()
+			utils.AppLog.Debug("Database Insert Success", zap.Int64("Rows", rows))
+		}
+	}
+	buffer.Reset()
+
+	if settings.IgnoreLabels != nil && len(settings.IgnoreLabels) > 0 {
+		settingsIgnoreLabelsLookupInsert := "INSERT INTO integrations_settings_ignorelabels_lk(integrations_settings_fk, label) VALUES"
+		settingsIgnoreLabelsValuesFmt := "(?,?)"
+		settingsIgnoreLabelsNumValues := 2 * len(settings.IgnoreLabels)
+		buffer.WriteString(settingsIgnoreLabelsLookupInsert)
+		values := make([]interface{}, settingsIgnoreLabelsNumValues)
+		delimeter := ""
+		for i := 0; i < len(settings.IgnoreLabels); i++ {
+			buffer.WriteString(delimeter)
+			buffer.WriteString(settingsIgnoreLabelsValuesFmt)
+			values[i+i+0] = settingsID
+			values[i+i+1] = settings.IgnoreLabels[i]
+			delimeter = ","
+		}
+		result, err = d.db.Exec(buffer.String(), values...)
+		if err != nil {
+			utils.AppLog.Error("Database Insert Failure", zap.Error(err))
+		} else {
+			rows, _ := result.RowsAffected()
+			utils.AppLog.Debug("Database Insert Success", zap.Int64("Rows", rows))
+		}
+	}
+	buffer.Reset()
+}
+
 func (d *Database) InsertRepositoryIntegration(repoId int, appId int, installationId int) {
 	var buffer bytes.Buffer
 	integrationsInsert := "INSERT INTO integrations(repo_id, app_id, installation_id) VALUES"
@@ -150,7 +218,9 @@ func (d *Database) ReadIntegrationByRepoId(repoId int) (*Integration, error) {
 	integration := new(Integration)
 	err := d.db.QueryRow("SELECT repo_id, app_id, installation_id FROM integrations WHERE repo_id = ?", repoId).Scan(&integration.RepoId, &integration.AppId, &integration.InstallationId)
 	if err != nil {
-		utils.AppLog.Error("database read failure - ReadIntegrationByRepoId()", zap.Error(err))
+		if err != sql.ErrNoRows {
+			utils.AppLog.Error("database read failure - ReadIntegrationByRepoId()", zap.Error(err))
+		}
 		return nil, err
 	}
 	return integration, nil

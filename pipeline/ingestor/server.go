@@ -21,8 +21,14 @@ type IngestorServer struct {
 
 // NewClient is a wrapper fo unit testing and stubbing out the client URLs.
 var NewClient = func(appId int, installationId int) *github.Client {
+	var key string
+	if PROD {
+		key = "heupr.2017-10-04.private-key.pem"
+	} else {
+		key = "heupr.2017-10-04.private-key.pem" //TODO: Change this after deployment to GCP
+	}
 	// Wrap the shared transport for use with the Github Installation.
-	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appId, installationId, "heupr.2017-10-04.private-key.pem")
+	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appId, installationId, key)
 	if err != nil {
 		utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
 		return nil
@@ -33,7 +39,7 @@ var NewClient = func(appId int, installationId int) *github.Client {
 
 func (i *IngestorServer) routes() *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.Handle("/hook", collectorHandler())
+	mux.Handle("/webhook", collectorHandler())
 	return mux
 }
 

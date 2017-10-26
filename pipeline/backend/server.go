@@ -58,10 +58,10 @@ func (bs *BackendServer) activateHandler(w http.ResponseWriter, r *http.Request)
 		utils.AppLog.Error("unable to decode json message", zap.Error(err))
 	}
 	integration := activationParams.InstallationEvent
-	limit := time.Now().AddDate(0, 0, -30) //activationParams.Limit
 	for _, repository := range integration.Repositories {
 		if _, ok := bs.Repos.Actives[*repository.ID]; !ok {
-			bs.NewArchRepo(*repository.ID, limit)
+			settings := HeuprConfigSettings{StartTime: time.Now(), IgnoreLabels: make(map[string]bool), IgnoreUsers: make(map[string]bool)}
+			bs.NewArchRepo(*repository.ID, settings)
 			bs.NewClient(*repository.ID, *integration.HeuprInstallation.AppID, *integration.HeuprInstallation.ID)
 			bs.NewModel(*repository.ID)
 		}
@@ -86,10 +86,12 @@ func (bs *BackendServer) Start() {
 	}
 
 	for _, integration := range integrations {
-		//TODO: Configure Limit
-		limit := time.Now().AddDate(0, 0, -30)
 		if _, ok := bs.Repos.Actives[integration.RepoId]; !ok {
-			bs.NewArchRepo(integration.RepoId, limit)
+			settings, err := bs.Database.ReadHeuprConfigSettingsByRepoId(integration.RepoId)
+			if err != nil {
+				panic(err)
+			}
+			bs.NewArchRepo(integration.RepoId, settings)
 			bs.NewClient(integration.RepoId, integration.AppId, integration.InstallationId)
 			bs.NewModel(integration.RepoId)
 		}

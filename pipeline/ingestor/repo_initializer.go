@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -74,7 +75,7 @@ func (r *RepoInitializer) ObliterateIntegration(appId int, installationId int) {
 }
 
 func (r *RepoInitializer) RaiseRepositoryWelcomeIssue(authRepo AuthenticatedRepo, assignee string) {
-	welcomeScreen := &github.IssueRequest{Title: github.String(WelcomeTitle), Body: github.String(WelcomeBody), Assignees: &[]string{assignee}}
+	welcomeScreen := &github.IssueRequest{Title: github.String(WelcomeTitle), Body: github.String(fmt.Sprintf(WelcomeBody, time.Now().Format(time.RFC822))), Assignees: &[]string{assignee}}
 	authRepo.Client.Issues.Create(context.Background(), *authRepo.Repo.Owner.Login, *authRepo.Repo.Name, welcomeScreen)
 }
 

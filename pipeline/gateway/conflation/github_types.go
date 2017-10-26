@@ -12,7 +12,7 @@ type CRIssue struct {
 	github.Issue
 	RefPullIds []int
 	RefPulls   []CRPullRequest
-	Triaged    bool
+	Triaged    *bool
 }
 
 type ExpandedIssue struct {

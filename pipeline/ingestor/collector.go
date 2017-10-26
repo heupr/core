@@ -52,7 +52,7 @@ var Workload = make(chan interface{}, 100)
 func collectorHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		eventType := r.Header.Get("X-Github-Event")
-		if eventType != "issues" && eventType != "pull_request" && eventType != "installation" {
+		if eventType != "issues" && eventType != "pull_request" && eventType != "installation" && eventType != "issue_comment" {
 			utils.AppLog.Warn("Ignoring event", zap.String("EventType", eventType))
 			return
 		}
@@ -70,6 +70,8 @@ func collectorHandler() http.Handler {
 		case *github.IssuesEvent:
 			Workload <- *v
 		case *github.PullRequestEvent:
+			Workload <- *v
+		case *github.IssueCommentEvent:
 			Workload <- *v
 		case *github.InstallationEvent:
 			e := &HeuprInstallationEvent{}

@@ -21,7 +21,7 @@ type Integration struct {
 }
 
 func (m *MemSQL) Open() {
-	mysql, err := sql.Open("mysql", "root@/heupr?interpolateParams=true")
+	mysql, err := sql.Open("mysql", "root@/heupr?interpolateParams=true&parseTime=true")
 	if err != nil {
 		panic(err.Error()) // TODO: Proper error handling.
 	}
