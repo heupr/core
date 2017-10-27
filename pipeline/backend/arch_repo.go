@@ -60,7 +60,7 @@ func (bs *BackendServer) NewClient(repoId, appId, installationId int) {
 	if PROD {
 		key = "heupr.2017-10-04.private-key.pem"
 	} else {
-		key = "heupr.2017-10-04.private-key.pem" //TODO: Change this after deployment to GCP
+		key = "heupr.test.private-key.pem" //TODO: Create Key
 	}
 	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appId, installationId, key)
 	if err != nil {
