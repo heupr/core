@@ -82,6 +82,17 @@ func (a *ArchRepo) TriageOpenIssues() {
 	utils.AppLog.Info("TriageOpenIssues()", zap.Int("Total", len(openIssues)))
 	for i := 0; i < len(openIssues); i++ {
 		if openIssues[i].Issue.CreatedAt.After(a.Settings.StartTime) {
+			labelValid := true
+			labels := openIssues[i].Issue.Labels
+			for j := 0; j < len(labels); j++ {
+				if _, ok := a.Settings.IgnoreLabels[*labels[j].Name]; ok {
+					labelValid = false
+					break
+				}
+			}
+			if !labelValid {
+				continue
+			}
 			*openIssues[i].Issue.Triaged = true
 			assignees := a.Hive.Blender.Predict(openIssues[i])
 			var name string
