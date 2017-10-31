@@ -1,10 +1,10 @@
 body {
     overflow-x: hidden;
-    font-family: "Roboto Slab","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: sans-serif;
 }
 
 .text-muted {
-    color: #777;
+    color: #777777;
     font-size: 20px;
 }
 
@@ -17,7 +17,8 @@ p {
     line-height: 1.75;
 }
 
-/*Team description*/
+/*Team description below the section subtitle*/
+/*Not currently being used*/
 p.large {
     font-size: 26px;
 }
@@ -48,7 +49,7 @@ h4,
 h5,
 h6 {
     text-transform: uppercase;
-    font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: Montserrat, sans-serif;
     font-weight: 700;
 }
 
@@ -61,15 +62,16 @@ h6 {
 }
 
 .bg-darkest-gray {
-    background-color: #222;
+    background-color: #222222;
 }
 
+/*This does not look like it's in use*/
 .btn-primary {
     border-color: #dc143c;
     text-transform: uppercase;
-    font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: Montserrat, sans-serif;
     font-weight: 700;
-    color: #fff;
+    color: #ffffff;
     background-color: #dc143c;
 }
 
@@ -79,7 +81,7 @@ h6 {
 .btn-primary.active,
 .open .dropdown-toggle.btn-primary {
     border-color: #ffffff;
-    color: #fff;
+    color: #ffffff;
     background-color: #dc143c;
 }
 
@@ -110,7 +112,7 @@ fieldset[disabled] .btn-primary.active {
 
 .btn-primary .badge {
     color: #dc143c;
-    background-color: #fff;
+    background-color: #ffffff;
 }
 
 .btn-xl {
@@ -118,10 +120,10 @@ fieldset[disabled] .btn-primary.active {
     border-color: #dc143c;
     border-radius: 3px;
     text-transform: uppercase;
-    font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: Montserrat, sans-serif;
     font-size: 18px;
     font-weight: 700;
-    color: #fff;
+    color: #ffffff;
     background-color: #dc143c;
 }
 
@@ -131,7 +133,7 @@ fieldset[disabled] .btn-primary.active {
 .btn-xl.active,
 .open .dropdown-toggle.btn-xl {
     border-color: #ffffff;
-    color: #fff;
+    color: #ffffff;
     background-color: #dc143c;
 }
 
@@ -162,17 +164,18 @@ fieldset[disabled] .btn-xl.active {
 
 .btn-xl .badge {
     color: #dc143c;
-    background-color: #fff;
+    background-color: #ffffff;
 }
 
 .navbar-default {
     border-color: transparent;
-    background-color: #222;
+    background-color: #222222;
 }
 
 /*Header company name*/
+/*This will ultimately be replaced by a logo image*/
 .navbar-default .navbar-brand {
-    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: Montserrat, sans-serif;
     weight: 000;
     font-weight: 700;
     color: #dc143c;
@@ -217,7 +220,7 @@ fieldset[disabled] .btn-xl.active {
 }
 
 .navbar-default .navbar-toggle .icon-bar {
-    background-color: #fff;
+    background-color: #ffffff;
 }
 
 .navbar-default .navbar-toggle:hover,
@@ -227,10 +230,10 @@ fieldset[disabled] .btn-xl.active {
 
 .navbar-default .nav li a {
     text-transform: uppercase;
-    font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: Montserrat,sans-serif;
     font-weight: 400;
     letter-spacing: 1px;
-    color: #fff;
+    color: #ffffff;
 }
 
 .navbar-default .nav li a:hover,
@@ -241,13 +244,13 @@ fieldset[disabled] .btn-xl.active {
 
 .navbar-default .navbar-nav>.active>a {
     border-radius: 0;
-    color: #fff;
+    color: #ffffff;
     background-color: #dc143c;
 }
 
 .navbar-default .navbar-nav>.active>a:hover,
 .navbar-default .navbar-nav>.active>a:focus {
-    color: #fff;
+    color: #ffffff;
     background-color: #dc143c;
 }
 
@@ -274,7 +277,7 @@ fieldset[disabled] .btn-xl.active {
 
     .navbar-default.navbar-shrink {
         padding: 10px 0;
-        background-color: #222;
+        background-color: #222222;
     }
 
     .navbar-default.navbar-shrink .navbar-brand {
@@ -284,7 +287,7 @@ fieldset[disabled] .btn-xl.active {
 
 header {
     text-align: center;
-    color: #fff;
+    color: #ffffff;
     background-attachment: scroll;
     background-image: url(../img/header-bg.jpg);
     background-position: center center;
@@ -300,25 +303,26 @@ header .intro-text {
     padding-bottom: 50px;
 }
 
-/*Params.hero.title*/
+/*Hero title introduction*/
 header .intro-text .intro-lead-in {
     margin-bottom: 25px;
-    font-family: "Droid Serif","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: Roboto, sans-serif;
     font-size: 22px;
     font-style: italic;
     line-height: 22px;
 }
 
-/*Params.hero.subtitle*/
+/*Hero subtitle w/ slogan*/
 header .intro-text .intro-heading {
     margin-bottom: 25px;
     text-transform: uppercase;
-    font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: Montserrat, sans-serif;
     font-size: 50px;
     font-weight: 700;
     line-height: 50px;
 }
 
+/*This does not look like it is in use*/
 @media(min-width:768px) {
     header .intro-text {
         padding-top: 300px;
@@ -327,7 +331,7 @@ header .intro-text .intro-heading {
 
     header .intro-text .intro-lead-in {
         margin-bottom: 25px;
-        font-family: "Droid Serif","Helvetica Neue",Helvetica,Arial,sans-serif;
+        font-family: Roboto, sans-serif;
         font-size: 40px;
         font-style: italic;
         line-height: 40px;
@@ -336,7 +340,7 @@ header .intro-text .intro-heading {
     header .intro-text .intro-heading {
         margin-bottom: 50px;
         text-transform: uppercase;
-        font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
+        font-family: Montserrat, sans-serif;
         font-size: 75px;
         font-weight: 700;
         line-height: 75px;
@@ -348,17 +352,21 @@ section {
 }
 
 /*Section heading*/
+/*This is for each of the sections within the webiste*/
 section h2.section-heading {
     margin-top: 0;
     margin-bottom: 15px;
+    font-family: Montserrat, sans-serif;
     font-size: 40px;
+    font-weight: 700;
 }
 
 /*Section subtitles*/
+/*The little descriptor for each page*/
 section h3.section-subheading {
     margin-bottom: 75px;
     text-transform: none;
-    font-family: "Droid Serif","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: Roboto, sans-serif;
     font-size: 26px;
     font-style: italic;
     font-weight: 400;
@@ -402,7 +410,7 @@ section h3.section-subheading {
 
 .team-member img {
     margin: 0 auto;
-    border: 7px solid #fff;
+    border: 7px solid #ffffff;
     max-width: 280px;
 }
 
@@ -419,7 +427,7 @@ section h3.section-subheading {
     font-size: 20px;
     text-transform: none;
     font-weight: 400;
-    color: #777;
+    color: #777777;
     margin-bottom: 0px;
 }
 
@@ -432,7 +440,7 @@ section h3.section-subheading {
     text-transform: none;
     font-style: italic;
     font-weight: 200;
-    color: #777;
+    color: #777777;
     margin-bottom: 15px
 }
 
@@ -464,7 +472,7 @@ section h3.section-subheading {
 
 aside .heading {
     text-transform: none;
-    color: #777;
+    color: #777777;
     margin-top: 20px;
     margin-bottom: -40px;
 }
@@ -475,17 +483,19 @@ footer {
 }
 
 footer span.copyright {
+    /*This does not look like it's in use*/
     text-transform: uppercase;
     text-transform: none;
-    font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: sans-serif;
     line-height: 40px;
 }
 
 footer ul.quicklinks {
     margin-bottom: 0;
+    /*This does not look like it's in use*/
     text-transform: uppercase;
     text-transform: none;
-    font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: sans-serif;
     line-height: 40px;
 }
 
@@ -502,8 +512,8 @@ ul.social-buttons li a {
     font-size: 20px;
     line-height: 40px;
     outline: 0;
-    color: #fff;
-    background-color: #222;
+    color: #ffffff;
+    background-color: #222222;
     -webkit-transition: all .3s;
     -moz-transition: all .3s;
     transition: all .3s;
