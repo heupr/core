@@ -22,15 +22,23 @@ func linkPullRequestsToIssue(issue *ExpandedIssue) {
 	}
 }
 
+func linkTitleToBody(issue *ExpandedIssue) {
+	if issue.PullRequest.Body != nil && issue.PullRequest.Title != nil {
+		*issue.PullRequest.Body = *issue.PullRequest.Body + " " + *issue.PullRequest.Title
+	} else if issue.Issue.Body != nil && issue.Issue.Title != nil {
+		*issue.Issue.Body = *issue.Issue.Body + " " + *issue.Issue.Title
+	}
+}
+
 // Accept a expanded "Issue" or "PR"
 // PR's need to have reference information
 func (c *ComboAlgorithm) Conflate(issue *ExpandedIssue) bool {
 	if len(issue.Issue.RefPulls) > 0 {
 		linkPullRequestsToIssue(issue)
-		return true
 	} else {
-		return false
+		linkTitleToBody(issue)
 	}
+		return true
 }
 
 // 1:1 Algorithm (Naive) (We may need to exclude 1:M issues)
