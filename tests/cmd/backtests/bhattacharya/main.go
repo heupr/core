@@ -15,5 +15,5 @@ func main() {
 	model := models.Model{Algorithm: &nbModel}
 	testContext := TestContext{Model: model}
 	testRunner := BackTestRunner{Context: testContext}
-	testRunner.Run("grafana/grafana")
+	testRunner.Run("dotnet/corefx")
 }

@@ -73,38 +73,36 @@ func (t *BackTestRunner) Run(repo string) {
 	}
 
 	openSet := []conf.ExpandedIssue{}
+	/*
+	TODO: Correct this logic
 	for i := range trainingSet {
 		if trainingSet[i].Issue.ID != nil {
 			if *trainingSet[i].Issue.State == "open" {
 				openSet = append(openSet, trainingSet[i])
 			}
 		}
-	}
+	} */
 
 	utils.ModelLog.Info("Training set size (before Linq): ", zap.Int("TrainingSetSize", len(trainingSet)))
+	fmt.Println("GithubIssues", len(githubIssues))
+	fmt.Println("GithubPulls", len(githubPulls))
 	fmt.Println("Training set size (before Linq): ", len(trainingSet))
 	processedTrainingSet := []conf.ExpandedIssue{}
+
 
 	excludeAssignees := From(trainingSet).Where(func(exclude interface{}) bool {
 		if exclude.(conf.ExpandedIssue).Issue.Assignee != nil {
 			assignee := *exclude.(conf.ExpandedIssue).Issue.Assignee.Login
-			/*
-			switch assignee {
-			case
-				"forstmeier",
-				"fishera123",
-				"irJERAD",
-				"konstantinTarletskis",
-				"hadim":
-				return false
-			}*/
-			return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b"
+			return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b" && assignee != "stephentoub"
+		} else if exclude.(conf.ExpandedIssue).PullRequest.User != nil {
+			return true
+		} else {
+			return false
 		}
-		// NOTE: THIS CAN BE MANIPULATED
+ 		// NOTE: THIS CAN BE MANIPULATED
 		// return assignee != "AndyAyersMS" && assignee != "CarolEidt" && assignee != "mikedn" && assignee != "pgavlin" && assignee != "BruceForstall" && assignee != "RussKeldorph" && assignee != "sdmaclea"
 		// return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b"
 		// return assignee != "forstmeier" && assignee != "fishera123" && assignee != "irJERAD" && assignee != "konstantinTarletskis" && assignee != "hadim"
-		return true
 	})
 
 	groupby := excludeAssignees.GroupBy(
