@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"os"
 
 	. "github.com/ahmetalpbalkan/go-linq"
 	"github.com/google/go-github/github"
@@ -14,6 +15,11 @@ import (
 	"core/pipeline/gateway"
 	conf "core/pipeline/gateway/conflation"
 	"core/utils"
+
+	"path/filepath"
+	"time"
+
+	strftime "github.com/lestrrat/go-strftime"
 )
 
 type TestContext struct {
@@ -71,8 +77,6 @@ func (t *BackTestRunner) Run(repo string) {
 			}
 		}
 	}
-
-	openSet := []conf.ExpandedIssue{}
 	/*
 	TODO: Correct this logic
 	for i := range trainingSet {
@@ -159,17 +163,36 @@ func (t *BackTestRunner) Run(repo string) {
 	scoreJohn := t.Context.Model.JohnFold(processedTrainingSet)
 	fmt.Println("John Fold:", scoreJohn)
 
-	generateProbTable := false
+
+	openIssues, err := newGateway.GetOpenIssues(r[0], r[1])
+	if err != nil {
+		utils.AppLog.Error("Cannot get Issues from Github Gateway.", zap.Error(err))
+	}
+
+  openSet := []conf.ExpandedIssue{}
+	for i := 0; i < len(openIssues); i++ {
+		isTriaged := openIssues[i].Assignees != nil || openIssues[i].Assignee != nil
+		openSet = append(openSet, conf.ExpandedIssue{Issue: conf.CRIssue{*openIssues[i], []int{}, []conf.CRPullRequest{}, &isTriaged}, IsTrained: false})
+	}
+
+	p, _ := strftime.New("$GOPATH/src/core/data/backtests/model-%Y%m%d%H%M-openissues.log")
+	f := p.FormatString(time.Now())
+	o := filepath.Join(os.Getenv("GOPATH"), f[7:])
+	utils.ModelLog = utils.IntializeLog(o)
+
+	generateProbTable := true
 	if (generateProbTable) {
 		for i := range openSet {
 			predictions := t.Context.Model.Predict(openSet[i])
 			nbm := t.Context.Model.Algorithm.(*bhattacharya.NBModel)
-			nbm.GenerateProbabilityTable(
-				*openSet[i].Issue.ID,
-				*openSet[i].Issue.Body,
-				predictions,
-				"open",
-			)
+			if openSet[i].Issue.Body != nil && openSet[i].Issue.PullRequestLinks == nil {
+				nbm.GenerateProbabilityTable(
+					*openSet[i].Issue.ID,
+					*openSet[i].Issue.Body,
+					predictions,
+					"open",
+				)
+			}
 		}
 	}
 }
