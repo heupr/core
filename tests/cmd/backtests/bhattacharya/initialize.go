@@ -88,7 +88,7 @@ func (t *BackTestRunner) Run(repo string) {
 	excludeAssignees := From(trainingSet).Where(func(exclude interface{}) bool {
 		if exclude.(conf.ExpandedIssue).Issue.Assignee != nil {
 			assignee := *exclude.(conf.ExpandedIssue).Issue.Assignee.Login
-
+			/*
 			switch assignee {
 			case
 				"forstmeier",
@@ -97,7 +97,8 @@ func (t *BackTestRunner) Run(repo string) {
 				"konstantinTarletskis",
 				"hadim":
 				return false
-			}
+			}*/
+			return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b"
 		}
 		// NOTE: THIS CAN BE MANIPULATED
 		// return assignee != "AndyAyersMS" && assignee != "CarolEidt" && assignee != "mikedn" && assignee != "pgavlin" && assignee != "BruceForstall" && assignee != "RussKeldorph" && assignee != "sdmaclea"
@@ -119,7 +120,7 @@ func (t *BackTestRunner) Run(repo string) {
 
 	where := groupby.Where(func(groupby interface{}) bool {
 		// NOTE: THIS CAN BE MANIPULATED (between 10-15 max so far)
-		return len(groupby.(Group).Group) >= 10
+		return len(groupby.(Group).Group) >= 30
 	})
 
 	orderby := where.OrderByDescending(func(where interface{}) interface{} {
@@ -160,14 +161,17 @@ func (t *BackTestRunner) Run(repo string) {
 	scoreJohn := t.Context.Model.JohnFold(processedTrainingSet)
 	fmt.Println("John Fold:", scoreJohn)
 
-	for i := range openSet {
-		predictions := t.Context.Model.Predict(openSet[i])
-		nbm := t.Context.Model.Algorithm.(*bhattacharya.NBModel)
-		nbm.GenerateProbabilityTable(
-			*openSet[i].Issue.ID,
-			*openSet[i].Issue.Body,
-			predictions,
-			"open",
-		)
+	generateProbTable := false
+	if (generateProbTable) {
+		for i := range openSet {
+			predictions := t.Context.Model.Predict(openSet[i])
+			nbm := t.Context.Model.Algorithm.(*bhattacharya.NBModel)
+			nbm.GenerateProbabilityTable(
+				*openSet[i].Issue.ID,
+				*openSet[i].Issue.Body,
+				predictions,
+				"open",
+			)
+		}
 	}
 }

@@ -15,17 +15,17 @@ import (
 	"core/utils"
 )
 
-func (m *Model) fold(train, test []conflation.ExpandedIssue) (float64, matrix, []string) {
+func (m *Model) fold(train, test []conflation.ExpandedIssue, genProbTable bool) (float64, matrix, []string) {
 	m.Learn(train)
-	return m.foldImplementation(test)
+	return m.foldImplementation(test, false)
 }
 
 func (m *Model) OnlineFold(train, test []conflation.ExpandedIssue) (float64, matrix, []string) {
 	m.OnlineLearn(train)
-	return m.foldImplementation(test)
+	return m.foldImplementation(test, false)
 }
 
-func (m *Model) foldImplementation(test []conflation.ExpandedIssue) (float64, matrix, []string) {
+func (m *Model) foldImplementation(test []conflation.ExpandedIssue, genProbTable bool) (float64, matrix, []string) {
 	expected := []string{}
 	predicted := []string{}
 
@@ -44,12 +44,24 @@ func (m *Model) foldImplementation(test []conflation.ExpandedIssue) (float64, ma
 		predictions := m.Predict(test[i])
 		//utils.ModelSummary.Debug("Predicted: ", predictions)
 		nbm := m.Algorithm.(*bhattacharya.NBModel)
-		nbm.GenerateProbabilityTable(
-			*test[i].Issue.ID,
-			*test[i].Issue.Body,
-			predictions,
-			"closed",
-		)
+		if genProbTable {
+			if test[i].Issue.ID != nil {
+				nbm.GenerateProbabilityTable(
+					*test[i].Issue.ID,
+					*test[i].Issue.Body,
+					predictions,
+					"closed",
+				)
+			} else {
+				nbm.GenerateProbabilityTable(
+					*test[i].PullRequest.ID,
+					*test[i].PullRequest.Body,
+					predictions,
+					"closed",
+				)
+			}
+		}
+
 		length := 5
 		if len(predictions) < length {
 			length = len(predictions)
@@ -90,7 +102,7 @@ func (m *Model) TrainFold(train []conflation.ExpandedIssue, test []conflation.Ex
 	var mat matrix
 	var distinct []string
 
-	score, mat, distinct = m.fold(train, test)
+	score, mat, distinct = m.fold(train, test, false)
 	utils.ModelLog.Info("Train Fold", zap.Float64("Accuracy", score))
 	mat.classesEvaluation(distinct)
 	utils.ModelLog.Info("Train Fold", zap.Float64("Score", score))
@@ -104,7 +116,7 @@ func (m *Model) JohnFold(issues []conflation.ExpandedIssue) float64 {
 	var score float64
 	var mat matrix
 	var distinct []string
-	for i := 0.8; i <= 0.9; i += 0.1 {
+	for i := 0.1; i <= 0.9; i += 0.1 {
 		p, _ := strftime.New("$GOPATH/src/core/data/backtests/model-%Y%m%d%H%M-fold-" + strconv.Itoa(int(i*10.0)) + ".log")
 		f := p.FormatString(time.Now())
 		o := filepath.Join(os.Getenv("GOPATH"), f[7:])
@@ -112,9 +124,9 @@ func (m *Model) JohnFold(issues []conflation.ExpandedIssue) float64 {
 
 		split := int(Round(i * float64(len(issues))))
 		if i < 0.8 {
-			score, mat, distinct = m.fold(issues[:split], issues[split:])
+			score, mat, distinct = m.fold(issues[:split], issues[split:], false)
 		} else {
-			score, mat, distinct = m.fold(issues[:split], issues[split:])
+			score, mat, distinct = m.fold(issues[:split], issues[split:], false)
 		}
 		modelRecoveryFile := utils.Config.DataCachesPath + "/JFold" + ToString(i*10.0) + ".model"
 		m.GenerateRecoveryFile(modelRecoveryFile)
@@ -136,10 +148,10 @@ func (m *Model) TwoFold(issues []conflation.ExpandedIssue) string {
 	//TODO: Fix log
 	//utils.ModelSummary.Info("Two Fold issues count: ", len(issues))
 	split := int(0.50 * float64(len(issues)))
-	firstScore, firstMatrix, firstDistinct := m.fold(issues[:split], issues[split:])
+	firstScore, firstMatrix, firstDistinct := m.fold(issues[:split], issues[split:], false)
 	//utils.ModelSummary.Info("First half, Accuracy: " + ToString(firstScore))
 	firstMatrix.classesEvaluation(firstDistinct)
-	secondScore, secondMatrix, secondDistinct := m.fold(issues[split:], issues[:split])
+	secondScore, secondMatrix, secondDistinct := m.fold(issues[split:], issues[:split], false)
 	//utils.ModelSummary.Info("Second half, Accuracy: " + ToString(secondScore))
 	secondMatrix.classesEvaluation(secondDistinct)
 	score := firstScore + secondScore
@@ -157,7 +169,7 @@ func (m *Model) TenFold(issues []conflation.ExpandedIssue) string {
 		segment := issues[start:end]
 		remainder := []conflation.ExpandedIssue{}
 		remainder = append(issues[:start], issues[end:]...)
-		score, matrix, distinct := m.fold(segment, remainder)
+		score, matrix, distinct := m.fold(segment, remainder, false)
 		//utils.ModelSummary.Info("Loop: " + ToString(i*10.0) + ", Accuracy: " + ToString(score))
 		matrix.classesEvaluation(distinct)
 		finalScore += score
