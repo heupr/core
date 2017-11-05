@@ -95,11 +95,17 @@ func (c *NBModel) Predict(input conflation.ExpandedIssue) []string {
 
 	//TODO: Improve logging
 	utils.ModelLog.Info("\n")
+	if input.Issue.Title != nil {
+		utils.ModelLog.Info("", zap.String("Title", *input.Issue.Title))
+	}
 	if input.Issue.Assignee != nil { //TODO: confirm why this is nil when processing a webhook
 		utils.ModelLog.Info("", zap.String("Assignee", *input.Issue.Assignee.Login))
 	}
 	if input.Issue.URL != nil { //TODO: confirm why this is nil when processing a webhook
 		utils.ModelLog.Info("", zap.String("URL", *input.Issue.URL))
+	}
+	if input.Issue.HTMLURL != nil { //TODO: confirm why this is nil when processing a webhook
+		utils.ModelLog.Info("", zap.String("URL", *input.Issue.HTMLURL))
 	}
 	for i := 0; i < len(names); i++ {
 		utils.ModelLog.Info("", zap.String("Class", strconv.Itoa(i)+": "+names[i]+", Score: "+strconv.FormatFloat(results[i].score, 'f', -1, 64)))
