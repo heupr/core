@@ -74,3 +74,25 @@ func (g *Gateway) GetOpenIssues(owner, repo string) ([]*github.Issue, error) {
 func (g *Gateway) GetClosedIssues(owner, repo string) ([]*github.Issue, error) {
 	return g.getIssues(owner, repo, "closed")
 }
+
+func (g *Gateway) GetContributors(owner, repo string) ([]*github.Contributor, error) {
+	options := &github.ListContributorsOptions{
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+	}
+	output := []*github.Contributor{}
+	for {
+		contributors, resp, err := g.Client.Repositories.ListContributors(context.Background(), owner, repo, options)
+		if err != nil {
+			return nil, err
+		}
+		output = append(output, contributors...)
+		if resp.NextPage == 0 || g.UnitTesting {
+			break
+		} else {
+			options.ListOptions.Page = resp.NextPage
+		}
+	}
+	return output, nil
+}

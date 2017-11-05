@@ -1,6 +1,7 @@
 package main
 
 import (
+//	"context"
 	"fmt"
 	"strings"
 	"os"
@@ -51,15 +52,15 @@ func (t *BackTestRunner) Run(repo string) {
 		utils.AppLog.Error("Cannot get PullRequests from Github Gateway.", zap.Error(err))
 	}
 
-	context := &conf.Context{}
+	conflationContext := &conf.Context{}
 
 	// NOTE: Changing the scenarios will allow different objects in.
 	// NOTE: THIS CAN BE MANIPULATED
 	scenarios := []conf.Scenario{&conf.Scenario3{}, &conf.Scenario4{}}
 
-	conflationAlgorithms := []conf.ConflationAlgorithm{&conf.ComboAlgorithm{Context: context}}
-	normalizer := conf.Normalizer{Context: context}
-	conflator := conf.Conflator{Scenarios: scenarios, ConflationAlgorithms: conflationAlgorithms, Normalizer: normalizer, Context: context}
+	conflationAlgorithms := []conf.ConflationAlgorithm{&conf.ComboAlgorithm{Context: conflationContext}}
+	normalizer := conf.Normalizer{Context: conflationContext}
+	conflator := conf.Conflator{Scenarios: scenarios, ConflationAlgorithms: conflationAlgorithms, Normalizer: normalizer, Context: conflationContext}
 
 	conflator.Context.Issues = []conf.ExpandedIssue{}
 	conflator.SetIssueRequests(githubIssues)
@@ -180,6 +181,10 @@ func (t *BackTestRunner) Run(repo string) {
 	o := filepath.Join(os.Getenv("GOPATH"), f[7:])
 	utils.ModelLog = utils.IntializeLog(o)
 
+	contributors,_ := newGateway.Gateway.GetContributors(r[0], r[1])
+	fmt.Println(len(contributors))
+
+	t.Context.Model.Learn(processedTrainingSet)
 	generateProbTable := true
 	if (generateProbTable) {
 		for i := range openSet {
@@ -191,7 +196,7 @@ func (t *BackTestRunner) Run(repo string) {
 			if openSet[i].Issue.Body != nil {
 				nbm.GenerateProbabilityTable(
 					*openSet[i].Issue.Number,
-					*openSet[i].Issue.Body,
+					*openSet[i].Issue.Title + " " + *openSet[i].Issue.Body,
 					predictions,
 					"open",
 				)
