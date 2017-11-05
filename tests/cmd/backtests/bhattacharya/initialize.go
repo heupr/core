@@ -18,6 +18,7 @@ import (
 	"core/utils"
 
 	"path/filepath"
+	"strconv"
 	"time"
 
 	strftime "github.com/lestrrat/go-strftime"
@@ -98,10 +99,10 @@ func (t *BackTestRunner) Run(repo string) {
 	excludeAssignees := From(trainingSet).Where(func(exclude interface{}) bool {
 		if exclude.(conf.ExpandedIssue).Issue.Assignee != nil {
 			assignee := *exclude.(conf.ExpandedIssue).Issue.Assignee.Login
-			return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b" && assignee != "stephentoub" && assignee != "maxlang"
+			return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b" && assignee != "stephentoub"
 		} else if exclude.(conf.ExpandedIssue).PullRequest.User != nil {
 			assignee := *exclude.(conf.ExpandedIssue).PullRequest.User.Login
-			return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b" && assignee != "stephentoub" && assignee != "maxlang"
+			return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b" && assignee != "stephentoub"
 		} else {
 			return false
 		}
@@ -183,6 +184,10 @@ func (t *BackTestRunner) Run(repo string) {
 	utils.ModelLog = utils.IntializeLog(o)
 
 	contributors,_ := newGateway.Gateway.GetContributors(r[0], r[1])
+	active := map[string]int{}
+	for i := 0; i < len(contributors); i++ {
+		active[*contributors[i].Login] = 1
+	}
 	fmt.Println(len(contributors))
 
 	t.Context.Model.Learn(processedTrainingSet)
@@ -193,6 +198,22 @@ func (t *BackTestRunner) Run(repo string) {
 				continue
 			}
 			predictions := t.Context.Model.Predict(openSet[i])
+			assigneeCount := 0
+			if openSet[i].Issue.Issue.Title != nil {
+				utils.ModelLog.Info("Backtest", zap.String("Title", *openSet[i].Issue.Issue.Title))
+			}
+			if openSet[i].Issue.Issue.HTMLURL != nil { //TODO: confirm why this is nil when processing a webhook
+				utils.ModelLog.Info("Backtest", zap.String("URL", *openSet[i].Issue.Issue.HTMLURL))
+			}
+			for j := range predictions {
+				if _, ok := active[predictions[j]]; ok {
+					utils.ModelLog.Info("Backtest", zap.String("Assignee", strconv.Itoa(j)+": "+predictions[j]))
+					assigneeCount++
+				}
+				if assigneeCount == 5 {
+					break
+				}
+			}
 			nbm := t.Context.Model.Algorithm.(*bhattacharya.NBModel)
 			if openSet[i].Issue.Body != nil {
 				nbm.GenerateProbabilityTable(
