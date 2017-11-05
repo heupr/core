@@ -183,11 +183,14 @@ func (t *BackTestRunner) Run(repo string) {
 	generateProbTable := true
 	if (generateProbTable) {
 		for i := range openSet {
+			if openSet[i].Issue.PullRequestLinks != nil {
+				continue
+			}
 			predictions := t.Context.Model.Predict(openSet[i])
 			nbm := t.Context.Model.Algorithm.(*bhattacharya.NBModel)
-			if openSet[i].Issue.Body != nil && openSet[i].Issue.PullRequestLinks == nil {
+			if openSet[i].Issue.Body != nil {
 				nbm.GenerateProbabilityTable(
-					*openSet[i].Issue.ID,
+					*openSet[i].Issue.Number,
 					*openSet[i].Issue.Body,
 					predictions,
 					"open",
@@ -195,4 +198,5 @@ func (t *BackTestRunner) Run(repo string) {
 			}
 		}
 	}
+
 }
