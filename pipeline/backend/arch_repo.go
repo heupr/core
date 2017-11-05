@@ -38,7 +38,7 @@ type ArchRepo struct {
 	Limit               time.Time
 	AssigneeAllocations map[string]int
 	EligibleAssignees   map[string]int
-	Settings						HeuprConfigSettings
+	Settings            HeuprConfigSettings
 }
 
 func (bs *BackendServer) NewArchRepo(repoID int, settings HeuprConfigSettings) {
@@ -77,9 +77,24 @@ func (a *ArchRepo) TriageOpenIssues() {
 		utils.AppLog.Error("!AllModelsBootstrapped()")
 		return
 	}
-
 	openIssues := a.Hive.Blender.GetOpenIssues()
 	utils.AppLog.Info("TriageOpenIssues()", zap.Int("Total", len(openIssues)))
+	if len(openIssues) == 0 {
+		return
+	}
+	var name string
+	if openIssues[0].Issue.Repository.FullName != nil {
+		name = *openIssues[0].Issue.Repository.FullName
+	} else {
+		name = *openIssues[0].Issue.Repository.Name
+	}
+	r := strings.Split(name, "/")
+
+	label, _, err := a.Client.Issues.GetLabel(context.Background(), r[0], r[1], "triaged")
+	if err != nil {
+		utils.AppLog.Error("could not get triaged label", zap.String("RepoName", r[0]+"/"+r[1]))
+	}
+
 	for i := 0; i < len(openIssues); i++ {
 		if openIssues[i].Issue.CreatedAt.After(a.Settings.StartTime) {
 			labelValid := true
@@ -95,13 +110,6 @@ func (a *ArchRepo) TriageOpenIssues() {
 			}
 			*openIssues[i].Issue.Triaged = true
 			assignees := a.Hive.Blender.Predict(openIssues[i])
-			var name string
-			if openIssues[i].Issue.Repository.FullName != nil {
-				name = *openIssues[i].Issue.Repository.FullName
-			} else {
-				name = *openIssues[i].Issue.Repository.Name
-			}
-			r := strings.Split(name, "/")
 			number := *openIssues[i].Issue.Number
 			fallbackAssignee := ""
 			assigned := false
@@ -124,6 +132,13 @@ func (a *ArchRepo) TriageOpenIssues() {
 								utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
 								break
 							}
+							if label.Name != nil && *label.Name == "triaged" {
+								_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), r[0], r[1], number, []string{*label.Name})
+								if err != nil {
+									utils.AppLog.Error("AddLabelsToIssue failed for primary assignee", zap.Error(err))
+								}
+							}
+
 							if issue.Assignees == nil || len(issue.Assignees) == 0 {
 								if fallbackAssignee == assignee {
 									fallbackAssignee = ""
@@ -147,6 +162,12 @@ func (a *ArchRepo) TriageOpenIssues() {
 				if err != nil {
 					utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
 					break
+				}
+				if label.Name != nil && *label.Name == "triaged" {
+					_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), r[0], r[1], number, []string{*label.Name})
+					if err != nil {
+						utils.AppLog.Error("AddLabelsToIssue failed for fallback assignee", zap.Error(err))
+					}
 				}
 				assigned = true
 				a.AssigneeAllocations[fallbackAssignee]++

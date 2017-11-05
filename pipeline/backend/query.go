@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"core/utils"
 	"encoding/json"
+	"github.com/google/go-github/github"
 	"reflect"
 	"strings"
 	"time"
-	"github.com/google/go-github/github"
 )
 
 var maxID = 0
@@ -19,18 +19,17 @@ type RepoData struct {
 	Pulls               []*github.PullRequest
 	AssigneeAllocations map[string]int
 	EligibleAssignees   map[string]int
-	Settings						HeuprConfigSettings
+	Settings            HeuprConfigSettings
 }
 
 type HeuprConfigSettings struct {
-  Integration  Integration
+	Integration  Integration
 	IgnoreUsers  map[string]bool
 	StartTime    time.Time
 	IgnoreLabels map[string]bool
 	Email        string
 	Twitter      string
 }
-
 
 func (m *MemSQL) Read() (map[int]*RepoData, error) {
 	// Current state of the Issue object (equivalent to any GitHub Event)
@@ -135,10 +134,8 @@ func (m *MemSQL) Read() (map[int]*RepoData, error) {
 	return repodata, nil
 }
 
-
-
 func (m *MemSQL) ReadHeuprConfigSettingsByRepoId(repoId int) (HeuprConfigSettings, error) {
-	settingsMap, err := m.ReadHeuprConfigSettings([]interface{}{ repoId })
+	settingsMap, err := m.ReadHeuprConfigSettings([]interface{}{repoId})
 	if _, ok := settingsMap[repoId]; !ok {
 		settings := HeuprConfigSettings{StartTime: time.Now(), IgnoreLabels: make(map[string]bool), IgnoreUsers: make(map[string]bool)}
 		settingsMap[repoId] = settings

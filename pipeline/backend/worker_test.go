@@ -38,10 +38,14 @@ func TestWorker(t *testing.T) {
 
 	fullname := "skywalker/t-16"
 	created := time.Now()
-	n1 := 1
 	i := []*github.Issue{
 		&github.Issue{
-			Number: &n1,
+			ID:     github.Int(2187),
+			Number: github.Int(1),
+			User: &github.User{
+				Login: github.String("luke"),
+			},
+			URL: github.String("fake-url"),
 			Repository: &github.Repository{
 				FullName: &fullname,
 			},
@@ -52,14 +56,16 @@ func TestWorker(t *testing.T) {
 	bs.Repos.Actives[repoID].Hive.Blender.Conflator.SetIssueRequests(i)
 	bs.Repos.Actives[repoID].Limit = time.Now() //.AddDate(0, 0, -1)
 
-	issueID := 2187
-	n2 := 2
 	work := &RepoData{
 		RepoID: repoID,
 		Open: []*github.Issue{
 			&github.Issue{
-				ID:        &issueID,
-				Number:    &n2,
+				ID:     github.Int(2188),
+				Number: github.Int(2),
+				User: &github.User{
+					Login: github.String("luke"),
+				},
+				URL:       github.String("fake-url"),
 				CreatedAt: &created,
 				Repository: &github.Repository{
 					FullName: &fullname,
