@@ -291,7 +291,7 @@ func (m *MemSQL) ReadEligibleAssignees(repos []interface{}) (map[int]map[string]
 		return nil, nil
 	}
 
-	// Finds which Contributors in a Repository have been active in the past year.
+	// Finds which Contributors in a Repository have been active in the past six months.
 	RECENT_ASSIGNEES_QUERY := `
     SELECT DISTINCT T3.repo_id, T3.assignee
     FROM github_events
@@ -312,7 +312,7 @@ func (m *MemSQL) ReadEligibleAssignees(repos []interface{}) (map[int]map[string]
         ON lk.github_event_assignees_fk = T2.id AND lk.assignee IS NOT NULL
     ) T3
     ON T3.issues_id = github_events.issues_id
-    WHERE closed_at > DATE_SUB(curdate(), INTERVAL 1 YEAR)
+    WHERE closed_at > DATE_SUB(curdate(), INTERVAL 6 MONTH)
     `
 
 	results, err := m.db.Query(RECENT_ASSIGNEES_QUERY, repos...)
