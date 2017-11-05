@@ -98,9 +98,10 @@ func (t *BackTestRunner) Run(repo string) {
 	excludeAssignees := From(trainingSet).Where(func(exclude interface{}) bool {
 		if exclude.(conf.ExpandedIssue).Issue.Assignee != nil {
 			assignee := *exclude.(conf.ExpandedIssue).Issue.Assignee.Login
-			return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b" && assignee != "stephentoub"
+			return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b" && assignee != "stephentoub" && assignee != "maxlang"
 		} else if exclude.(conf.ExpandedIssue).PullRequest.User != nil {
-			return true
+			assignee := *exclude.(conf.ExpandedIssue).PullRequest.User.Login
+			return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b" && assignee != "stephentoub" && assignee != "maxlang"
 		} else {
 			return false
 		}
@@ -123,7 +124,7 @@ func (t *BackTestRunner) Run(repo string) {
 
 	where := groupby.Where(func(groupby interface{}) bool {
 		// NOTE: THIS CAN BE MANIPULATED (between 10-15 max so far)
-		return len(groupby.(Group).Group) >= 30
+		return len(groupby.(Group).Group) >= 10
 	})
 
 	orderby := where.OrderByDescending(func(where interface{}) interface{} {
@@ -188,7 +189,7 @@ func (t *BackTestRunner) Run(repo string) {
 	generateProbTable := true
 	if (generateProbTable) {
 		for i := range openSet {
-			if openSet[i].Issue.PullRequestLinks != nil {
+			if openSet[i].Issue.PullRequestLinks != nil || openSet[i].Issue.Assignee != nil {
 				continue
 			}
 			predictions := t.Context.Model.Predict(openSet[i])
