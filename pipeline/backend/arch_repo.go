@@ -132,7 +132,7 @@ func (a *ArchRepo) TriageOpenIssues() {
 								utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
 								break
 							}
-							if label.Name != nil {
+							if label != nil {
 								if *label.Name == "triaged" {
 									_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), r[0], r[1], number, []string{*label.Name})
 									if err != nil {
@@ -165,7 +165,7 @@ func (a *ArchRepo) TriageOpenIssues() {
 					utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
 					break
 				}
-				if label.Name != nil {
+				if label != nil {
 					if *label.Name == "triaged" {
 						_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), r[0], r[1], number, []string{*label.Name})
 						if err != nil {
