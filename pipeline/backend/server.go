@@ -91,6 +91,9 @@ func (bs *BackendServer) Start() {
 			if err != nil {
 				panic(err)
 			}
+			if settings.StartTime.IsZero() {
+				settings.StartTime = time.Now()
+			}
 			bs.NewArchRepo(integration.RepoId, settings)
 			bs.NewClient(integration.RepoId, integration.AppId, integration.InstallationId)
 			bs.NewModel(integration.RepoId)
