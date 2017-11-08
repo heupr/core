@@ -39,6 +39,9 @@ type ArchRepo struct {
 	AssigneeAllocations map[string]int
 	EligibleAssignees   map[string]int
 	Settings            HeuprConfigSettings
+	TriagedLabelEnabledCheck	bool //TEMPORARY FIX
+	TriagedLabel				*github.Label //TEMPORARY FIX
+	TriagedLabelEnabled	bool
 }
 
 func (bs *BackendServer) NewArchRepo(repoID int, settings HeuprConfigSettings) {
@@ -90,10 +93,18 @@ func (a *ArchRepo) TriageOpenIssues() {
 	}
 	r := strings.Split(name, "/")
 
-	label, _, err := a.Client.Issues.GetLabel(context.Background(), r[0], r[1], "triaged")
-	if err != nil {
-		utils.AppLog.Error("could not get triaged label", zap.String("RepoName", r[0]+"/"+r[1]))
+	//TEMPORARY FIX
+	var label *github.Label
+	if a.TriagedLabelEnabledCheck == false {
+		a.TriagedLabelEnabledCheck = true
+		lbl, _, err := a.Client.Issues.GetLabel(context.Background(), r[0], r[1], "triaged")
+		if err != nil {
+			utils.AppLog.Error("could not get triaged label", zap.String("RepoName", r[0]+"/"+r[1]))
+		}
+		a.TriagedLabel = lbl
 	}
+	label = a.TriagedLabel
+
 
 	for i := 0; i < len(openIssues); i++ {
 		if openIssues[i].Issue.CreatedAt.After(a.Settings.StartTime) {
