@@ -97,9 +97,30 @@ func (a *ArchRepo) TriageOpenIssues() {
 	var label *github.Label
 	if a.TriagedLabelEnabledCheck == false {
 		a.TriagedLabelEnabledCheck = true
+
+		limits, _, _ := a.Client.RateLimits(context.Background())
+		if limits != nil {
+			limit := limits.Core.Limit
+			remaining := limits.Core.Remaining
+			utils.AppLog.Info("RateLimits()", zap.Int("Limit", limit), zap.Int("Remaining", remaining))
+		}
+		utils.AppLog.Info("GetLabel()", zap.String("RepoName", r[0]+"/"+r[1]))
 		lbl, _, err := a.Client.Issues.GetLabel(context.Background(), r[0], r[1], "triaged")
 		if err != nil {
-			utils.AppLog.Error("could not get triaged label", zap.String("RepoName", r[0]+"/"+r[1]))
+			utils.AppLog.Error("could not get triaged label", zap.String("RepoName", r[0]+"/"+r[1]), zap.Error(err))
+			if _, ok := err.(*github.RateLimitError); ok {
+				time.Sleep(1 * time.Minute)
+				limits, _, _ = a.Client.RateLimits(context.Background())
+				if limits != nil {
+					limit := limits.Core.Limit
+					remaining := limits.Core.Remaining
+					utils.AppLog.Info("RateLimits()", zap.Int("Limit", limit), zap.Int("Remaining", remaining))
+				}
+				lbl, _, err = a.Client.Issues.GetLabel(context.Background(), r[0], r[1], "triaged")
+				if err == nil {
+					utils.AppLog.Info("GetLabel() Label Retry Success", zap.String("RepoName", r[0]+"/"+r[1]))
+				}
+			}
 		}
 		a.TriagedLabel = lbl
 	}
@@ -141,14 +162,20 @@ func (a *ArchRepo) TriageOpenIssues() {
 							issue, _, err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{assignee})
 							if err != nil {
 								utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
-								break
-							}
-							if label != nil {
-								if *label.Name == "triaged" {
-									_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), r[0], r[1], number, []string{*label.Name})
-									if err != nil {
-										utils.AppLog.Error("AddLabelsToIssue failed for primary assignee", zap.Error(err))
+								if _, ok := err.(*github.RateLimitError); ok {
+									time.Sleep(15 * time.Minute)
+									limits, _, _ := a.Client.RateLimits(context.Background())
+									if limits != nil {
+										limit := limits.Core.Limit
+										remaining := limits.Core.Remaining
+										utils.AppLog.Info("RateLimits()", zap.Int("Limit", limit), zap.Int("Remaining", remaining))
 									}
+									issue, _, err = a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{assignee})
+									if err != nil {
+										break
+									}
+								} else {
+									break
 								}
 							}
 
@@ -157,6 +184,16 @@ func (a *ArchRepo) TriageOpenIssues() {
 									fallbackAssignee = ""
 								}
 								continue
+							}
+
+							if label != nil {
+								if *label.Name == "triaged" {
+									utils.AppLog.Info("AddLabelsToIssue()", zap.Int("IssueNumber", number))
+									_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), r[0], r[1], number, []string{*label.Name})
+									if err != nil {
+										utils.AppLog.Error("AddLabelsToIssue failed for primary assignee", zap.Error(err))
+									}
+								}
 							}
 							assigned = true
 							assignmentsCount++
@@ -178,6 +215,7 @@ func (a *ArchRepo) TriageOpenIssues() {
 				}
 				if label != nil {
 					if *label.Name == "triaged" {
+						utils.AppLog.Info("AddLabelsToIssue()", zap.Int("IssueNumber", number))
 						_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), r[0], r[1], number, []string{*label.Name})
 						if err != nil {
 							utils.AppLog.Error("AddLabelsToIssue failed for fallback assignee", zap.Error(err))
