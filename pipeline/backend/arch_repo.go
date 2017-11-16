@@ -155,6 +155,9 @@ func (a *ArchRepo) TriageOpenIssues() {
 			fallbackAssignee := ""
 			assigned := false
 			for i := 0; i < len(assignees); i++ {
+				if name == "yarnpkg/yarn" && assignees[i] == "cpojer" {
+					continue
+				}
 				assignee := assignees[i]
 				if _, ok := a.Settings.IgnoreUsers[assignee]; ok {
 					continue
