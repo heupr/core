@@ -126,7 +126,7 @@ func (a *ArchRepo) TriageOpenIssues() {
 	}
 	label = a.TriagedLabel
 
-
+	rateCheck := false
 	for i := 0; i < len(openIssues); i++ {
 		if openIssues[i].Issue.CreatedAt.After(a.Settings.StartTime) {
 			labelValid := true
@@ -140,12 +140,24 @@ func (a *ArchRepo) TriageOpenIssues() {
 			if !labelValid {
 				continue
 			}
+			if !rateCheck {
+				limits, _, _ := a.Client.RateLimits(context.Background())
+				if limits != nil {
+					limit := limits.Core.Limit
+					remaining := limits.Core.Remaining
+					utils.AppLog.Info("RateLimits()", zap.Int("Limit", limit), zap.Int("Remaining", remaining))
+				}
+				rateCheck = true
+			}
 			*openIssues[i].Issue.Triaged = true
 			assignees := a.Hive.Blender.Predict(openIssues[i])
 			number := *openIssues[i].Issue.Number
 			fallbackAssignee := ""
 			assigned := false
 			for i := 0; i < len(assignees); i++ {
+				if name == "yarnpkg/yarn" && assignees[i] == "cpojer" {
+					continue
+				}
 				assignee := assignees[i]
 				if _, ok := a.Settings.IgnoreUsers[assignee]; ok {
 					continue
