@@ -1,10 +1,9 @@
 package main
 
 import (
-//	"context"
 	"fmt"
-	"strings"
 	"os"
+	"strings"
 
 	. "github.com/ahmetalpbalkan/go-linq"
 	"github.com/google/go-github/github"
@@ -57,7 +56,7 @@ func (t *BackTestRunner) Run(repo string) {
 
 	// NOTE: Changing the scenarios will allow different objects in.
 	// NOTE: THIS CAN BE MANIPULATED
-	scenarios := []conf.Scenario{&conf.Scenario3{}, &conf.Scenario4{}}
+	scenarios := []conf.Scenario{&conf.Scenario2{}, &conf.Scenario3{}, &conf.Scenario7{}}
 
 	conflationAlgorithms := []conf.ConflationAlgorithm{&conf.ComboAlgorithm{Context: conflationContext}}
 	normalizer := conf.Normalizer{Context: conflationContext}
@@ -80,21 +79,20 @@ func (t *BackTestRunner) Run(repo string) {
 		}
 	}
 	/*
-	TODO: Correct this logic
-	for i := range trainingSet {
-		if trainingSet[i].Issue.ID != nil {
-			if *trainingSet[i].Issue.State == "open" {
-				openSet = append(openSet, trainingSet[i])
+		TODO: Correct this logic
+		for i := range trainingSet {
+			if trainingSet[i].Issue.ID != nil {
+				if *trainingSet[i].Issue.State == "open" {
+					openSet = append(openSet, trainingSet[i])
+				}
 			}
-		}
-	} */
+		} */
 
 	utils.ModelLog.Info("Training set size (before Linq): ", zap.Int("TrainingSetSize", len(trainingSet)))
 	fmt.Println("GithubIssues", len(githubIssues))
 	fmt.Println("GithubPulls", len(githubPulls))
 	fmt.Println("Training set size (before Linq): ", len(trainingSet))
 	processedTrainingSet := []conf.ExpandedIssue{}
-
 
 	excludeAssignees := From(trainingSet).Where(func(exclude interface{}) bool {
 		if exclude.(conf.ExpandedIssue).Issue.Assignee != nil {
@@ -106,7 +104,7 @@ func (t *BackTestRunner) Run(repo string) {
 		} else {
 			return false
 		}
- 		// NOTE: THIS CAN BE MANIPULATED
+		// NOTE: THIS CAN BE MANIPULATED
 		// return assignee != "AndyAyersMS" && assignee != "CarolEidt" && assignee != "mikedn" && assignee != "pgavlin" && assignee != "BruceForstall" && assignee != "RussKeldorph" && assignee != "sdmaclea"
 		// return assignee != "dotnet-bot" && assignee != "dotnet-mc-bot" && assignee != "00101010b"
 		// return assignee != "forstmeier" && assignee != "fishera123" && assignee != "irJERAD" && assignee != "konstantinTarletskis" && assignee != "hadim"
@@ -166,13 +164,12 @@ func (t *BackTestRunner) Run(repo string) {
 	scoreJohn := t.Context.Model.JohnFold(processedTrainingSet)
 	fmt.Println("John Fold:", scoreJohn)
 
-
 	openIssues, err := newGateway.GetOpenIssues(r[0], r[1])
 	if err != nil {
 		utils.AppLog.Error("Cannot get Issues from Github Gateway.", zap.Error(err))
 	}
 
-  openSet := []conf.ExpandedIssue{}
+	openSet := []conf.ExpandedIssue{}
 	for i := 0; i < len(openIssues); i++ {
 		isTriaged := openIssues[i].Assignees != nil || openIssues[i].Assignee != nil
 		openSet = append(openSet, conf.ExpandedIssue{Issue: conf.CRIssue{*openIssues[i], []int{}, []conf.CRPullRequest{}, &isTriaged}, IsTrained: false})
@@ -183,7 +180,7 @@ func (t *BackTestRunner) Run(repo string) {
 	o := filepath.Join(os.Getenv("GOPATH"), f[7:])
 	utils.ModelLog = utils.IntializeLog(o)
 
-	contributors,_ := newGateway.Gateway.GetContributors(r[0], r[1])
+	contributors, _ := newGateway.Gateway.GetContributors(r[0], r[1])
 	active := map[string]int{}
 	for i := 0; i < len(contributors); i++ {
 		active[*contributors[i].Login] = 1
@@ -192,7 +189,7 @@ func (t *BackTestRunner) Run(repo string) {
 
 	t.Context.Model.Learn(processedTrainingSet)
 	generateProbTable := true
-	if (generateProbTable) {
+	if generateProbTable {
 		for i := range openSet {
 			if openSet[i].Issue.PullRequestLinks != nil || openSet[i].Issue.Assignee != nil {
 				continue
@@ -218,12 +215,11 @@ func (t *BackTestRunner) Run(repo string) {
 			if openSet[i].Issue.Body != nil {
 				nbm.GenerateProbabilityTable(
 					*openSet[i].Issue.Number,
-					*openSet[i].Issue.Title + " " + *openSet[i].Issue.Body,
+					*openSet[i].Issue.Title+" "+*openSet[i].Issue.Body,
 					predictions,
 					"open",
 				)
 			}
 		}
 	}
-
 }
