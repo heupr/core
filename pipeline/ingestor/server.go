@@ -54,8 +54,8 @@ func (i *IngestorServer) Start() error {
 	dispatcher := Dispatcher{Database: &i.Database, RepoInitializer: &i.RepoInitializer}
 	dispatcher.Start(5)
 
-	i.Restart()
-	i.Continuity()
+	//i.Restart()
+	//i.Continuity()
 
 	i.Server = http.Server{Addr: utils.Config.IngestorServerAddress, Handler: i.routes()}
 	err := i.Server.ListenAndServe()
