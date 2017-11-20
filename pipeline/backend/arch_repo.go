@@ -33,15 +33,15 @@ type ArchHive struct {
 
 type ArchRepo struct {
 	sync.Mutex
-	Hive                *ArchHive
-	Client              *github.Client
-	Limit               time.Time
-	AssigneeAllocations map[string]int
-	EligibleAssignees   map[string]int
-	Settings            HeuprConfigSettings
-	TriagedLabelEnabledCheck	bool //TEMPORARY FIX
-	TriagedLabel				*github.Label //TEMPORARY FIX
-	TriagedLabelEnabled	bool
+	Hive                     *ArchHive
+	Client                   *github.Client
+	Limit                    time.Time
+	AssigneeAllocations      map[string]int
+	EligibleAssignees        map[string]int
+	Settings                 HeuprConfigSettings
+	TriagedLabelEnabledCheck bool          //TEMPORARY FIX
+	TriagedLabel             *github.Label //TEMPORARY FIX
+	TriagedLabelEnabled      bool
 }
 
 func (bs *BackendServer) NewArchRepo(repoID int, settings HeuprConfigSettings) {
@@ -63,7 +63,7 @@ func (bs *BackendServer) NewClient(repoId, appId, installationId int) {
 	if PROD {
 		key = "heupr.2017-10-04.private-key.pem"
 	} else {
-		key = "heupr.test.private-key.pem" //TODO: Create Key
+		key = "forstmeier-heupr.2017-11-18.private-key.pem"
 	}
 	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appId, installationId, key)
 	if err != nil {

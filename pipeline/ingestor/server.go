@@ -25,7 +25,7 @@ var NewClient = func(appId int, installationId int) *github.Client {
 	if PROD {
 		key = "heupr.2017-10-04.private-key.pem"
 	} else {
-		key = "heupr.test.private-key.pem" //TODO: Create Key
+		key = "forstmeier-heupr.2017-11-18.private-key.pem"
 	}
 	// Wrap the shared transport for use with the Github Installation.
 	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appId, installationId, key)
