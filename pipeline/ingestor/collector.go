@@ -11,7 +11,8 @@ import (
 	"core/utils"
 )
 
-// Workaround Github API limitation. This is required to wrap HeuprInstallation
+// HeuprInstallationEvent is a workaround for the Github API limitation. This
+// is required to wrap HeuprInstallation
 type HeuprInstallationEvent struct {
 	// The action that was performed. Can be either "created" or "deleted".
 	Action            *string            `json:"action,omitempty"`
@@ -20,7 +21,8 @@ type HeuprInstallationEvent struct {
 	Repositories      []HeuprRepository  `json:"repositories,omitempty"`
 }
 
-// Workaround Github API limitation. go-github is missing repositories field
+// HeuprInstallation is a workaround for the Github API limitation. The
+// go-github library is missing a repositories field.
 type HeuprInstallation struct {
 	ID              *int         `json:"id,omitempty"`
 	Account         *github.User `json:"account,omitempty"`

@@ -19,69 +19,6 @@ type Worker struct {
 	Quit            chan bool
 }
 
-func NewWorker(id int, db *Database, repoInitializer *RepoInitializer, queue chan chan interface{}) Worker {
-	return Worker{
-		ID:              id,
-		Database:        db,
-		RepoInitializer: repoInitializer,
-		Work:            make(chan interface{}),
-		Queue:           queue,
-		Quit:            make(chan bool),
-	}
-}
-
-func (w *Worker) Start() {
-	go func() {
-		for {
-			w.Queue <- w.Work
-			select {
-			case event := <-w.Work:
-				switch v := event.(type) {
-				case github.IssuesEvent:
-					//The Action that was performed. Can be one of "assigned", "unassigned", "labeled", "unlabeled", "opened", "edited", "milestoned", "demilestoned", "closed", or "reopened".
-					v.Issue.Repository = v.Repo
-					if *v.Action == "edited" && *v.Issue.User.Login == "heupr[bot]" {
-						//go w.ProcessHeuprInteractionIssuesEvent(v)
-						if *v.Sender.Login != "heupr[bot]" && v.Issue.Assignees != nil {
-							for i := 0; i < len(v.Issue.Assignees); i++ {
-								if *v.Sender.Login == *v.Issue.Assignees[i].Login {
-										go w.ProcessHeuprInteractionIssuesEvent(v)
-										break
-								}
-							}
-						}
-						continue
-					}
-					w.Database.InsertIssue(*v.Issue, v.Action)
-				case github.PullRequestEvent:
-					//v.PullRequest.Base.Repo = v.Repo //TODO: Confirm
-					w.Database.InsertPullRequest(*v.PullRequest, v.Action)
-				case github.IssueCommentEvent:
-					if *v.Action == "created" && *v.Issue.User.Login == "heupr[bot]" {
-						if *v.Sender.Login != "heupr[bot]" && v.Issue.Assignees != nil {
-							for i := 0; i < len(v.Issue.Assignees); i++ {
-								if *v.Sender.Login == *v.Issue.Assignees[i].Login {
-										v.Issue.Repository = v.Repo
-										go w.ProcessHeuprInteractionCommentEvent(v)
-										break
-								}
-							}
-						}
-					}
-				case HeuprInstallationEvent:
-					w.ProcessHeuprInstallationEvent(v)
-				case HeuprInstallationRepositoriesEvent:
-					w.ProcessHeuprInstallationRepositoriesEvent(v)
-				default:
-					utils.AppLog.Error("Unknown", zap.Any("GithubEvent", v))
-				}
-			case <-w.Quit:
-				return
-			}
-		}
-	}()
-}
-
 func (w *Worker) ProcessHeuprInstallationEvent(event HeuprInstallationEvent) {
 	go func(e HeuprInstallationEvent) {
 		switch *e.Action {
@@ -133,6 +70,69 @@ func (w *Worker) ProcessHeuprInstallationRepositoriesEvent(event HeuprInstallati
 			}
 		}
 	}(event)
+}
+
+func NewWorker(id int, db *Database, repoInitializer *RepoInitializer, queue chan chan interface{}) Worker {
+	return Worker{
+		ID:              id,
+		Database:        db,
+		RepoInitializer: repoInitializer,
+		Work:            make(chan interface{}),
+		Queue:           queue,
+		Quit:            make(chan bool),
+	}
+}
+
+func (w *Worker) Start() {
+	go func() {
+		for {
+			w.Queue <- w.Work
+			select {
+			case event := <-w.Work:
+				switch v := event.(type) {
+				case github.IssuesEvent:
+					//The Action that was performed. Can be one of "assigned", "unassigned", "labeled", "unlabeled", "opened", "edited", "milestoned", "demilestoned", "closed", or "reopened".
+					v.Issue.Repository = v.Repo
+					if *v.Action == "edited" && *v.Issue.User.Login == "heupr[bot]" {
+						//go w.ProcessHeuprInteractionIssuesEvent(v)
+						if *v.Sender.Login != "heupr[bot]" && v.Issue.Assignees != nil {
+							for i := 0; i < len(v.Issue.Assignees); i++ {
+								if *v.Sender.Login == *v.Issue.Assignees[i].Login {
+									go w.ProcessHeuprInteractionIssuesEvent(v)
+									break
+								}
+							}
+						}
+						continue
+					}
+					w.Database.InsertIssue(*v.Issue, v.Action)
+				case github.PullRequestEvent:
+					//v.PullRequest.Base.Repo = v.Repo //TODO: Confirm
+					w.Database.InsertPullRequest(*v.PullRequest, v.Action)
+				case github.IssueCommentEvent:
+					if *v.Action == "created" && *v.Issue.User.Login == "heupr[bot]" {
+						if *v.Sender.Login != "heupr[bot]" && v.Issue.Assignees != nil {
+							for i := 0; i < len(v.Issue.Assignees); i++ {
+								if *v.Sender.Login == *v.Issue.Assignees[i].Login {
+									v.Issue.Repository = v.Repo
+									go w.ProcessHeuprInteractionCommentEvent(v)
+									break
+								}
+							}
+						}
+					}
+				case HeuprInstallationEvent:
+					w.ProcessHeuprInstallationEvent(v)
+				case HeuprInstallationRepositoriesEvent:
+					w.ProcessHeuprInstallationRepositoriesEvent(v)
+				default:
+					utils.AppLog.Error("Unknown", zap.Any("GithubEvent", v))
+				}
+			case <-w.Quit:
+				return
+			}
+		}
+	}()
 }
 
 func (w *Worker) Stop() {

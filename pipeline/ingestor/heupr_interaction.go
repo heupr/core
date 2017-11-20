@@ -14,7 +14,7 @@ import (
 )
 
 type HeuprConfigSettings struct {
-  Integration  Integration
+	Integration  Integration
 	IgnoreUsers  []string
 	StartTime    time.Time
 	IgnoreLabels []string
@@ -67,53 +67,53 @@ func extractSettings(issue github.Issue) (ignoreUsers []string, startTime time.T
 }
 
 func (w *Worker) ProcessHeuprInteractionCommentEvent(event github.IssueCommentEvent) {
-  owner := *event.Repo.Owner.Login
-  repo := *event.Repo.Name
-  repoId := *event.Repo.ID
-  number := *event.Issue.Number
-  integration, err := w.Database.ReadIntegrationByRepoId(repoId)
-  if err != nil {
-    utils.AppLog.Error("Failed to process HeuprInterectionEvent.", zap.Error(err))
-  }
-  client := NewClient(integration.AppId, integration.InstallationId)
+	owner := *event.Repo.Owner.Login
+	repo := *event.Repo.Name
+	repoId := *event.Repo.ID
+	number := *event.Issue.Number
+	integration, err := w.Database.ReadIntegrationByRepoId(repoId)
+	if err != nil {
+		utils.AppLog.Error("Failed to process HeuprInterectionEvent.", zap.Error(err))
+	}
+	client := NewClient(integration.AppId, integration.InstallationId)
 
-  if strings.Contains(*event.Comment.Body, "no") || strings.Contains(*event.Comment.Body, "No") {
-    body := fmt.Sprintf(HoldOnMessage, *event.Sender.Login)
-    comment := &github.IssueComment{Body: &body}
-    _, _, err = client.Issues.CreateComment(context.Background(), owner, repo, number, comment)
-    if err != nil {
-      utils.AppLog.Error("Failed to process HeuprInterectionEvent.", zap.Error(err))
-    }
-    return
-  }
+	if strings.Contains(*event.Comment.Body, "no") || strings.Contains(*event.Comment.Body, "No") {
+		body := fmt.Sprintf(HoldOnMessage, *event.Sender.Login)
+		comment := &github.IssueComment{Body: &body}
+		_, _, err = client.Issues.CreateComment(context.Background(), owner, repo, number, comment)
+		if err != nil {
+			utils.AppLog.Error("Failed to process HeuprInterectionEvent.", zap.Error(err))
+		}
+		return
+	}
 
-  if !strings.Contains(*event.Comment.Body, "yes") && !strings.Contains(*event.Comment.Body, "Yes") {
-    return
-  }
+	if !strings.Contains(*event.Comment.Body, "yes") && !strings.Contains(*event.Comment.Body, "Yes") {
+		return
+	}
 
-  //Duplicate Logic. It gets the job done for validation & settings extraction)
-  ignoreUsers, startTime, ignoreLabels, email, twitter, err := extractSettings(*event.Issue)
-  var body string
-  if err != nil {
-    body = fmt.Sprintf(ConfirmationErrMessage, *event.Sender.Login, err, ignoreUsers, startTime, ignoreLabels, email, twitter)
-  } else {
-    body = fmt.Sprintf(AppliedSettingsMessage, *event.Sender.Login, ignoreUsers, startTime, ignoreLabels, email, twitter)
-  }
-  comment := &github.IssueComment{Body: &body}
-  _, _, err = client.Issues.CreateComment(context.Background(), owner, repo, number, comment)
-  if err != nil {
-    utils.AppLog.Error("Failed to process HeuprInterectionEvent.", zap.Error(err))
-  }
+	//Duplicate Logic. It gets the job done for validation & settings extraction)
+	ignoreUsers, startTime, ignoreLabels, email, twitter, err := extractSettings(*event.Issue)
+	var body string
+	if err != nil {
+		body = fmt.Sprintf(ConfirmationErrMessage, *event.Sender.Login, err, ignoreUsers, startTime, ignoreLabels, email, twitter)
+	} else {
+		body = fmt.Sprintf(AppliedSettingsMessage, *event.Sender.Login, ignoreUsers, startTime, ignoreLabels, email, twitter)
+	}
+	comment := &github.IssueComment{Body: &body}
+	_, _, err = client.Issues.CreateComment(context.Background(), owner, repo, number, comment)
+	if err != nil {
+		utils.AppLog.Error("Failed to process HeuprInterectionEvent.", zap.Error(err))
+	}
 
-  settings := HeuprConfigSettings{Integration: *integration, IgnoreUsers: ignoreUsers, StartTime: startTime, IgnoreLabels: ignoreLabels, Email: email, Twitter: twitter}
-  w.Database.InsertRepositoryIntegrationSettings(settings)
-  //Workaround: This causes the backend to kick in and pull in the latest settings.
+	settings := HeuprConfigSettings{Integration: *integration, IgnoreUsers: ignoreUsers, StartTime: startTime, IgnoreLabels: ignoreLabels, Email: email, Twitter: twitter}
+	w.Database.InsertRepositoryIntegrationSettings(settings)
+	//Workaround: This causes the backend to kick in and pull in the latest settings.
 	action := "opened"
 	w.Database.InsertIssue(*event.Issue, &action)
 }
 
 func (w *Worker) ProcessHeuprInteractionIssuesEvent(event github.IssuesEvent) {
-  //TODO: Add user validation
+	//TODO: Add user validation
 	owner := *event.Issue.Repository.Owner.Login
 	repo := *event.Issue.Repository.Name
 	repoId := *event.Issue.Repository.ID
@@ -125,12 +125,12 @@ func (w *Worker) ProcessHeuprInteractionIssuesEvent(event github.IssuesEvent) {
 	client := NewClient(integration.AppId, integration.InstallationId)
 
 	ignoreUsers, startTime, ignoreLabels, email, twitter, err := extractSettings(*event.Issue)
-  var body string
-  if err == nil {
-    body = fmt.Sprintf(ConfirmationMessage, *event.Sender.Login, ignoreUsers, startTime, ignoreLabels, email, twitter)
-  } else {
-    body = fmt.Sprintf(ConfirmationErrMessage, *event.Sender.Login, err, ignoreUsers, startTime, ignoreLabels, email, twitter)
-  }
+	var body string
+	if err == nil {
+		body = fmt.Sprintf(ConfirmationMessage, *event.Sender.Login, ignoreUsers, startTime, ignoreLabels, email, twitter)
+	} else {
+		body = fmt.Sprintf(ConfirmationErrMessage, *event.Sender.Login, err, ignoreUsers, startTime, ignoreLabels, email, twitter)
+	}
 	comment := &github.IssueComment{Body: &body}
 	_, _, err = client.Issues.CreateComment(context.Background(), owner, repo, number, comment)
 	if err != nil {
