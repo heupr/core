@@ -3,7 +3,7 @@ package ingestor
 var Workers chan chan interface{}
 
 type Dispatcher struct {
-	Database        *Database
+	Database        DataAccess
 	RepoInitializer *RepoInitializer
 }
 

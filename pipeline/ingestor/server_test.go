@@ -15,42 +15,44 @@ func Test_NewClient(t *testing.T) {
 	// think of a good way to assert the NewClient results.
 	tests := []struct {
 		integration struct {
-			appId          int
-			installationId int
+			appID          int
+			installationID int
 		}
 		output interface{}
 	}{
 		{struct {
-			appId          int
-			installationId int
+			appID          int
+			installationID int
 		}{1, 2}, nil},
 		{struct {
-			appId          int
-			installationId int
+			appID          int
+			installationID int
 		}{2, 2}, nil},
 		{struct {
-			appId          int
-			installationId int
+			appID          int
+			installationID int
 		}{3, 3}, nil},
 	}
 
 	owner := "bomarr-order"
 	repo := "bt-16-perimeter-droid"
+	// This is a dummy GitHub server to return test objects for issues, pulls,
+	// and repos.
 	mux := http.NewServeMux()
 	mux.HandleFunc(fmt.Sprintf("/repos/%v/%v/issues", owner, repo), func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `[{"id":123,"number":456}]`) // Issues dummy service.
+		fmt.Fprint(w, `[{"id":123,"number":456}]`)
 	})
 	mux.HandleFunc(fmt.Sprintf("/repos/%v/%v/pulls", owner, repo), func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `[{"id":321,"number":456,"base":{"repo":{"id":890}}}]`) // Pulls dummy service.
+		fmt.Fprint(w, `[{"id":321,"number":456,"base":{"repo":{"id":890}}}]`)
 	})
 	mux.HandleFunc(fmt.Sprintf("/repos/%v/%v", owner, repo), func(w http.ResponseWriter, r *http.Request) {
 		obj := fmt.Sprintf(`{"id":213,"name":"%v","owner":{"login":"%v"}}`, repo, owner)
-		fmt.Fprint(w, obj) // Repos dummy service.
+		fmt.Fprint(w, obj)
 	})
 	server := httptest.NewServer(mux)
 	testURL, _ := url.Parse(server.URL)
 
-	NewClient = func(appId int, installationId int) *github.Client {
+	NewClient = func(appID int, installationID int) *github.Client {
 		c := github.NewClient(nil)
 		c.BaseURL = testURL
 		c.UploadURL = testURL
@@ -58,7 +60,7 @@ func Test_NewClient(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		c := NewClient(test.integration.appId, test.integration.installationId)
+		c := NewClient(test.integration.appID, test.integration.installationID)
 		if c == nil {
 			t.Errorf("failed to make client")
 		}

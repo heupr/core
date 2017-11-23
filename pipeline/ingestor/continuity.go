@@ -10,7 +10,7 @@ import (
 	"core/utils"
 )
 
-const CONTINUITY_QUERY = `
+const continuityQuery = `
 SELECT *
 FROM (
     SELECT repo_id, number AS start_num, LEAD(number, 1) OVER (PARTITION BY repo_id ORDER BY number) AS end_num, is_pull
@@ -29,46 +29,45 @@ WHERE t.end_num - t.start_num > 1 AND is_pull = TRUE;
 `
 
 func (i *IngestorServer) continuityCheck() ([]*github.Issue, []*github.PullRequest, error) {
-	results, err := i.Database.db.Query(CONTINUITY_QUERY)
+	gaps, err := i.Database.continuityCheck(continuityQuery)
 	if err != nil {
 		utils.AppLog.Error("continuity check query", zap.Error(err))
 		return nil, nil, err
 	}
-	defer results.Close()
 
 	issues := []*github.Issue{}
 	pulls := []*github.PullRequest{}
-
-	for results.Next() {
-		repoId, startNum, endNum, is_pull := new(int), new(int), new(int), new(bool)
-		if err := results.Scan(repoId, startNum, endNum, is_pull); err != nil {
-			utils.AppLog.Error("continuity check row scan", zap.Error(err))
-			return nil, nil, err
-		}
-
-		integration, err := i.Database.ReadIntegrationByRepoId(*repoId)
+	for j := range gaps {
+		repoID := gaps[j][0].(int)
+		ctx := context.Background()
+		integration, err := i.Database.ReadIntegrationByRepoID(repoID)
 		if err != nil {
-			utils.AppLog.Error("retrieve token continuity check", zap.Error(err))
+			utils.AppLog.Error(
+				"retrieve token continuity check",
+				zap.Error(err),
+			)
 		}
-		client := NewClient(integration.AppId, integration.InstallationId)
 
-		repo, _, err := client.Repositories.GetByID(context.Background(), *repoId)
+		client := NewClient(integration.AppID, integration.InstallationID)
+		repo, _, err := client.Repositories.GetByID(ctx, repoID)
 		if err != nil {
 			utils.AppLog.Error("ingestor restart get by id", zap.Error(err))
 			return nil, nil, err
 		}
-		owner := repo.Owner.Login
-		name := repo.Name
 
-		for j := *startNum + 1; j < *endNum; j++ {
-			if *is_pull {
-				pull, _, err := client.PullRequests.Get(context.Background(), *owner, *name, j)
+		owner := *repo.Owner.Login
+		name := *repo.Name
+		startNum, endNum := gaps[j][1].(int), gaps[j][2].(int)
+		isPull := gaps[j][3].(bool)
+		for k := startNum + 1; k < endNum; k++ {
+			if isPull {
+				pull, _, err := client.PullRequests.Get(ctx, owner, name, k)
 				if err != nil {
 					return nil, nil, err
 				}
 				pulls = append(pulls, pull)
 			} else {
-				issue, _, err := client.Issues.Get(context.Background(), *owner, *name, j)
+				issue, _, err := client.Issues.Get(ctx, owner, name, k)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -81,9 +80,9 @@ func (i *IngestorServer) continuityCheck() ([]*github.Issue, []*github.PullReque
 	return issues, pulls, nil
 }
 
-// Periodically ensure that data contained in MemSQL is contiguous.
+// Continuity periodically ensures that data contained in MemSQL is contiguous.
 func (i *IngestorServer) Continuity() {
-	ticker := time.NewTicker(time.Second * 30) // TEMPORARY
+	ticker := time.NewTicker(time.Second * 300) // TEMPORARY
 	// This chan is being kept as a means for thread-safe graceful shutdowns
 	// and could be eventually passed as an argument into Continuity().
 	ender := make(chan bool)

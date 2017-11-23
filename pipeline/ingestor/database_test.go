@@ -10,7 +10,7 @@ import (
 	"core/pipeline/gateway"
 )
 
-func TestInsert(t *testing.T) {
+func TestBulkInsertIssues(t *testing.T) {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "YOUR-TOKEN-HERE"})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 	client := github.NewClient(tc)
@@ -21,7 +21,7 @@ func TestInsert(t *testing.T) {
 
 	bufferPool := NewPool()
 	db := Database{BufferPool: bufferPool}
-	db.Open()
+	db.open()
 
 	repo := &github.Repository{ID: github.Int(26295345), Organization: &github.Organization{Name: github.String("dotnet")}, Name: github.String("coreclr")}
 	for i := 0; i < len(githubIssues); i++ {

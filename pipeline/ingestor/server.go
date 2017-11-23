@@ -15,12 +15,12 @@ import (
 
 type IngestorServer struct {
 	Server          http.Server
-	Database        Database
+	Database        DataAccess
 	RepoInitializer RepoInitializer
 }
 
 // NewClient is a wrapper fo unit testing and stubbing out the client URLs.
-var NewClient = func(appId int, installationId int) *github.Client {
+var NewClient = func(appID int, installationID int) *github.Client {
 	var key string
 	if PROD {
 		key = "heupr.2017-10-04.private-key.pem"
@@ -28,7 +28,12 @@ var NewClient = func(appId int, installationId int) *github.Client {
 		key = "forstmeier-heupr.2017-11-18.private-key.pem"
 	}
 	// Wrap the shared transport for use with the Github Installation.
-	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appId, installationId, key)
+	itr, err := ghinstallation.NewKeyFromFile(
+		http.DefaultTransport,
+		appID,
+		installationID,
+		key,
+	)
 	if err != nil {
 		utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
 		return nil
@@ -45,13 +50,17 @@ func (i *IngestorServer) routes() *http.ServeMux {
 
 func (i *IngestorServer) Start() error {
 	bufferPool := NewPool()
-	i.Database = Database{BufferPool: bufferPool}
+	i.Database = &Database{BufferPool: bufferPool}
 	defer i.Database.Close()
-	i.Database.Open()
+	i.Database.open()
 
-	i.RepoInitializer = RepoInitializer{Database: &i.Database, HttpClient: http.Client{Timeout: time.Second * 10}}
-
-	dispatcher := Dispatcher{Database: &i.Database, RepoInitializer: &i.RepoInitializer}
+	i.RepoInitializer = RepoInitializer{
+		Database: i.Database,
+		HttpClient: http.Client{
+			Timeout: time.Second * 10,
+		},
+	}
+	dispatcher := Dispatcher{Database: i.Database, RepoInitializer: &i.RepoInitializer}
 	dispatcher.Start(5)
 
 	//i.Restart()

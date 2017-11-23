@@ -12,7 +12,7 @@ import (
 
 type Worker struct {
 	ID              int
-	Database        *Database
+	Database        DataAccess
 	RepoInitializer *RepoInitializer
 	Work            chan interface{}
 	Queue           chan chan interface{}
@@ -72,7 +72,7 @@ func (w *Worker) ProcessHeuprInstallationRepositoriesEvent(event HeuprInstallati
 	}(event)
 }
 
-func NewWorker(id int, db *Database, repoInitializer *RepoInitializer, queue chan chan interface{}) Worker {
+func NewWorker(id int, db DataAccess, repoInitializer *RepoInitializer, queue chan chan interface{}) Worker {
 	return Worker{
 		ID:              id,
 		Database:        db,

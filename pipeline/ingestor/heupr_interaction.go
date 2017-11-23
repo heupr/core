@@ -69,13 +69,13 @@ func extractSettings(issue github.Issue) (ignoreUsers []string, startTime time.T
 func (w *Worker) ProcessHeuprInteractionCommentEvent(event github.IssueCommentEvent) {
 	owner := *event.Repo.Owner.Login
 	repo := *event.Repo.Name
-	repoId := *event.Repo.ID
+	repoID := *event.Repo.ID
 	number := *event.Issue.Number
-	integration, err := w.Database.ReadIntegrationByRepoId(repoId)
+	integration, err := w.Database.ReadIntegrationByRepoID(repoID)
 	if err != nil {
 		utils.AppLog.Error("Failed to process HeuprInterectionEvent.", zap.Error(err))
 	}
-	client := NewClient(integration.AppId, integration.InstallationId)
+	client := NewClient(integration.AppID, integration.InstallationID)
 
 	if strings.Contains(*event.Comment.Body, "no") || strings.Contains(*event.Comment.Body, "No") {
 		body := fmt.Sprintf(HoldOnMessage, *event.Sender.Login)
@@ -116,13 +116,13 @@ func (w *Worker) ProcessHeuprInteractionIssuesEvent(event github.IssuesEvent) {
 	//TODO: Add user validation
 	owner := *event.Issue.Repository.Owner.Login
 	repo := *event.Issue.Repository.Name
-	repoId := *event.Issue.Repository.ID
+	repoID := *event.Issue.Repository.ID
 	number := *event.Issue.Number
-	integration, err := w.Database.ReadIntegrationByRepoId(repoId)
+	integration, err := w.Database.ReadIntegrationByRepoID(repoID)
 	if err != nil {
 		utils.AppLog.Error("Failed to process HeuprInterectionEvent.", zap.Error(err))
 	}
-	client := NewClient(integration.AppId, integration.InstallationId)
+	client := NewClient(integration.AppID, integration.InstallationID)
 
 	ignoreUsers, startTime, ignoreLabels, email, twitter, err := extractSettings(*event.Issue)
 	var body string

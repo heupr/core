@@ -22,7 +22,7 @@ type ActivationParams struct {
 }
 
 type RepoInitializer struct {
-	Database   *Database
+	Database   DataAccess
 	HttpClient http.Client
 }
 
@@ -49,8 +49,8 @@ func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
 	r.Database.BulkInsertIssuesPullRequests(githubIssues, githubPulls)
 }
 
-func (r *RepoInitializer) RepositoryIntegrationExists(repoId int, appId int, installationId int) bool {
-	_, err := r.Database.ReadIntegrationByRepoId(repoId)
+func (r *RepoInitializer) RepositoryIntegrationExists(repoID int, appID int, installationID int) bool {
+	_, err := r.Database.ReadIntegrationByRepoID(repoID)
 	switch {
 	case err == sql.ErrNoRows:
 		return false
@@ -62,16 +62,16 @@ func (r *RepoInitializer) RepositoryIntegrationExists(repoId int, appId int, ins
 	}
 }
 
-func (r *RepoInitializer) AddRepositoryIntegration(repoId int, appId int, installationId int) {
-	r.Database.InsertRepositoryIntegration(repoId, appId, installationId)
+func (r *RepoInitializer) AddRepositoryIntegration(repoID int, appID int, installationID int) {
+	r.Database.InsertRepositoryIntegration(repoID, appID, installationID)
 }
 
-func (r *RepoInitializer) RemoveRepositoryIntegration(repoId int, appId int, installationId int) {
-	r.Database.DeleteRepositoryIntegration(repoId, appId, installationId)
+func (r *RepoInitializer) RemoveRepositoryIntegration(repoID int, appID int, installationID int) {
+	r.Database.DeleteRepositoryIntegration(repoID, appID, installationID)
 }
 
-func (r *RepoInitializer) ObliterateIntegration(appId int, installationId int) {
-	r.Database.ObliterateIntegration(appId, installationId)
+func (r *RepoInitializer) ObliterateIntegration(appID int, installationID int) {
+	r.Database.ObliterateIntegration(appID, installationID)
 }
 
 func (r *RepoInitializer) RaiseRepositoryWelcomeIssue(authRepo AuthenticatedRepo, assignee string) {

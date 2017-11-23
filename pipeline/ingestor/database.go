@@ -22,24 +22,12 @@ type Event struct {
 	Payload interface{}       `json:"payload"`
 }
 
-type Value interface{}
+// type Value interface{}
 
 type Integration struct {
-	RepoId         int
-	AppId          int
-	InstallationId int
-}
-
-type SQLDB interface {
-	Query(query string, args ...interface{}) (*sql.Rows, error)
-	QueryRow(query string, args ...interface{}) *sql.Row
-	Exec(query string, args ...interface{}) (sql.Result, error)
-	Close() error
-}
-
-type Database struct {
-	db         SQLDB // *sql.DB
-	BufferPool Pool
+	RepoID         int
+	AppID          int
+	InstallationID int
 }
 
 type EventType int
@@ -55,10 +43,32 @@ type EventQuery struct {
 	Repo string
 }
 
-func (d *Database) Open() {
+type DataAccess interface {
+	open()
+	Close()
+	continuityCheck(query string) ([][]interface{}, error)
+	RestartCheck(query string, args ...interface{}) (*sql.Rows, error) // TODO: Rebuild
+	ReadIntegrations() ([]Integration, error)
+	ReadIntegrationByRepoID(repoID int) (*Integration, error)
+	InsertIssue(issue github.Issue, action *string)
+	InsertPullRequest(pull github.PullRequest, action *string)
+	BulkInsertIssuesPullRequests(issues []*github.Issue, pulls []*github.PullRequest)
+	InsertRepositoryIntegration(repoID, appID, installID int)
+	InsertRepositoryIntegrationSettings(settings HeuprConfigSettings)
+	DeleteRepositoryIntegration(repoID, appID, installID int)
+	ObliterateIntegration(appID, installID int)
+}
+
+type Database struct {
+	db         *sql.DB
+	BufferPool Pool
+}
+
+func (d *Database) open() {
 	mysql, err := sql.Open("mysql", "root@/heupr?interpolateParams=true")
 	if err != nil {
-		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
+		// TODO: Implement proper error handling (not just panic).
+		panic(err.Error())
 	}
 	d.db = mysql
 }
@@ -67,18 +77,43 @@ func (d *Database) Close() {
 	d.db.Close()
 }
 
+func (d *Database) continuityCheck(query string) ([][]interface{}, error) {
+	results, err := d.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer results.Close()
+
+	output := [][]interface{}{}
+	for results.Next() {
+		repoID := new(int)
+		startNum, endNum := new(int), new(int)
+		isPull := new(bool)
+		if err := results.Scan(repoID, startNum, endNum, isPull); err != nil {
+			utils.AppLog.Error("continuity check row scan", zap.Error(err))
+			return nil, err
+		}
+		output = append(output, []interface{}{repoID, startNum, endNum, isPull})
+	}
+	return output, nil
+}
+
+func (d *Database) RestartCheck(query string, args ...interface{}) (*sql.Rows, error) {
+	return d.db.Query(query, args...)
+}
+
 func (d *Database) FlushBackTestTable() {
 	d.db.Exec("optimize table backtest_events flush")
 }
 
-func (d *Database) EnableRepo(repoId int) {
+func (d *Database) EnableRepo(repoID int) {
 	var buffer bytes.Buffer
 	archRepoInsert := "INSERT INTO arch_repos(repository_id, enabled) VALUES"
 	valuesFmt := "(?,?)"
 
 	buffer.WriteString(archRepoInsert)
 	buffer.WriteString(valuesFmt)
-	result, err := d.db.Exec(buffer.String(), repoId, true)
+	result, err := d.db.Exec(buffer.String(), repoID, true)
 	if err != nil {
 		utils.AppLog.Error("database repo insert failure", zap.Error(err))
 	} else {
@@ -95,7 +130,7 @@ func (d *Database) InsertRepositoryIntegrationSettings(settings HeuprConfigSetti
 
 	buffer.WriteString(settingsInsert)
 	buffer.WriteString(valuesFmt)
-	result, err := d.db.Exec(buffer.String(), settings.Integration.RepoId, settings.StartTime, settings.Email, settings.Twitter)
+	result, err := d.db.Exec(buffer.String(), settings.Integration.RepoID, settings.StartTime, settings.Email, settings.Twitter)
 	if err != nil {
 		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
 		return
@@ -155,14 +190,14 @@ func (d *Database) InsertRepositoryIntegrationSettings(settings HeuprConfigSetti
 	buffer.Reset()
 }
 
-func (d *Database) InsertRepositoryIntegration(repoId int, appId int, installationId int) {
+func (d *Database) InsertRepositoryIntegration(repoID, appID, installationID int) {
 	var buffer bytes.Buffer
 	integrationsInsert := "INSERT INTO integrations(repo_id, app_id, installation_id) VALUES"
 	valuesFmt := "(?,?,?)"
 
 	buffer.WriteString(integrationsInsert)
 	buffer.WriteString(valuesFmt)
-	result, err := d.db.Exec(buffer.String(), repoId, appId, installationId)
+	result, err := d.db.Exec(buffer.String(), repoID, appID, installationID)
 	if err != nil {
 		utils.AppLog.Error("database integration insert failure", zap.Error(err))
 	} else {
@@ -171,8 +206,8 @@ func (d *Database) InsertRepositoryIntegration(repoId int, appId int, installati
 	}
 }
 
-func (d *Database) DeleteRepositoryIntegration(repoId int, appId int, installationId int) {
-	result, err := d.db.Exec("DELETE FROM integrations where repo_id = ? and app_id = ? and installation_id = ?", repoId, appId, installationId)
+func (d *Database) DeleteRepositoryIntegration(repoID, appID, installationID int) {
+	result, err := d.db.Exec("DELETE FROM integrations where repo_id = ? and app_id = ? and installation_id = ?", repoID, appID, installationID)
 	if err != nil {
 		utils.AppLog.Error("database integration delete failure", zap.Error(err))
 	} else {
@@ -181,8 +216,8 @@ func (d *Database) DeleteRepositoryIntegration(repoId int, appId int, installati
 	}
 }
 
-func (d *Database) ObliterateIntegration(appId int, installationId int) {
-	result, err := d.db.Exec("DELETE FROM integrations where app_id = ? and installation_id = ?", appId, installationId)
+func (d *Database) ObliterateIntegration(appID, installationID int) {
+	result, err := d.db.Exec("DELETE FROM integrations where app_id = ? and installation_id = ?", appID, installationID)
 	if err != nil {
 		utils.AppLog.Error("database integration obliterate failure", zap.Error(err))
 	} else {
@@ -201,7 +236,7 @@ func (d *Database) ReadIntegrations() ([]Integration, error) {
 	defer results.Close()
 	for results.Next() {
 		integration := Integration{}
-		err := results.Scan(&integration.RepoId, &integration.AppId, &integration.InstallationId)
+		err := results.Scan(&integration.RepoID, &integration.AppID, &integration.InstallationID)
 		if err != nil {
 			return nil, err
 		}
@@ -214,12 +249,12 @@ func (d *Database) ReadIntegrations() ([]Integration, error) {
 	return integrations, nil
 }
 
-func (d *Database) ReadIntegrationByRepoId(repoId int) (*Integration, error) {
+func (d *Database) ReadIntegrationByRepoID(repoID int) (*Integration, error) {
 	integration := new(Integration)
-	err := d.db.QueryRow("SELECT repo_id, app_id, installation_id FROM integrations WHERE repo_id = ?", repoId).Scan(&integration.RepoId, &integration.AppId, &integration.InstallationId)
+	err := d.db.QueryRow("SELECT repo_id, app_id, installation_id FROM integrations WHERE repo_id = ?", repoID).Scan(&integration.RepoID, &integration.AppID, &integration.InstallationID)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			utils.AppLog.Error("database read failure - ReadIntegrationByRepoId()", zap.Error(err))
+			utils.AppLog.Error("database read failure - ReadIntegrationByRepoID()", zap.Error(err))
 		}
 		return nil, err
 	}

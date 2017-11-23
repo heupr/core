@@ -25,16 +25,15 @@ FROM (
 ORDER BY g.is_pull`
 
 func (i *IngestorServer) Restart() error {
-
 	integrations, err := i.Database.ReadIntegrations()
 	if err != nil {
 		utils.AppLog.Error("Retrieve bulk tokens on ingestor restart", zap.Error(err))
 	}
 
 	for _, integration := range integrations {
-		client := NewClient(integration.AppId, integration.InstallationId)
+		client := NewClient(integration.AppID, integration.InstallationID)
 
-		repo, _, err := client.Repositories.GetByID(context.Background(), integration.RepoId)
+		repo, _, err := client.Repositories.GetByID(context.Background(), integration.RepoID)
 		if err != nil {
 			utils.AppLog.Error("Ingestor restart get by id", zap.Error(err))
 			return err
@@ -44,7 +43,7 @@ func (i *IngestorServer) Restart() error {
 		name := repo.Name
 
 		iOld, pOld, iNew, pNew := new(int), new(int), new(int), new(int)
-		rows, err := i.Database.db.Query(RESTART_QUERY, integration.RepoId, integration.RepoId)
+		rows, err := i.Database.RestartCheck(RESTART_QUERY, integration.RepoID, integration.RepoID)
 		if err != nil {
 			utils.AppLog.Error("restart query: ", zap.Error(err))
 		}

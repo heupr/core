@@ -2,190 +2,115 @@ package ingestor
 
 import (
 	"database/sql"
-	"database/sql/driver"
-	"encoding/json"
-	"fmt" // TEMPORARY
-	"io"
-	"io/ioutil"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"testing"
 
-	"github.com/boltdb/bolt"
 	"github.com/google/go-github/github"
-	"golang.org/x/oauth2"
-
-	"core/pipeline/frontend"
-	"core/utils"
 )
 
-// This unit test employs an "easy" solution to the BoltDB filepath by simply
-// overwriting the config value; however, a wrapper struct could be built
-// around the BoltDB which would then implement a new interface with methods
-// like open, close, etc.
-// See https://github.com/boltdb/bolt/blob/master/cmd/bolt/main_test.go#L181
-
-type testDB struct {
-	name string
+var tests = []struct {
+	query   []interface{}
+	missing []int
+}{
+	{[]interface{}{1, 1, 3, false}, []int{2}},
+	{[]interface{}{1, 3, 6, false}, []int{4, 5}},
+	{[]interface{}{1, 7, 9, true}, []int{8}},
 }
 
-type testDriver struct{}
+type testDataAccess struct{}
 
-func (td testDriver) Open(name string) (driver.Conn, error) {
-	db := &testDB{name: name}
-	conn := &testConn{db: db}
-	return conn, nil
-}
+func (t *testDataAccess) open() {}
 
-type testConn struct {
-	db *testDB
-}
+func (t *testDataAccess) Close() {}
 
-func (tc testConn) Prepare(query string) (driver.Stmt, error) {
-	return nil, nil
-}
-
-func (tc testConn) Close() error {
-	return nil
-}
-
-func (tc testConn) Begin() (driver.Tx, error) {
-	return nil, nil
-}
-
-func (c *testConn) Query(query string, args []driver.Value) (driver.Rows, error) {
-	tr := testRows{}
-	return tr, nil
-}
-
-type testStmt struct{}
-
-func (ts testStmt) Close() error {
-	return nil
-}
-
-func (ts testStmt) NumInput() int {
-	return 0
-}
-
-func (ts testStmt) Exec(args []driver.Value) (driver.Result, error) {
-	return nil, nil
-}
-
-func (ts testStmt) Query(args []driver.Value) (driver.Rows, error) {
-	return nil, nil
-}
-
-type testRows struct {
-	rowsi    driver.Rows
-	cancel   func()
-	closed   bool
-	lasterr  error
-	lastcols []driver.Value
-	// NOTE: See https://github.com/golang/go/blob/master/src/database/sql/fakedb_test.go#L858
-}
-
-func (tr testRows) Columns() []string {
-	out := make([]string, 4)
-	return out
-}
-
-func (tr testRows) Close() error {
-	return nil
-}
-
-var startstop = true
-
-func destPopulator(dest *[]interface{}, new []interface{}) {
-	*dest = new
-}
-
-func (tr testRows) Next(dest []driver.Value) error {
-	if startstop {
-		// NOTE: Below is a commented list of the corresponding database
-		// schema.
-		dest[0] = 1 // repo_id
-		// NOTE: This is what the query would return if the number 2 issue was
-		// missing from the table.
-		dest[1] = 1     // startNum issue
-		dest[2] = 3     // endNum issue
-		dest[3] = false // is_pull
-		startstop = false
-		return nil
-	} else {
-		return io.EOF
+func (t *testDataAccess) continuityCheck(query string) ([][]interface{}, error) {
+	testResults := [][]interface{}{}
+	for i := range tests {
+		testResults = append(testResults, tests[i].query)
 	}
+	return testResults, nil
 }
+
+func (t *testDataAccess) RestartCheck(query string, args ...interface{}) (*sql.Rows, error) {
+	return nil, nil
+}
+
+func (t *testDataAccess) ReadIntegrations() ([]Integration, error) { return nil, nil }
+
+func (t *testDataAccess) ReadIntegrationByRepoID(id int) (*Integration, error) {
+	return &Integration{1, 1, 1}, nil
+}
+
+func (t *testDataAccess) InsertIssue(i github.Issue, action *string) {}
+
+func (t *testDataAccess) InsertPullRequest(p github.PullRequest, action *string) {}
+
+func (t *testDataAccess) BulkInsertIssuesPullRequests(i []*github.Issue, p []*github.PullRequest) {}
+
+func (t *testDataAccess) InsertRepositoryIntegration(repoID, appID, installID int) {}
+
+func (t *testDataAccess) InsertRepositoryIntegrationSettings(settings HeuprConfigSettings) {}
+
+func (t *testDataAccess) DeleteRepositoryIntegration(repoID, appID, installID int) {}
+
+func (t *testDataAccess) ObliterateIntegration(appID, installID int) {}
 
 func Test_continuityCheck(t *testing.T) {
-	token, err := json.Marshal(&oauth2.Token{AccessToken: "droideka"})
-	if err != nil {
-		t.Errorf("failed marshaling test token: %v", err)
-	}
-	// Set up fake BoltDB file and database.
-	name := "continuity-test.db"
-	utils.Config.BoltDBPath = name // NOTE: Easy config option.
-	file, err := ioutil.TempFile("", name)
-	if err != nil {
-		t.Errorf("generate continuity test file %v", err)
-	}
-	file.Close()
-	defer os.Remove(name)
-	b, err := bolt.Open(name, 0644, nil)
-	if err != nil {
-		t.Errorf("opening test bolt db %v", err)
-	}
-	boltDB := frontend.BoltDB{DB: b}
-	if err := boltDB.Initialize(); err != nil {
-		t.Errorf("initialize test bolt db %v", err)
-	}
-	if err := boltDB.Store("token", 1, token); err != nil {
-		t.Errorf("setting bolt db test values %v", err)
-	}
-	boltDB.DB.Close()
-
-	// Set up fake GitHub server; note that this unit test is only meant to
-	// have a single call to the GitHub server - it would be to find the
-	// missing issue (issue number 2).
+	// This is the fake GitHub server that is queried by the method. Below are
+	// the handlers to return a repo, issues, and a pull, respectively.
 	mux := http.NewServeMux()
-	// Returning the test repo structure.
 	mux.HandleFunc("/repositories/1", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{"id":1,"name":"trade-federation","owner":{"login":"nute-gunray"}}`)
 	})
-	// Returning issues for test repo.
 	mux.HandleFunc("/repos/nute-gunray/trade-federation/issues/2", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{"id":2,"number":2}`)
 	})
+	mux.HandleFunc("/repos/nute-gunray/trade-federation/issues/4", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"id":4,"number":4}`)
+	})
+	mux.HandleFunc("/repos/nute-gunray/trade-federation/issues/5", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"id":5,"number":5}`)
+	})
+	mux.HandleFunc("/repos/nute-gunray/trade-federation/pulls/8", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"id":8,"number":8}`)
+	})
 	server := httptest.NewServer(mux)
-	testURL, _ := url.Parse(server.URL)
+	testURL, _ := url.Parse(server.URL + "/")
 
-	NewClient = func(t oauth2.Token) *github.Client {
+	NewClient = func(appID int, installationID int) *github.Client {
 		c := github.NewClient(nil)
 		c.BaseURL = testURL
 		c.UploadURL = testURL
 		return c
 	}
 
-	// Create fake MemSQL database (see above for variable settings).
-	driverName := "cato-nemoidia"
-	sourceName := "purse-world"
-	td := testDriver{}
-
-	sql.Register(driverName, td)
-	db, err := sql.Open(driverName, sourceName)
-	if err != nil {
-		t.Errorf("error opening test database %v: %v", sourceName, err)
-	}
 	testIS := IngestorServer{
-		Database: Database{
-			db: db,
-		},
+		Database: &testDataAccess{},
 	}
 
-	_, _, err = testIS.continuityCheck()
+	issues, pulls, err := testIS.continuityCheck()
 	if err != nil {
-		t.Errorf("continuity check test: %v", err)
+		t.Errorf("continuity check error: %v", err)
+	}
+
+	// This is just a simple check to make sure that continuityCheck is
+	// returning the same number of issues/pulls that are fed in as tests.
+	issueCount := []int{}
+	pullCount := []int{}
+	for i := range tests {
+		if tests[i].query[3] == false {
+			issueCount = append(issueCount, tests[i].missing...)
+		} else {
+			pullCount = append(pullCount, tests[i].missing...)
+		}
+	}
+	if len(issues) != len(issueCount) {
+		t.Error("returned issues not equal to test issues")
+	}
+	if len(pulls) != len(pullCount) {
+		t.Error("returned pull not equal to test pulls")
 	}
 }
