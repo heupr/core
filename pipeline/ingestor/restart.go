@@ -9,7 +9,7 @@ import (
 	"core/utils"
 )
 
-const RESTART_QUERY = `
+const restartQuery = `
 SELECT ifnull(g.number, 0) as number, g.is_pull as is_pull
 FROM (
     SELECT MAX(number) as number, ifnull(is_pull, FALSE) as is_pull
@@ -24,139 +24,169 @@ FROM (
 ) g
 ORDER BY g.is_pull`
 
+var issueGaps = func(client *github.Client, owner, name string, dbIssueNum int) ([]*github.Issue, error) {
+	ctx := context.Background()
+	issue, _, err := client.Issues.ListByRepo(
+		ctx,
+		owner,
+		name,
+		&github.IssueListByRepoOptions{
+			State: "all",
+			ListOptions: github.ListOptions{
+				PerPage: 1,
+			},
+		},
+	)
+	if err != nil {
+		utils.AppLog.Error("newest GitHub issue retrival", zap.Error(err))
+		return nil, err
+	}
+	githubIssueNum := 0
+	if len(issue) > 0 {
+		githubIssueNum = *issue[0].Number
+	}
+
+	diff := githubIssueNum - dbIssueNum
+	missingIssues := []*github.Issue{}
+	for diff > 0 {
+		opts := github.IssueListByRepoOptions{
+			State: "all",
+			ListOptions: github.ListOptions{
+				PerPage: 100,
+			},
+		}
+		switch {
+		case diff > 0 && diff <= 100:
+			opts.ListOptions.PerPage = diff
+			diff = 0
+		case diff > 100:
+			opts.ListOptions.PerPage = 100
+			diff = diff - 100
+		}
+		issues, resp, err := client.Issues.ListByRepo(ctx, owner, name, &opts)
+		if err != nil {
+			utils.AppLog.Error("missing GitHub issue retrival", zap.Error(err))
+			return nil, err
+		}
+		missingIssues = append(missingIssues, issues...)
+		if resp.NextPage == 0 {
+			break
+		} else {
+			opts.ListOptions.Page = resp.NextPage
+		}
+	}
+	return missingIssues, nil
+}
+
+var pullGaps = func(client *github.Client, owner, name string, dbPullNum int) ([]*github.PullRequest, error) {
+	ctx := context.Background()
+	pull, _, err := client.PullRequests.List(
+		ctx,
+		owner,
+		name,
+		&github.PullRequestListOptions{
+			State: "all",
+			ListOptions: github.ListOptions{
+				PerPage: 1,
+			},
+		},
+	)
+	if err != nil {
+		utils.AppLog.Error(
+			"newest GitHub pull request retrival",
+			zap.Error(err),
+		)
+		return nil, err
+	}
+	githubPullNum := 0
+	if len(pull) > 0 {
+		githubPullNum = *pull[0].Number
+	}
+
+	diff := githubPullNum - dbPullNum
+	missingPulls := []*github.PullRequest{}
+	for diff > 0 {
+		opts := github.PullRequestListOptions{
+			State:       "all",
+			ListOptions: github.ListOptions{},
+		}
+		switch {
+		case diff > 0 && diff <= 100:
+			opts.ListOptions.PerPage = diff
+			diff = 0
+		case diff > 100:
+			opts.ListOptions.PerPage = 100
+			diff = diff - 100
+		}
+		pulls, resp, err := client.PullRequests.List(ctx, owner, name, &opts)
+		if err != nil {
+			utils.AppLog.Error(
+				"missing GitHub pull request retrival",
+				zap.Error(err),
+			)
+			return nil, err
+		}
+		missingPulls = append(missingPulls, pulls...)
+		if resp.NextPage == 0 {
+			break
+		} else {
+			opts.ListOptions.Page = resp.NextPage
+		}
+	}
+	return missingPulls, nil
+}
+
+// Restart starts the server and looks for new objects missed durring downtime.
 func (i *IngestorServer) Restart() error {
 	integrations, err := i.Database.ReadIntegrations()
 	if err != nil {
-		utils.AppLog.Error("Retrieve bulk tokens on ingestor restart", zap.Error(err))
+		return err
 	}
 
 	for _, integration := range integrations {
 		client := NewClient(integration.AppID, integration.InstallationID)
-
 		repo, _, err := client.Repositories.GetByID(context.Background(), integration.RepoID)
 		if err != nil {
-			utils.AppLog.Error("Ingestor restart get by id", zap.Error(err))
+			utils.AppLog.Error("restart get repo by id", zap.Error(err))
 			return err
 		}
 
-		owner := repo.Owner.Login
-		name := repo.Name
+		owner := *repo.Owner.Login
+		name := *repo.Name
 
-		iOld, pOld, iNew, pNew := new(int), new(int), new(int), new(int)
-		rows, err := i.Database.RestartCheck(RESTART_QUERY, integration.RepoID, integration.RepoID)
+		dbIssueNum, dbPullNum, err := i.Database.restartCheck(
+			restartQuery,
+			integration.RepoID,
+		)
 		if err != nil {
-			utils.AppLog.Error("restart query: ", zap.Error(err))
-		}
-		defer rows.Close()
-		for rows.Next() {
-			number := new(int)
-			is_pull := new(bool)
-			if err := rows.Scan(number, is_pull); err != nil {
-				utils.AppLog.Error("restart scan: ", zap.Error(err))
-			}
-			switch *is_pull {
-			case false:
-				*iOld = *number
-			case true:
-				*pOld = *number
-			}
+			return err
 		}
 
-		if *iOld == 0 && *pOld == 0 {
+		if dbIssueNum == 0 && dbPullNum == 0 {
 			authRepo := AuthenticatedRepo{
 				Repo:   repo,
 				Client: client,
 			}
 			i.RepoInitializer.AddRepo(authRepo)
+			utils.AppLog.Info("initializing new repo", zap.String("repo name", *repo.Name))
 			return nil
 		}
 
-		issue, _, err := client.Issues.ListByRepo(context.Background(), *owner, *name, &github.IssueListByRepoOptions{
-			State: "all",
-			ListOptions: github.ListOptions{
-				PerPage: 1,
-			},
-		})
+		missingIssues, err := issueGaps(client, owner, name, dbIssueNum)
 		if err != nil {
-			utils.AppLog.Error("newest issue retrival", zap.Error(err))
 			return err
 		}
-		if len(issue) > 0 {
-			iNew = issue[0].Number
-		}
-
-		iDiff := *iNew - *iOld
-		missingIssues := []*github.Issue{}
-		for iDiff > 0 {
-			opts := github.IssueListByRepoOptions{
-				State:       "all",
-				ListOptions: github.ListOptions{},
-			}
-			switch {
-			case iDiff > 0 && iDiff <= 100:
-				opts.ListOptions.PerPage = iDiff
-				iDiff = 0
-			case iDiff > 100:
-				opts.ListOptions.PerPage = 100
-				iDiff = iDiff - 100
-			}
-			issues, resp, err := client.Issues.ListByRepo(context.Background(), *owner, *name, &opts)
-			if err != nil {
-				utils.AppLog.Error("newest issue retrival", zap.Error(err))
-			}
-			missingIssues = append(missingIssues, issues...)
-			if resp.NextPage == 0 {
-				break
-			} else {
-				opts.ListOptions.Page = resp.NextPage
-			}
-		}
-
-		pull, _, err := client.PullRequests.List(context.Background(), *owner, *name, &github.PullRequestListOptions{
-			State: "all",
-			ListOptions: github.ListOptions{
-				PerPage: 1,
-			},
-		})
+		missingPulls, err := pullGaps(client, owner, name, dbPullNum)
 		if err != nil {
-			utils.AppLog.Error("newest pull request retrival", zap.Error(err))
+			return err
 		}
 
-		if len(pull) > 0 {
-			pNew = pull[0].Number
-		}
-
-		pDiff := *pNew - *pOld
-		missingPulls := []*github.PullRequest{}
-		for pDiff > 0 {
-			opts := github.PullRequestListOptions{
-				State:       "all",
-				ListOptions: github.ListOptions{},
-			}
-			switch {
-			case pDiff > 0 && pDiff <= 100:
-				opts.ListOptions.PerPage = pDiff
-				pDiff = 0
-			case pDiff > 100:
-				opts.ListOptions.PerPage = 100
-				pDiff = pDiff - 100
-			}
-			pulls, resp, err := client.PullRequests.List(context.Background(), *owner, *name, &opts)
-			if err != nil {
-				utils.AppLog.Error("newest pull request retrival", zap.Error(err))
-			}
-			missingPulls = append(missingPulls, pulls...)
-			if resp.NextPage == 0 {
-				break
-			} else {
-				opts.ListOptions.Page = resp.NextPage
-			}
-		}
-
+		// This is a fix for a deficiency in the GitHub API.
 		for j := 0; j < len(missingIssues); j++ {
 			missingIssues[j].Repository = repo
 		}
 		i.Database.BulkInsertIssuesPullRequests(missingIssues, missingPulls)
 	}
+	utils.AppLog.Info("successful ingestor server restart")
 	return nil
 }

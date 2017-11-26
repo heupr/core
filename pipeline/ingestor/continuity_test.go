@@ -1,7 +1,6 @@
 package ingestor
 
 import (
-	"database/sql"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -20,13 +19,13 @@ var tests = []struct {
 	{[]interface{}{1, 7, 9, true}, []int{8}},
 }
 
-type testDataAccess struct{}
+type continuityDA struct{}
 
-func (t *testDataAccess) open() {}
+func (c *continuityDA) open() {}
 
-func (t *testDataAccess) Close() {}
+func (c *continuityDA) Close() {}
 
-func (t *testDataAccess) continuityCheck(query string) ([][]interface{}, error) {
+func (c *continuityDA) continuityCheck(query string) ([][]interface{}, error) {
 	testResults := [][]interface{}{}
 	for i := range tests {
 		testResults = append(testResults, tests[i].query)
@@ -34,29 +33,29 @@ func (t *testDataAccess) continuityCheck(query string) ([][]interface{}, error) 
 	return testResults, nil
 }
 
-func (t *testDataAccess) RestartCheck(query string, args ...interface{}) (*sql.Rows, error) {
-	return nil, nil
+func (c *continuityDA) restartCheck(query string, repoID int) (int, int, error) {
+	return 0, 0, nil
 }
 
-func (t *testDataAccess) ReadIntegrations() ([]Integration, error) { return nil, nil }
+func (c *continuityDA) ReadIntegrations() ([]Integration, error) { return nil, nil }
 
-func (t *testDataAccess) ReadIntegrationByRepoID(id int) (*Integration, error) {
+func (c *continuityDA) ReadIntegrationByRepoID(id int) (*Integration, error) {
 	return &Integration{1, 1, 1}, nil
 }
 
-func (t *testDataAccess) InsertIssue(i github.Issue, action *string) {}
+func (c *continuityDA) InsertIssue(i github.Issue, action *string) {}
 
-func (t *testDataAccess) InsertPullRequest(p github.PullRequest, action *string) {}
+func (c *continuityDA) InsertPullRequest(p github.PullRequest, action *string) {}
 
-func (t *testDataAccess) BulkInsertIssuesPullRequests(i []*github.Issue, p []*github.PullRequest) {}
+func (c *continuityDA) BulkInsertIssuesPullRequests(i []*github.Issue, p []*github.PullRequest) {}
 
-func (t *testDataAccess) InsertRepositoryIntegration(repoID, appID, installID int) {}
+func (c *continuityDA) InsertRepositoryIntegration(repoID, appID, installID int) {}
 
-func (t *testDataAccess) InsertRepositoryIntegrationSettings(settings HeuprConfigSettings) {}
+func (c *continuityDA) InsertRepositoryIntegrationSettings(settings HeuprConfigSettings) {}
 
-func (t *testDataAccess) DeleteRepositoryIntegration(repoID, appID, installID int) {}
+func (c *continuityDA) DeleteRepositoryIntegration(repoID, appID, installID int) {}
 
-func (t *testDataAccess) ObliterateIntegration(appID, installID int) {}
+func (c *continuityDA) ObliterateIntegration(appID, installID int) {}
 
 func Test_continuityCheck(t *testing.T) {
 	// This is the fake GitHub server that is queried by the method. Below are
@@ -88,7 +87,7 @@ func Test_continuityCheck(t *testing.T) {
 	}
 
 	testIS := IngestorServer{
-		Database: &testDataAccess{},
+		Database: &continuityDA{},
 	}
 
 	issues, pulls, err := testIS.continuityCheck()

@@ -47,7 +47,7 @@ type DataAccess interface {
 	open()
 	Close()
 	continuityCheck(query string) ([][]interface{}, error)
-	RestartCheck(query string, args ...interface{}) (*sql.Rows, error) // TODO: Rebuild
+	restartCheck(query string, repoID int) (int, int, error)
 	ReadIntegrations() ([]Integration, error)
 	ReadIntegrationByRepoID(repoID int) (*Integration, error)
 	InsertIssue(issue github.Issue, action *string)
@@ -80,6 +80,7 @@ func (d *Database) Close() {
 func (d *Database) continuityCheck(query string) ([][]interface{}, error) {
 	results, err := d.db.Query(query)
 	if err != nil {
+		utils.AppLog.Error("continuity check query", zap.Error(err))
 		return nil, err
 	}
 	defer results.Close()
@@ -98,8 +99,30 @@ func (d *Database) continuityCheck(query string) ([][]interface{}, error) {
 	return output, nil
 }
 
-func (d *Database) RestartCheck(query string, args ...interface{}) (*sql.Rows, error) {
-	return d.db.Query(query, args...)
+func (d *Database) restartCheck(query string, repoID int) (int, int, error) {
+	results, err := d.db.Query(query, repoID, repoID)
+	if err != nil {
+		utils.AppLog.Error("restart check query", zap.Error(err))
+		return 0, 0, err
+	}
+
+	issueNum := new(int)
+	pullNum := new(int)
+	for results.Next() {
+		number := new(int)
+		isPull := new(bool)
+		if err := results.Scan(number, isPull); err != nil {
+			utils.AppLog.Error("restart check scan", zap.Error(err))
+			return 0, 0, err
+		}
+		switch *isPull {
+		case false:
+			*issueNum = *number
+		case true:
+			*pullNum = *number
+		}
+	}
+	return *issueNum, *pullNum, nil
 }
 
 func (d *Database) FlushBackTestTable() {
