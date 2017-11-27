@@ -71,6 +71,7 @@ func TestRestart(t *testing.T) {
 	}
 
 	issueErr := false
+	temp := issueGaps
 	issueGaps = func(client *github.Client, owner, name string, dbIssueNum int) (i []*github.Issue, err error) {
 		switch issueErr {
 		case false:
@@ -111,4 +112,36 @@ func TestRestart(t *testing.T) {
 			t.Errorf("failure testing restart: %v", err)
 		}
 	})
+	issueGaps = temp
+}
+
+func Test_gapHelpers(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/repos/wat-tambor/techno-union/issues", func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		switch r.Form["per_page"][0] {
+		case "1":
+			fmt.Fprint(w, `[{"id":3,"number":3}]`)
+		default:
+			fmt.Fprint(w, `[{"id":2,"number":2},{"id":3,"number":3}]`)
+		}
+	})
+	server := httptest.NewServer(mux)
+	testURL, _ := url.Parse(server.URL + "/")
+
+	NewClient = func(appID int, installationID int) *github.Client {
+		c := github.NewClient(nil)
+		c.BaseURL = testURL
+		c.UploadURL = testURL
+		return c
+	}
+	client := NewClient(1, 1)
+
+	issues, err := issueGaps(client, "wat-tambor", "techno-union", 1)
+	if err != nil {
+		t.Errorf("error finding issue gaps: %v", err)
+	}
+	if len(issues) != 2 {
+		t.Errorf("expected two (2) issues, received %v", len(issues))
+	}
 }

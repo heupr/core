@@ -26,21 +26,18 @@ ORDER BY g.is_pull`
 
 var issueGaps = func(client *github.Client, owner, name string, dbIssueNum int) ([]*github.Issue, error) {
 	ctx := context.Background()
-	issue, _, err := client.Issues.ListByRepo(
-		ctx,
-		owner,
-		name,
-		&github.IssueListByRepoOptions{
-			State: "all",
-			ListOptions: github.ListOptions{
-				PerPage: 1,
-			},
+	opts := github.IssueListByRepoOptions{
+		State: "all",
+		ListOptions: github.ListOptions{
+			PerPage: 1,
 		},
-	)
+	}
+	issue, _, err := client.Issues.ListByRepo(ctx, owner, name, &opts)
 	if err != nil {
 		utils.AppLog.Error("newest GitHub issue retrival", zap.Error(err))
 		return nil, err
 	}
+
 	githubIssueNum := 0
 	if len(issue) > 0 {
 		githubIssueNum = *issue[0].Number
@@ -49,12 +46,6 @@ var issueGaps = func(client *github.Client, owner, name string, dbIssueNum int) 
 	diff := githubIssueNum - dbIssueNum
 	missingIssues := []*github.Issue{}
 	for diff > 0 {
-		opts := github.IssueListByRepoOptions{
-			State: "all",
-			ListOptions: github.ListOptions{
-				PerPage: 100,
-			},
-		}
 		switch {
 		case diff > 0 && diff <= 100:
 			opts.ListOptions.PerPage = diff
