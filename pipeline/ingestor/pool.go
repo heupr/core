@@ -2,7 +2,7 @@ package ingestor
 
 import "sync"
 
-// A Pool is a type-safe wrapper around a sync.Pool.
+// Pool is a type-safe wrapper around a sync.Pool.
 type Pool struct {
 	p *sync.Pool
 }
