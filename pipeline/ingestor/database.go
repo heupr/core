@@ -96,6 +96,10 @@ func (d *Database) continuityCheck(query string) ([][]interface{}, error) {
 		}
 		output = append(output, []interface{}{repoID, startNum, endNum, isPull})
 	}
+	if err = results.Err(); err != nil {
+		utils.AppLog.Error("continuity check next loop", zap.Error(err))
+		return nil, err
+	}
 	return output, nil
 }
 
@@ -121,6 +125,10 @@ func (d *Database) restartCheck(query string, repoID int) (int, int, error) {
 		case true:
 			*pullNum = *number
 		}
+	}
+	if err = results.Err(); err != nil {
+		utils.AppLog.Error("restart check next loop", zap.Error(err))
+		return 0, 0, err
 	}
 	return *issueNum, *pullNum, nil
 }
