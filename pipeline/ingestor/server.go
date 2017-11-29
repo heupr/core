@@ -7,7 +7,6 @@ import (
 
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
-
 	"go.uber.org/zap"
 
 	"core/utils"
@@ -56,7 +55,7 @@ func (i *IngestorServer) Start() error {
 
 	i.RepoInitializer = RepoInitializer{
 		Database: i.Database,
-		HttpClient: http.Client{
+		HTTPClient: http.Client{
 			Timeout: time.Second * 10,
 		},
 	}

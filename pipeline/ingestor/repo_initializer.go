@@ -23,7 +23,7 @@ type ActivationParams struct {
 
 type RepoInitializer struct {
 	Database   DataAccess
-	HttpClient http.Client
+	HTTPClient http.Client
 }
 
 func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
@@ -31,22 +31,25 @@ func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
 		Client:      authRepo.Client,
 		UnitTesting: false,
 	}
-	githubIssues, err := newGateway.GetClosedIssues(*authRepo.Repo.Owner.Login, *authRepo.Repo.Name)
+	issues, err := newGateway.GetClosedIssues(
+		*authRepo.Repo.Owner.Login,
+		*authRepo.Repo.Name,
+	)
 	if err != nil {
-		// TODO: Proper error handling should be evaluated for this method;
-		// possibly adjust to return an error variable.
-		utils.AppLog.Error(err.Error())
+		utils.AppLog.Error("add repo get issues", zap.Error(err))
 	}
-	// The Repo struct needs to be added to the Issue struct body - this is
-	// possibly a bug in the GitHub API.
-	for i := 0; i < len(githubIssues); i++ {
-		githubIssues[i].Repository = authRepo.Repo
+	// Adding the Repo to the Issue is to cover a GitHub API deficiency.
+	for i := 0; i < len(issues); i++ {
+		issues[i].Repository = authRepo.Repo
 	}
-	githubPulls, err := newGateway.GetClosedPulls(*authRepo.Repo.Owner.Login, *authRepo.Repo.Name)
+	pulls, err := newGateway.GetClosedPulls(
+		*authRepo.Repo.Owner.Login,
+		*authRepo.Repo.Name,
+	)
 	if err != nil {
-		utils.AppLog.Error(err.Error())
+		utils.AppLog.Error("add repo get pulls", zap.Error(err))
 	}
-	r.Database.BulkInsertIssuesPullRequests(githubIssues, githubPulls)
+	r.Database.BulkInsertIssuesPullRequests(issues, pulls)
 }
 
 func (r *RepoInitializer) RepositoryIntegrationExists(repoID int, appID int, installationID int) bool {
@@ -90,11 +93,10 @@ func (r *RepoInitializer) ActivateBackend(params ActivationParams) {
 		utils.AppLog.Error("failed to create http request", zap.Error(err))
 		return
 	}
-	resp, err := r.HttpClient.Do(req)
+	resp, err := r.HTTPClient.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
 		utils.AppLog.Error("failed internal post", zap.Error(err))
 		return
-	} else {
-		defer resp.Body.Close()
 	}
 }
