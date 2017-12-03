@@ -1,6 +1,8 @@
 package ingestor
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -29,7 +31,18 @@ func (r *repoInitializerDBStub) restartCheck(query string, repoID int) (int, int
 
 func (r *repoInitializerDBStub) ReadIntegrations() ([]Integration, error) { return nil, nil }
 
-func (r *repoInitializerDBStub) ReadIntegrationByRepoID(id int) (*Integration, error) { return nil, nil }
+func (r *repoInitializerDBStub) ReadIntegrationByRepoID(id int) (i *Integration, err error) {
+	// Each case is for each of the test repo IDs passed in for the unit test.
+	switch id {
+	case 1:
+		i, err = nil, sql.ErrNoRows
+	case 2:
+		i, err = nil, errors.New("stub read integration error")
+	case 3:
+		i, err = &Integration{}, nil
+	}
+	return
+}
 
 func (r *repoInitializerDBStub) InsertIssue(i github.Issue, action *string) {}
 
@@ -84,5 +97,32 @@ func TestAddRepo(t *testing.T) {
 	testRI.AddRepo(testAuthRepo)
 	if len(db.issues) != 2 && len(db.pulls) != 2 {
 		t.Error("inserting incorrect number of issues/pulls")
+	}
+}
+
+func TestRepoIntegrationExists(t *testing.T) {
+	tests := []struct {
+		id     int
+		result bool
+	}{
+		{1, false},
+		{2, false},
+		{3, true},
+	}
+
+	db := &repoInitializerDBStub{}
+	testRI := RepoInitializer{
+		Database: db,
+	}
+
+	for _, test := range tests {
+		result := testRI.RepoIntegrationExists(test.id)
+		if result != test.result {
+			t.Errorf(
+				"repo exists test error; received %v, wanted %v",
+				result,
+				test.result,
+			)
+		}
 	}
 }

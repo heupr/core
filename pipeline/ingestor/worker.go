@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/google/go-github/github"
-
 	"go.uber.org/zap"
 
 	"core/utils"
@@ -32,7 +31,7 @@ func (w *Worker) ProcessHeuprInstallationEvent(event HeuprInstallationEvent) {
 					return
 				}
 				repo := AuthenticatedRepo{Repo: githubRepo, Client: client}
-				if w.RepoInitializer.RepoIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {
+				if w.RepoInitializer.RepoIntegrationExists(*repo.Repo.ID) {
 					return
 				}
 				go w.RepoInitializer.AddRepo(repo)
@@ -52,7 +51,7 @@ func (w *Worker) ProcessHeuprInstallationRepositoriesEvent(event HeuprInstallati
 			client := NewClient(*e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
 			for i := 0; i < len(e.RepositoriesAdded); i++ {
 				repo := AuthenticatedRepo{Repo: e.RepositoriesAdded[i], Client: client}
-				if w.RepoInitializer.RepoIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {
+				if w.RepoInitializer.RepoIntegrationExists(*repo.Repo.ID) {
 					return
 				}
 				go w.RepoInitializer.AddRepo(repo)
@@ -63,7 +62,7 @@ func (w *Worker) ProcessHeuprInstallationRepositoriesEvent(event HeuprInstallati
 			client := NewClient(*e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
 			for i := 0; i < len(e.RepositoriesRemoved); i++ {
 				repo := AuthenticatedRepo{Repo: e.RepositoriesRemoved[i], Client: client}
-				if !w.RepoInitializer.RepoIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {
+				if !w.RepoInitializer.RepoIntegrationExists(*repo.Repo.ID) {
 					return
 				}
 				w.RepoInitializer.RemoveRepoIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
@@ -91,7 +90,10 @@ func (w *Worker) Start() {
 			case event := <-w.Work:
 				switch v := event.(type) {
 				case github.IssuesEvent:
-					//The Action that was performed. Can be one of "assigned", "unassigned", "labeled", "unlabeled", "opened", "edited", "milestoned", "demilestoned", "closed", or "reopened".
+					// The Action that was performed. Can be one of "assigned",
+					// "unassigned", "labeled", "unlabeled", "opened",
+					// "edited", "milestoned", "demilestoned", "closed", or
+					// "reopened".
 					v.Issue.Repository = v.Repo
 					if *v.Action == "edited" && *v.Issue.User.Login == "heupr[bot]" {
 						//go w.ProcessHeuprInteractionIssuesEvent(v)

@@ -52,13 +52,13 @@ func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
 	r.Database.BulkInsertIssuesPullRequests(issues, pulls)
 }
 
-func (r *RepoInitializer) RepoIntegrationExists(repoID, appID, installationID int) bool {
+func (r *RepoInitializer) RepoIntegrationExists(repoID int) bool {
 	_, err := r.Database.ReadIntegrationByRepoID(repoID)
 	switch {
 	case err == sql.ErrNoRows:
 		return false
 	case err != nil:
-		utils.AppLog.Error("integration read error", zap.Error(err))
+		utils.AppLog.Error("integration read by repo id error", zap.Error(err))
 		return false
 	default:
 		return true
