@@ -52,7 +52,7 @@ func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
 	r.Database.BulkInsertIssuesPullRequests(issues, pulls)
 }
 
-func (r *RepoInitializer) RepositoryIntegrationExists(repoID int, appID int, installationID int) bool {
+func (r *RepoInitializer) RepoIntegrationExists(repoID, appID, installationID int) bool {
 	_, err := r.Database.ReadIntegrationByRepoID(repoID)
 	switch {
 	case err == sql.ErrNoRows:
@@ -65,19 +65,19 @@ func (r *RepoInitializer) RepositoryIntegrationExists(repoID int, appID int, ins
 	}
 }
 
-func (r *RepoInitializer) AddRepositoryIntegration(repoID int, appID int, installationID int) {
+func (r *RepoInitializer) AddRepoIntegration(repoID, appID, installationID int) {
 	r.Database.InsertRepositoryIntegration(repoID, appID, installationID)
 }
 
-func (r *RepoInitializer) RemoveRepositoryIntegration(repoID int, appID int, installationID int) {
+func (r *RepoInitializer) RemoveRepoIntegration(repoID, appID, installationID int) {
 	r.Database.DeleteRepositoryIntegration(repoID, appID, installationID)
 }
 
-func (r *RepoInitializer) ObliterateIntegration(appID int, installationID int) {
+func (r *RepoInitializer) ObliterateIntegration(appID, installationID int) {
 	r.Database.ObliterateIntegration(appID, installationID)
 }
 
-func (r *RepoInitializer) RaiseRepositoryWelcomeIssue(authRepo AuthenticatedRepo, assignee string) {
+func (r *RepoInitializer) RaiseRepoWelcomeIssue(authRepo AuthenticatedRepo, assignee string) {
 	welcomeScreen := &github.IssueRequest{Title: github.String(WelcomeTitle), Body: github.String(fmt.Sprintf(WelcomeBody, time.Now().Format(time.RFC822))), Assignees: &[]string{assignee}}
 	authRepo.Client.Issues.Create(context.Background(), *authRepo.Repo.Owner.Login, *authRepo.Repo.Name, welcomeScreen)
 }

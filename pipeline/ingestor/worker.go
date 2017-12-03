@@ -32,12 +32,12 @@ func (w *Worker) ProcessHeuprInstallationEvent(event HeuprInstallationEvent) {
 					return
 				}
 				repo := AuthenticatedRepo{Repo: githubRepo, Client: client}
-				if w.RepoInitializer.RepositoryIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {
+				if w.RepoInitializer.RepoIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {
 					return
 				}
 				go w.RepoInitializer.AddRepo(repo)
-				w.RepoInitializer.AddRepositoryIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
-				w.RepoInitializer.RaiseRepositoryWelcomeIssue(repo, *event.Sender.Login)
+				w.RepoInitializer.AddRepoIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+				w.RepoInitializer.RaiseRepoWelcomeIssue(repo, *event.Sender.Login)
 			}
 		case "deleted":
 			w.RepoInitializer.ObliterateIntegration(*e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
@@ -52,21 +52,21 @@ func (w *Worker) ProcessHeuprInstallationRepositoriesEvent(event HeuprInstallati
 			client := NewClient(*e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
 			for i := 0; i < len(e.RepositoriesAdded); i++ {
 				repo := AuthenticatedRepo{Repo: e.RepositoriesAdded[i], Client: client}
-				if w.RepoInitializer.RepositoryIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {
+				if w.RepoInitializer.RepoIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {
 					return
 				}
 				go w.RepoInitializer.AddRepo(repo)
-				w.RepoInitializer.AddRepositoryIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
-				w.RepoInitializer.RaiseRepositoryWelcomeIssue(repo, *event.Sender.Login)
+				w.RepoInitializer.AddRepoIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+				w.RepoInitializer.RaiseRepoWelcomeIssue(repo, *event.Sender.Login)
 			}
 		case "removed":
 			client := NewClient(*e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
 			for i := 0; i < len(e.RepositoriesRemoved); i++ {
 				repo := AuthenticatedRepo{Repo: e.RepositoriesRemoved[i], Client: client}
-				if !w.RepoInitializer.RepositoryIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {
+				if !w.RepoInitializer.RepoIntegrationExists(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID) {
 					return
 				}
-				w.RepoInitializer.RemoveRepositoryIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+				w.RepoInitializer.RemoveRepoIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
 			}
 		}
 	}(event)
