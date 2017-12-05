@@ -7,9 +7,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/google/go-github/github"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest"
+
+	"core/utils"
 )
 
 type repoInitializerDBStub struct {
@@ -124,5 +130,42 @@ func TestRepoIntegrationExists(t *testing.T) {
 				test.result,
 			)
 		}
+	}
+}
+
+func TestActivateBackend(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/test-url", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, r)
+	})
+	server := httptest.NewServer(mux)
+	testURL, _ := url.Parse(server.URL + "/")
+
+	utils.Config.BackendActivationEndpoint = testURL.String()
+
+	params := ActivationParams{}
+	testRI := RepoInitializer{
+		HTTPClient: http.Client{},
+	}
+
+	buf := zaptest.Buffer{}
+	ws := zapcore.AddSync(&buf)
+	core := zapcore.NewCore(
+		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+		ws,
+		zapcore.DebugLevel,
+	)
+	logger := zap.New(core)
+	utils.AppLog = logger
+
+	testRI.ActivateBackend(params)
+
+	logs := buf.Lines()
+	if len(logs) > 0 {
+		full := strings.Split(logs[0], ",")
+		t.Error(
+			"activate backend logging error:",
+			strings.Trim(full[len(full)-1:][0], "}"),
+		)
 	}
 }
