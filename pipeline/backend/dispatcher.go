@@ -11,7 +11,7 @@ func (bs *BackendServer) Dispatcher(count int) {
 
 	go func() {
 		for {
-			work := <-Workload
+			work := <-workload
 			go func() {
 				workers := <-Workers
 				workers <- work

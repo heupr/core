@@ -1,11 +1,11 @@
 package backend
 
-var Workload = make(chan *RepoData, 100)
+var workload = make(chan *RepoData, 100)
 
-func Collector(repodata map[int]*RepoData) {
+func collector(repodata map[int]*RepoData) {
 	if len(repodata) != 0 {
 		for _, rd := range repodata {
-			Workload <- rd
+			workload <- rd
 		}
 	}
 }

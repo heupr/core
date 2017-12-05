@@ -128,7 +128,7 @@ func (bs *BackendServer) Timer(ender chan bool) {
 				if err != nil {
 					utils.AppLog.Error("backend timer", zap.Error(err))
 				}
-				Collector(data)
+				collector(data)
 			case <-ender:
 				ticker.Stop()
 				close(ender)
