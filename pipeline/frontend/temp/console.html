@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Heupr Console</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/css/bootstrap-select.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/js/bootstrap-select.min.js"></script>
+
+    <script>
+    $(document).ready(function() {
+      var numbers = ["label1", "label2", "label3"]; // TEMPORARY
+      var option = '';
+      for (var i=0;i<numbers.length;i++){
+         option += '<option value="'+ numbers[i] + '">' + numbers[i] + '</option>';
+      }
+      $(".selectpicker").append(option);
+    });
+    </script>
+
+    <style>
+      .navbar {
+        margin-bottom: 0;
+        border-radius: 0;
+        padding: 15px;
+        background-color: #DC143C;
+        border-color: #DC143C;
+      }
+
+      a.navbar-brand {
+        color: #FFFFFF;
+        font-weight: bold;
+        text-decoration: none;
+        font-size: 25px;
+      }
+
+      h2 {
+        margin-bottom: 30px;
+      }
+
+      h4 {
+        margin-top: 20px;
+      }
+
+      .glyphicon-info-sign {
+        color: #DC143C;
+      }
+
+      .form-group {
+        width: 220px;
+      }
+
+      .btn {
+        margin: 2px;
+      }
+
+      .btn-primary {
+        margin-top: 10px;
+      }
+
+      li {
+        margin: 4px;
+      }
+
+    </style>
+  </head>
+</html>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="#">Heupr</a>
+</nav>
+
+<div>
+  <div class="row">
+    <div class="col-sm-2"></div>
+    <form class="col-sm-8" id="label-settings" >
+      <h2>Label options</h2>
+
+      <hr>
+
+      <h4><small><span class="glyphicon glyphicon-info-sign" title="Labels applied to all newly raised issues"></span></small> Default label(s)</h4>
+
+      <div class="row">
+        <div class="col-sm-4">
+          <div class="dropdown">
+            <select class="selectpicker" id="default" data-live-search="true" multiple title="Select label(s)..."></select>
+          </div>
+        </div>
+      </div>
+
+      <h4><small><span class="glyphicon glyphicon-info-sign" title="Labels chosen by Heupr for newly raised issues"></span></small> Dynamic label(s)</h4>
+
+      <div class="row" id="bucket-row">
+        <div class="col-sm-4" id="bucket">
+          <div class="form-group">
+            <input type="text" class="form-control" id="description" placeholder="Bucket description">
+          </div>
+
+          <div class="dropdown">
+            <select class="selectpicker" data-live-search="true" multiple title="Select label(s)..."></select>
+          </div>
+
+          <small><span class="glyphicon glyphicon-info-sign" title="Add another class of labels"></span></small>
+          <span>
+            <button type="button" class="btn btn-primary" onclick="addBucket()">Add bucket</button>
+          </span>
+          <script>
+          function addBucket() {
+            var bckt = document.getElementById("bucket");
+            var cln = bckt.cloneNode(true);
+            cln.getElementsByClassName("form-control")[0].value = "";
+            document.getElementById("bucket-row").appendChild(cln);
+          }
+          </script>
+
+          <small><span class="glyphicon glyphicon-info-sign" title="Remove this class of labels"></span></small>
+          <span>
+            <button type="button" class="btn btn-primary" onclick="removeBucket(this)">Remove bucket</button>
+          </span>
+          <script>
+          function removeBucket(elmnt) {
+            var lst = document.getElementById("bucket-row");
+            var cnt = lst.childElementCount;
+            if (cnt == 1) {
+              alert("Cannot remove bucket");
+            } else {
+              var inpt = confirm("Are you sure you want to remove the bucket?");
+              if (inpt == true) {
+                lst.removeChild(elmnt.parentElement.parentElement);
+              }
+            }
+          }
+          </script>
+
+        </div>
+      </div>
+
+      <br>
+      <span>
+        <button type="button" class="btn btn-primary" onclick="save()">Save</button>
+      </span>
+      <script>
+      function save() {
+        var frm = document.getElementById("label-settings");
+      }
+      </script>
+
+    </form>
+    <div class="col-sm-2"></div>
+  </div>
+</div>
