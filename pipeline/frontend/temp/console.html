@@ -13,11 +13,11 @@
     <script>
     $(document).ready(function() {
       var numbers = ["label1", "label2", "label3"]; // TEMPORARY
-      var option = '';
+      var options = '';
       for (var i=0;i<numbers.length;i++){
-         option += '<option value="'+ numbers[i] + '">' + numbers[i] + '</option>';
+         options += '<option value="'+ numbers[i] + '">' + numbers[i] + '</option>';
       }
-      $(".selectpicker").append(option);
+      $(".selectpicker").append(options);
     });
     </script>
 
@@ -49,8 +49,13 @@
         color: #DC143C;
       }
 
-      .form-group {
+      .bucket {
+        margin-bottom: 10px;
+      }
+
+      .form-control {
         width: 220px;
+        margin-bottom: 2px;
       }
 
       .btn {
@@ -76,94 +81,81 @@
 <div>
   <div class="row">
     <div class="col-sm-2"></div>
-    <form class="col-sm-8" id="label-settings" action="#" method="POST" onsubmit="saveSettings(); return false">
-
-    <script>
-    function saveSettings() {
-      alert("HERE'S A TEST");
-    }
-    </script>
-
-      <h2>Label options</h2>
-
-      <hr>
-
-      <h4>
-        <small>
-          <span class="glyphicon glyphicon-info-sign" title="Labels applied to all newly raised issues"></span>
-        </small> Default label(s)
-      </h4>
-
-      <div class="row">
-        <div class="col-sm-4">
-          <div class="dropdown">
-            <select class="selectpicker" id="default" data-live-search="true" multiple="true" title="Select label(s)..."></select>
+    <div class="col-sm-8">
+      <form role="form" id="label-settings" action="#" method="POST">
+        <h2>Label options</h2>
+        <hr>
+        <h4>
+          <small>
+            <span class="glyphicon glyphicon-info-sign" title="Applied to all newly raised issues"></span>
+          </small> Default label(s)
+        </h4>
+        <div class="row" id="bucket-default">
+          <div class="col-sm-4">
+            <div>
+              <select class="selectpicker" data-live-search="true" multiple="true" title="Select label(s)..."></select>
+            </div>
           </div>
         </div>
-      </div>
-
-      <h4>
-        <small>
-          <span class="glyphicon glyphicon-info-sign" title="Labels chosen by Heupr for newly raised issues"></span>
-        </small> Dynamic label(s)
-      </h4>
-
-      <div class="row" id="bucket-row">
-        <div class="col-sm-4" id="bucket">
-          <div class="form-group">
-            <input type="text" class="form-control" placeholder="Bucket description">
-          </div>
-
-          <div class="dropdown">
-            <select class="selectpicker" data-live-search="true" multiple="true" title="Select label(s)..."></select>
-          </div>
-
+        <h4>
           <small>
-            <span class="glyphicon glyphicon-info-sign" title="Add another class of labels"></span>
-          </small>
+            <span class="glyphicon glyphicon-info-sign" title="Labels chosen by Heupr for newly raised issues"></span>
+          </small> Dynamic label(s)
+        </h4>
+        <div class="row" id="bucket-row">
+          <div class="col-sm-4 bucket" id="bucket">
+            <div>
+              <input class="form-control" type="text" placeholder="Bucket description">
+            </div>
 
-          <span>
-            <button type="button" class="btn btn-primary" onclick="addBucket()">Add bucket</button>
-          </span>
+            <div>
+              <select class="selectpicker" data-live-search="true" multiple="true" title="Select label(s)..."></select>
+            </div>
 
-          <script>
-          function addBucket() {
-            var bckt = document.getElementById("bucket");
-            var cln = bckt.cloneNode(true);
-            cln.getElementsByClassName("form-control")[0].value = "";
-            cln.setAttribute("id", "1");
-            document.getElementById("bucket-row").appendChild(cln);
-          }
-          </script>
+            <small>
+              <span class="glyphicon glyphicon-info-sign" title="Add another class of labels"></span>
+            </small>
 
-          <small><span class="glyphicon glyphicon-info-sign" title="Remove this class of labels"></span></small>
-          <span>
-            <button type="button" class="btn btn-primary" onclick="removeBucket(this)">Remove bucket</button>
-          </span>
+            <span>
+              <button class="btn btn-primary" type="button" onclick="addBucket()">Add bucket</button>
+            </span>
+            <script>
+            function addBucket() {
+              var cln = $("#bucket").clone();
+              cln.appendTo("#bucket-row");
+              cln.find(".form-control").val("");
+              cln.find(".bootstrap-select").replaceWith(function() { return $("select", this); });
+              cln.find("select").selectpicker();
+            }
+            </script>
 
-          <script>
-          function removeBucket(elmnt) {
-            var lst = document.getElementById("bucket-row");
-            var cnt = lst.childElementCount;
-            if (cnt == 1) {
-              alert("Cannot remove bucket");
-            } else {
-              var inpt = confirm("Are you sure you want to remove the bucket?");
-              if (inpt == true) {
-                lst.removeChild(elmnt.parentElement.parentElement);
+            <small>
+              <span class="glyphicon glyphicon-info-sign" title="Remove this class of labels"></span>
+            </small>
+
+            <span>
+              <button class="btn btn-primary" type="button" onclick="removeBucket(this)">Remove bucket</button>
+            </span>
+            <script>
+            function removeBucket(elmnt) {
+              var lst = document.getElementById("bucket-row");
+              var cnt = lst.childElementCount;
+              if (cnt == 1) {
+                alert("Cannot remove bucket");
+              } else {
+                var inpt = confirm("Are you sure you want to remove the bucket?");
+                if (inpt == true) {
+                  lst.removeChild(elmnt.parentElement.parentElement);
+                }
               }
             }
-          }
-          </script>
-
+            </script>
+          </div>
         </div>
-      </div>
-
-      <br>
-
-      <input type="submit" class="btn btn-primary" value="Save">
-
-    </form>
+        <br>
+        <input type="submit" class="btn btn-primary" value="Save">
+      </form>
+    </div>
     <div class="col-sm-2"></div>
   </div>
 </div>
