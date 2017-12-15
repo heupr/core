@@ -76,42 +76,62 @@
 <div>
   <div class="row">
     <div class="col-sm-2"></div>
-    <form class="col-sm-8" id="label-settings" >
+    <form class="col-sm-8" id="label-settings" action="#" method="POST" onsubmit="saveSettings(); return false">
+
+    <script>
+    function saveSettings() {
+      alert("HERE'S A TEST");
+    }
+    </script>
+
       <h2>Label options</h2>
 
       <hr>
 
-      <h4><small><span class="glyphicon glyphicon-info-sign" title="Labels applied to all newly raised issues"></span></small> Default label(s)</h4>
+      <h4>
+        <small>
+          <span class="glyphicon glyphicon-info-sign" title="Labels applied to all newly raised issues"></span>
+        </small> Default label(s)
+      </h4>
 
       <div class="row">
         <div class="col-sm-4">
           <div class="dropdown">
-            <select class="selectpicker" id="default" data-live-search="true" multiple title="Select label(s)..."></select>
+            <select class="selectpicker" id="default" data-live-search="true" multiple="true" title="Select label(s)..."></select>
           </div>
         </div>
       </div>
 
-      <h4><small><span class="glyphicon glyphicon-info-sign" title="Labels chosen by Heupr for newly raised issues"></span></small> Dynamic label(s)</h4>
+      <h4>
+        <small>
+          <span class="glyphicon glyphicon-info-sign" title="Labels chosen by Heupr for newly raised issues"></span>
+        </small> Dynamic label(s)
+      </h4>
 
       <div class="row" id="bucket-row">
         <div class="col-sm-4" id="bucket">
           <div class="form-group">
-            <input type="text" class="form-control" id="description" placeholder="Bucket description">
+            <input type="text" class="form-control" placeholder="Bucket description">
           </div>
 
           <div class="dropdown">
-            <select class="selectpicker" data-live-search="true" multiple title="Select label(s)..."></select>
+            <select class="selectpicker" data-live-search="true" multiple="true" title="Select label(s)..."></select>
           </div>
 
-          <small><span class="glyphicon glyphicon-info-sign" title="Add another class of labels"></span></small>
+          <small>
+            <span class="glyphicon glyphicon-info-sign" title="Add another class of labels"></span>
+          </small>
+
           <span>
             <button type="button" class="btn btn-primary" onclick="addBucket()">Add bucket</button>
           </span>
+
           <script>
           function addBucket() {
             var bckt = document.getElementById("bucket");
             var cln = bckt.cloneNode(true);
             cln.getElementsByClassName("form-control")[0].value = "";
+            cln.setAttribute("id", "1");
             document.getElementById("bucket-row").appendChild(cln);
           }
           </script>
@@ -120,6 +140,7 @@
           <span>
             <button type="button" class="btn btn-primary" onclick="removeBucket(this)">Remove bucket</button>
           </span>
+
           <script>
           function removeBucket(elmnt) {
             var lst = document.getElementById("bucket-row");
@@ -139,14 +160,8 @@
       </div>
 
       <br>
-      <span>
-        <button type="button" class="btn btn-primary" onclick="save()">Save</button>
-      </span>
-      <script>
-      function save() {
-        var frm = document.getElementById("label-settings");
-      }
-      </script>
+
+      <input type="submit" class="btn btn-primary" value="Save">
 
     </form>
     <div class="col-sm-2"></div>
