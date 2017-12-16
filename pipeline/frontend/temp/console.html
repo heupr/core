@@ -85,37 +85,18 @@
       <form role="form" id="label-settings" action="#" method="POST" onsubmit="saveSettings(); return false">
       <script>
       function saveSettings() {
-        $(".bucket").each(function() {
-          alert($(this).val());
+        var names = [];
+        $(".col-sm-4.bucket").each(function() {
+          names.push($(this).find(".form-control").val())
         });
-        // ------------------------
-        // var bckts = $(".bucket");
-        // alert(bckts.length);
-        // var descs = [];
-        // alert(descs.length);
-        // for (i = 0; i < bckts.length; i++) {
-        //   var bckt = bckts[i];
-        //   var desc = bckt.find(".form-control");
-        //   alert(desc);
-        // }
-        // -----------------------
-        // alert(bckts);
-        // var descs = [];
-        // alert(descs);
-        // for (var i = 0; i < bckts.length; i++) {
-        //   alert("LOOP");
-        //   var desc = bckts[i].find("form-control").val();
-        //   alert(desc);
-        //   descs.push(desc);
-        // }
-        // alert(descs);
-        // pull down all buckets description
-        // - for each description
-        // - - pull out text
-        // - - add to array
-        // - check array for duplicates and empty fields
-        // - - if true alert and exit function
-        // NOTE: onsubmit: "saveSettings(); return false"
+        names.sort();
+        var filtered = names.filter( function(v, i, a) {
+          return !i || v !== a[i-1];
+        });
+        if (names.length != filtered.length) {
+          alert("Please enter unique bucket descriptions");
+          return;
+        }
       }
       </script>
         <h2>Label options</h2>
@@ -140,7 +121,7 @@
         <div class="row" id="bucket-row">
           <div class="col-sm-4 bucket">
             <div>
-              <input class="form-control" type="text" placeholder="Bucket description">
+              <input class="form-control" type="text" name="description" placeholder="Bucket description">
             </div>
 
             <div>
