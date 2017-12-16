@@ -14,7 +14,7 @@
     $(document).ready(function() {
       var numbers = ["label1", "label2", "label3"]; // TEMPORARY
       var options = '';
-      for (var i=0;i<numbers.length;i++){
+      for (i=0;i<numbers.length;i++){
          options += '<option value="'+ numbers[i] + '">' + numbers[i] + '</option>';
       }
       $(".selectpicker").append(options);
@@ -82,9 +82,41 @@
   <div class="row">
     <div class="col-sm-2"></div>
     <div class="col-sm-8">
-      <form role="form" id="label-settings" action="#" method="POST">
+      <form role="form" id="label-settings" action="#" method="POST" onsubmit="saveSettings(); return false">
       <script>
-      // NOTE: onsubmit: "saveSettings(); return false"
+      function saveSettings() {
+        $(".bucket").each(function() {
+          alert($(this).val());
+        });
+        // ------------------------
+        // var bckts = $(".bucket");
+        // alert(bckts.length);
+        // var descs = [];
+        // alert(descs.length);
+        // for (i = 0; i < bckts.length; i++) {
+        //   var bckt = bckts[i];
+        //   var desc = bckt.find(".form-control");
+        //   alert(desc);
+        // }
+        // -----------------------
+        // alert(bckts);
+        // var descs = [];
+        // alert(descs);
+        // for (var i = 0; i < bckts.length; i++) {
+        //   alert("LOOP");
+        //   var desc = bckts[i].find("form-control").val();
+        //   alert(desc);
+        //   descs.push(desc);
+        // }
+        // alert(descs);
+        // pull down all buckets description
+        // - for each description
+        // - - pull out text
+        // - - add to array
+        // - check array for duplicates and empty fields
+        // - - if true alert and exit function
+        // NOTE: onsubmit: "saveSettings(); return false"
+      }
       </script>
         <h2>Label options</h2>
         <hr>

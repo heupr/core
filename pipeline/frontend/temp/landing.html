@@ -25,8 +25,38 @@
         font-size: 25px;
       }
 
+      .directory-container {
+        padding: 25px;
+      }
+
+      .disclosure-container {
+        padding: 25px;
+        position: fixed;
+        bottom: 0px;
+      }
+
+      a.directory-link {
+        color: #DC143C;
+        font-weight: bold;
+        text-decoration: none;
+        font-size: 20px;
+        margin: 4px;
+      }
+
+      a.disclosure-link {
+        color: #DC143C;
+        font-weight: normal;
+        text-decoration: none;
+        font-size: 16px;
+        margin: 4px;
+      }
+
+      h1 {
+        text-align: center;
+      }
+
       .sign-up {
-        margin: 25px;
+        margin-top: 50px;
         text-align: center;
       }
 
@@ -49,15 +79,30 @@
 <div>
   <div class="row">
     <div class="col-sm-2">
-      <!-- about (POSSIBLY IN NAVBAR)-->
-      <!-- console (POSSIBLY IN NAVBAR) -->
-      <!-- social media -->
-      <!-- terms / privacy -->
+      <div class="directory-container">
+        <div>
+          <a class="directory-link" href="#">docs</a>
+        </div>
+        <div>
+          <a class="directory-link" href="#">console</a>
+        </div>
+        <div>
+          <a class="directory-link" href="#">twitter</a>
+        </div>
+      </div>
+      <div class="disclosure-container">
+        <div>
+          <a class="disclosure-link" href="#">terms of service</a>
+        </div>
+        <div>
+          <a class="disclosure-link" href="#">privacy policy</a>
+        </div>
+      </div>
     </div>
     <div class="col-sm-8">
+      <h1>Welcome to Heupr!</h1>
       <!-- landing page intro -->
       <!-- gifs showing usage -->
-      <!-- sign up button -->
       <div class="sign-up">
         <button type="button" class="btn btn-primary btn-lg">SIGN UP NOW!</button>
       </div>
@@ -65,3 +110,18 @@
     <div class="col-sm-2"></div>
   </div>
 </div>
+
+<script>
+  window.productHuntUpcoming = {
+    appId: 131,
+    position: 'bottomRight',
+  };
+
+  (function(doc, scr, src, a, b) {
+    a = doc.createElement(scr);
+    b = doc.getElementsByTagName(scr)[0];
+    a.async = true;
+    a.src = src;
+    b.parentNode.insertBefore(a, b);
+  })(document, 'script', 'https://assets.producthunt.com/assets/upwigloader.js');
+</script>
