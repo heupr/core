@@ -1,9 +1,11 @@
 package frontend
 
 import (
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gorilla/schema"
+	"go.uber.org/zap"
 
 	"core/utils"
 )
@@ -20,6 +22,25 @@ const setup = `
     </body>
 </html>
 `
+
+func staticHandler(filepath string) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		data, err := ioutil.ReadFile(filepath)
+		if err != nil {
+			if PROD {
+				utils.SlackLog.Error(
+					"Error generating landing page",
+					zap.Error(err),
+				)
+			}
+			http.Redirect(w, r, "/", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(string(data)))
+	})
+}
 
 var decoder = schema.NewDecoder()
 

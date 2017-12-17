@@ -19,6 +19,30 @@ func init() {
 	*req = *r
 }
 
+func Test_staticHandler(t *testing.T) {
+	assert := assert.New(t)
+    
+    // More files/scenarios can be added here as desired.
+    tests := []struct {
+		filepath string
+		result   int
+	}{
+		{"", http.StatusInternalServerError},
+		{"website2/landing-page.html", http.StatusOK},
+		{"website2/docs.html", http.StatusOK},
+	}
+
+	for i := range tests {
+		rec := httptest.NewRecorder()
+		staticHandler(tests[i].filepath).ServeHTTP(rec, req)
+
+		assert.Equal(
+			tests[i].result, rec.Code,
+			fmt.Sprint("filepath", tests[i].filepath),
+		)
+	}
+}
+
 func Test_httpRedirect(t *testing.T) {
 	assert := assert.New(t)
 	rec := httptest.NewRecorder()
