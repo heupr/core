@@ -12,12 +12,18 @@
 
     <script>
     $(document).ready(function() {
-      var numbers = ["label1", "label2", "label3"]; // TEMPORARY
-      var options = '';
-      for (i=0;i<numbers.length;i++){
-         options += '<option value="'+ numbers[i] + '">' + numbers[i] + '</option>';
+      var animals = ["Bantha", "Eopie", "Dewback", "Ronto"]; // TEMPORARY
+      var labels = '';
+      for (i=0;i<animals.length;i++){
+         labels += '<option value="'+ animals[i] + '">' + animals[i] + '</option>';
       }
-      $(".selectpicker").append(options);
+      $(".selectpicker.labels").append(labels);
+      var droids = ["R2-D2", "C-3P0"]; // TEMPORARY
+      var repos = '';
+      for (i=0;i<droids.length;i++){
+        repos += '<option value="'+ droids[i] + '">' + droids[i] + '</option>';
+      }
+      $(".selectpicker.repos").append(repos);
     });
     </script>
 
@@ -100,6 +106,10 @@
         }
       }
       </script>
+        <h2>Select Repo</h2>
+        <div>
+          <select class="selectpicker repos" data-live-search="true" title="Select repo"></select>
+        </div>
         <h2>Label options</h2>
         <hr>
         <h4>
@@ -110,7 +120,7 @@
         <div class="row" id="bucket-default">
           <div class="col-sm-4">
             <div>
-              <select class="selectpicker" data-live-search="true" multiple="true" title="Select label(s)..."></select>
+              <select class="selectpicker labels" data-live-search="true" multiple="true" title="Select label(s)..."></select>
             </div>
           </div>
         </div>
@@ -126,7 +136,7 @@
             </div>
 
             <div>
-              <select class="selectpicker" data-live-search="true" multiple="true" title="Select label(s)..."></select>
+              <select class="selectpicker labels" data-live-search="true" multiple="true" title="Select label(s)..."></select>
             </div>
 
             <small>
