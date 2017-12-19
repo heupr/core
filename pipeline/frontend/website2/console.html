@@ -89,9 +89,16 @@
   <div class="row">
     <div class="col-sm-2"></div>
     <div class="col-sm-8">
+      <h2>Select Repo</h2>
+      <div>
+        <form role="form" id="repo-selection" action="#" method="POST">
+          <select class="selectpicker repos" data-live-search="true" onchange="this.form.submit()" title="Select repo"></select>
+        </form>
+      </div>
       <form role="form" id="label-settings" action="#" method="POST" onsubmit="saveSettings(); return false">
       <script>
       function saveSettings() {
+        // NOTE: This is a crude check to ensure unique bucket names are used.
         var names = [];
         $(".col-sm-4.bucket").each(function() {
           names.push($(this).find(".form-control").val())
@@ -106,10 +113,6 @@
         }
       }
       </script>
-        <h2>Select Repo</h2>
-        <div>
-          <select class="selectpicker repos" data-live-search="true" title="Select repo"></select>
-        </div>
         <h2>Label options</h2>
         <hr>
         <h4>
