@@ -5,8 +5,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
+	"github.com/google/go-github/github"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,6 +61,48 @@ func Test_staticHandler(t *testing.T) {
 		assert.Equal(
 			tests[i].result, rec.Code,
 			fmt.Sprint("filepath", tests[i].filepath),
+		)
+	}
+}
+
+func Test_consoleHandler(t *testing.T) {
+	// Dummy GitHub server to return values for ListUserInstallations.
+	mux := http.NewServeMux()
+	mux.HandleFunc("/user/installations", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"installations":[{"id":65},{"id":66}]}`)
+	})
+	server := httptest.NewServer(mux)
+	testURL, _ := url.Parse(server.URL + "/")
+
+	newClient = func(code string) (*github.Client, error) {
+		c := github.NewClient(nil)
+		c.BaseURL = testURL
+		c.UploadURL = testURL
+		return c, nil
+	}
+
+	assert := assert.New(t)
+	handler := http.HandlerFunc(consoleHandler)
+
+	tests := []struct {
+		method string
+		state  string
+		result int
+	}{
+		{"GET", "", http.StatusTemporaryRedirect},
+		{"GET", oauthState, http.StatusOK},
+	}
+
+	for i := range tests {
+		req.Method = tests[i].method
+		req.Form = url.Values{}
+		req.Form.Set("state", tests[i].state)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+
+		assert.Equal(
+			tests[i].result, rec.Code,
+			fmt.Sprint("method", tests[i].method),
 		)
 	}
 }
