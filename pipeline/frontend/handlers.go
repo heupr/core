@@ -71,6 +71,16 @@ var newClient = func(code string) (*github.Client, error) {
 	return client, nil
 }
 
+type option struct {
+	Value int
+	Name  string
+}
+
+type dropdowns struct {
+	repos  []option
+	labels []option
+}
+
 func consoleHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		if oauthState != r.FormValue("state") {
@@ -89,17 +99,27 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		opts := &github.ListOptions{PerPage: 100}
-		installs := []*github.Installation{}
+		repoOptions := []option{}
 		for {
-			inst, resp, err := client.Apps.ListUserInstallations(
+			repos, resp, err := client.Apps.ListUserRepos(
 				context.Background(),
+				5535,
 				opts,
 			)
 			if err != nil {
 				http.Redirect(w, r, "/", http.StatusInternalServerError)
-				return
+				utils.AppLog.Error(
+					"error collecting user repos",
+					zap.Error(err),
+				)
 			}
-			installs = append(installs, inst...)
+			for i := range repos {
+				repoOptions = append(repoOptions, option{
+					Value: *repos[i].ID,
+					Name:  *repos[i].FullName,
+				})
+			}
+
 			if resp.NextPage == 0 {
 				break
 			} else {
@@ -107,6 +127,14 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// TODO:
+		// - Add repoOptions to a dropdown struct (repos field)
+		// - Build logic for looping/catching all repo labels
+		// - Place into options and onto dropdown struct (labels field)
+		// - The ReadFile below will change to a template ParseFile
+		// - Execute template w/ the collected dropdown struct data
+		// - Make changes to the console.html file
+		// - https://www.socketloop.com/tutorials/golang-populate-dropdown-with-html-template-example
 		data, err := ioutil.ReadFile("website2/console.html")
 		if err != nil {
 			if PROD {

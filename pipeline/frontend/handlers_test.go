@@ -29,16 +29,7 @@ func Test_httpRedirect(t *testing.T) {
 	handler.ServeHTTP(rec, req)
 
 	// This redirects from the non-PROD else check in the production code.
-	wanted := http.StatusMovedPermanently
-	received := rec.Code
-
-	assert.Equal(
-		wanted, received,
-		fmt.Sprintf(
-			"handler returning incorrect status code; received %v, wanted %v",
-			received, wanted,
-		),
-	)
+	assert.Equal(http.StatusMovedPermanently, rec.Code, nil)
 }
 
 func Test_staticHandler(t *testing.T) {
@@ -60,7 +51,7 @@ func Test_staticHandler(t *testing.T) {
 
 		assert.Equal(
 			tests[i].result, rec.Code,
-			fmt.Sprint("filepath", tests[i].filepath),
+			fmt.Sprint("filepath ", tests[i].filepath),
 		)
 	}
 }
@@ -68,8 +59,8 @@ func Test_staticHandler(t *testing.T) {
 func Test_consoleHandler(t *testing.T) {
 	// Dummy GitHub server to return values for ListUserInstallations.
 	mux := http.NewServeMux()
-	mux.HandleFunc("/user/installations", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{"installations":[{"id":65},{"id":66}]}`)
+	mux.HandleFunc("/user/installations/5535/repositories", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"repositories":[{"id":65,"full_name":"contingency/chancellor"},{"id":66,"full_name":"jedi"}]}`)
 	})
 	server := httptest.NewServer(mux)
 	testURL, _ := url.Parse(server.URL + "/")
@@ -85,12 +76,13 @@ func Test_consoleHandler(t *testing.T) {
 	handler := http.HandlerFunc(consoleHandler)
 
 	tests := []struct {
+		name   string
 		method string
 		state  string
 		result int
 	}{
-		{"GET", "", http.StatusTemporaryRedirect},
-		{"GET", oauthState, http.StatusOK},
+		{"GET without state", "GET", "", http.StatusTemporaryRedirect},
+		{"passing GET", "GET", oauthState, http.StatusOK},
 	}
 
 	for i := range tests {
@@ -102,7 +94,7 @@ func Test_consoleHandler(t *testing.T) {
 
 		assert.Equal(
 			tests[i].result, rec.Code,
-			fmt.Sprint("method", tests[i].method),
+			fmt.Sprint(tests[i].name),
 		)
 	}
 }
