@@ -18,12 +18,6 @@
          labels += '<option value="'+ animals[i] + '">' + animals[i] + '</option>';
       }
       $(".selectpicker.labels").append(labels);
-      var droids = ["R2-D2", "C-3P0"]; // TEMPORARY
-      var repos = '';
-      for (i=0;i<droids.length;i++){
-        repos += '<option value="'+ droids[i] + '">' + droids[i] + '</option>';
-      }
-      $(".selectpicker.repos").append(repos);
     });
     </script>
 
@@ -92,7 +86,11 @@
       <h2>Select Repo</h2>
       <div>
         <form role="form" id="repo-selection" action="#" method="POST">
-          <select class="selectpicker repos" data-live-search="true" onchange="this.form.submit()" title="Select repo"></select>
+          <select class="selectpicker repos" data-live-search="true" onchange="this.form.submit()" title="Select repo">
+          {{ range $key, $value := .Repos }}
+            <option value="{{ $key }}">{{ $value }}</option>
+          {{ end }}
+          </select>
         </form>
       </div>
       <form role="form" id="label-settings" action="#" method="POST" onsubmit="saveSettings(); return false">

@@ -71,14 +71,10 @@ var newClient = func(code string) (*github.Client, error) {
 	return client, nil
 }
 
-type option struct {
-	Value int
-	Name  string
-}
-
-type dropdowns struct {
-	repos  []option
-	labels []option
+// Dropdowns is a holder for information to be populated into the template.
+type Dropdowns struct {
+	Repos  map[int]string
+	Labels map[int]string
 }
 
 func consoleHandler(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +95,7 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		opts := &github.ListOptions{PerPage: 100}
-		repoOptions := []option{}
+		repoOptions := make(map[int]string)
 		for {
 			repos, resp, err := client.Apps.ListUserRepos(
 				context.Background(),
@@ -114,10 +110,7 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 				)
 			}
 			for i := range repos {
-				repoOptions = append(repoOptions, option{
-					Value: *repos[i].ID,
-					Name:  *repos[i].FullName,
-				})
+				repoOptions[*repos[i].ID] = *repos[i].FullName
 			}
 
 			if resp.NextPage == 0 {
