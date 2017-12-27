@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"testing"
 
 	"github.com/google/go-github/github"
@@ -60,7 +61,13 @@ func Test_consoleHandler(t *testing.T) {
 	// Dummy GitHub server to return values for ListUserInstallations.
 	mux := http.NewServeMux()
 	mux.HandleFunc("/user/installations/5535/repositories", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{"repositories":[{"id":65,"full_name":"contingency/chancellor"},{"id":66,"full_name":"jedi"}]}`)
+		fmt.Fprint(w, `{"repositories":[{"id":-65,"full_name":"contingency/chancellor"},{"id":-66,"full_name":"contingency/jedi"}]}`)
+	})
+	mux.HandleFunc("/repos/contingency/chancellor/labels", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `[{"name":"do-not-use"}]`)
+	})
+	mux.HandleFunc("/repos/contingency/jedi/labels", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `[{"name":"definitely-use"}]`)
 	})
 	server := httptest.NewServer(mux)
 	testURL, _ := url.Parse(server.URL + "/")
@@ -78,17 +85,35 @@ func Test_consoleHandler(t *testing.T) {
 	tests := []struct {
 		name   string
 		method string
-		state  string
+		forms  map[string]string
 		result int
 	}{
-		{"GET without state", "GET", "", http.StatusTemporaryRedirect},
-		{"passing GET", "GET", oauthState, http.StatusOK},
+		{
+			"GET without state",
+			"GET",
+			map[string]string{"state": ""},
+			http.StatusTemporaryRedirect,
+		},
+		{
+			"passing GET",
+			"GET",
+			map[string]string{"state": oauthState},
+			http.StatusOK,
+		},
+		{
+			"POST without state",
+			"POST",
+			map[string]string{"state": ""},
+			http.StatusTemporaryRedirect,
+		},
 	}
 
 	for i := range tests {
 		req.Method = tests[i].method
 		req.Form = url.Values{}
-		req.Form.Set("state", tests[i].state)
+		for k, v := range tests[i].forms {
+			req.Form.Set(k, v)
+		}
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
 
@@ -96,6 +121,13 @@ func Test_consoleHandler(t *testing.T) {
 			tests[i].result, rec.Code,
 			fmt.Sprint(tests[i].name),
 		)
+		nums := []string{"-65", "-66"}
+		for i := range nums {
+			filename := nums[i] + "_github.gob"
+			if _, err := os.Stat(filename); err == nil {
+				os.Remove(filename)
+			}
+		}
 	}
 }
 

@@ -2,9 +2,14 @@ package frontend
 
 import (
 	"context"
+	"encoding/gob"
+	"fmt" // TEMPORARY
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/google/go-github/github"
 	"github.com/gorilla/schema"
@@ -72,10 +77,15 @@ var newClient = func(code string) (*github.Client, error) {
 	return client, nil
 }
 
+type storage struct {
+	Name   string
+	Labels []string
+}
+
 // Dropdowns is a holder for information to be populated into the template.
 type Dropdowns struct {
 	Repos  map[int]string
-	Labels map[int]string
+	Labels map[int][]string
 }
 
 func consoleHandler(w http.ResponseWriter, r *http.Request) {
@@ -96,9 +106,9 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		opts := &github.ListOptions{PerPage: 100}
-		repoOptions := make(map[int]string)
+		repos := make(map[int]string)
 		for {
-			repos, resp, err := client.Apps.ListUserRepos(
+			rep, resp, err := client.Apps.ListUserRepos(
 				context.Background(),
 				5535,
 				opts,
@@ -110,8 +120,8 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 					zap.Error(err),
 				)
 			}
-			for i := range repos {
-				repoOptions[*repos[i].ID] = *repos[i].FullName
+			for i := range rep {
+				repos[*rep[i].ID] = *rep[i].FullName
 			}
 
 			if resp.NextPage == 0 {
@@ -121,8 +131,62 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		opts = &github.ListOptions{PerPage: 100}
+		labels := make(map[int][]string)
+		for key, value := range repos {
+			fullname := strings.Split(value, "/")
+			for {
+				l, resp, err := client.Issues.ListLabels(
+					context.Background(),
+					fullname[0],
+					fullname[1],
+					opts,
+				)
+				if err != nil {
+					http.Redirect(w, r, "/", http.StatusInternalServerError)
+					utils.AppLog.Error(
+						"error collecting repo labels",
+						zap.Error(err),
+					)
+				}
+				for i := range l {
+					labels[key] = append(labels[key], *l[i].Name)
+				}
+
+				if resp.NextPage == 0 {
+					break
+				} else {
+					opts.Page = resp.NextPage
+				}
+			}
+		}
+
+		for id, name := range repos {
+			file, err := os.Create(strconv.Itoa(id) + "_github.gob")
+			defer file.Close()
+			if err != nil {
+				http.Redirect(w, r, "/", http.StatusInternalServerError)
+				utils.AppLog.Error(
+					"error creating github info file",
+					zap.Error(err),
+				)
+			}
+			s := storage{
+				Name:   name,
+				Labels: labels[id],
+			}
+			encoder := gob.NewEncoder(file)
+			if err := encoder.Encode(s); err != nil {
+				http.Redirect(w, r, "/", http.StatusInternalServerError)
+				utils.AppLog.Error(
+					"error encoding github info to file",
+					zap.Error(err),
+				)
+			}
+		}
+
 		dropdowns := Dropdowns{
-			Repos: repoOptions,
+			Repos: repos,
 		}
 
 		t, err := template.ParseFiles("website2/console.html")
@@ -139,11 +203,18 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 		t.Execute(w, dropdowns)
 	} else if r.Method == "POST" {
 		r.ParseForm()
-		// if r.Form["id"] == "repo-selection" {
-		// 	// populate label dropdowns
-		// } else if r.Form["id"] == "label-settings" {
-		// 	// collect data received into "snapshot"
-		// }
+		if r.Form["state"][0] != oauthState {
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+			return
+		}
+
+		if r.Form["repo-selection"] != nil {
+			fmt.Println("HERE") // TEMPORARY
+			// populate label dropdowns from GitHub storage
+		} else {
+			fmt.Println("ELSE") // TEMPORARY
+			// collect label selections into "snapshot"
+		}
 	}
 }
 
