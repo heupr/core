@@ -3,11 +3,12 @@ package frontend
 import (
 	"context"
 	"encoding/gob"
-	"fmt" // TEMPORARY
+	// "fmt" // TEMPORARY
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -19,6 +20,8 @@ import (
 
 	"core/utils"
 )
+
+// TODO: Add in consts for HTTP statuses.
 
 func httpRedirect(w http.ResponseWriter, r *http.Request) {
 	if PROD {
@@ -88,7 +91,7 @@ type Dropdowns struct {
 	Labels map[int][]string
 }
 
-func consoleHandler(w http.ResponseWriter, r *http.Request) {
+func reposHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		if oauthState != r.FormValue("state") {
 			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
@@ -107,12 +110,9 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 
 		opts := &github.ListOptions{PerPage: 100}
 		repos := make(map[int]string)
+		ctx := context.Background()
 		for {
-			rep, resp, err := client.Apps.ListUserRepos(
-				context.Background(),
-				5535,
-				opts,
-			)
+			repo, resp, err := client.Apps.ListUserRepos(ctx, 5535, opts)
 			if err != nil {
 				http.Redirect(w, r, "/", http.StatusInternalServerError)
 				utils.AppLog.Error(
@@ -120,8 +120,8 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 					zap.Error(err),
 				)
 			}
-			for i := range rep {
-				repos[*rep[i].ID] = *rep[i].FullName
+			for i := range repo {
+				repos[*repo[i].ID] = *repo[i].FullName
 			}
 
 			if resp.NextPage == 0 {
@@ -134,12 +134,12 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 		opts = &github.ListOptions{PerPage: 100}
 		labels := make(map[int][]string)
 		for key, value := range repos {
-			fullname := strings.Split(value, "/")
+			name := strings.Split(value, "/")
 			for {
 				l, resp, err := client.Issues.ListLabels(
-					context.Background(),
-					fullname[0],
-					fullname[1],
+					ctx,
+					name[0],
+					name[1],
 					opts,
 				)
 				if err != nil {
@@ -162,6 +162,7 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for id, name := range repos {
+			// TODO: Check to see if the file exists.
 			file, err := os.Create(strconv.Itoa(id) + "_github.gob")
 			defer file.Close()
 			if err != nil {
@@ -185,6 +186,7 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// NOTE: Possibly change to an anonymous struct.
 		dropdowns := Dropdowns{
 			Repos: repos,
 		}
@@ -192,29 +194,61 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 		t, err := template.ParseFiles("website2/console.html")
 		if err != nil {
 			if PROD {
-				utils.SlackLog.Error(
-					"Error generating console page",
-					zap.Error(err),
-				)
+				utils.SlackLog.Error("Repos selection page", zap.Error(err))
 			}
 			http.Redirect(w, r, "/", http.StatusInternalServerError)
 			return
 		}
 		t.Execute(w, dropdowns)
-	} else if r.Method == "POST" {
+	}
+}
+
+func consoleHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
 		r.ParseForm()
 		if r.Form["state"][0] != oauthState {
 			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 			return
 		}
 
-		if r.Form["repo-selection"] != nil {
-			fmt.Println("HERE") // TEMPORARY
-			// populate label dropdowns from GitHub storage
-		} else {
-			fmt.Println("ELSE") // TEMPORARY
-			// collect label selections into "snapshot"
+		repo := r.Form["repo-selection"][0]
+		if repo == "" {
+			http.Redirect(w, r, "/", http.StatusBadRequest)
+			return
 		}
+
+		githubFile, settingsFile := "", ""
+		err := filepath.Walk(
+			"./",
+			func(path string, info os.FileInfo, err error) error {
+				if filepath.Ext(path) == ".gob" {
+					parts := strings.Split(path, "_")
+					if parts[0] == repo {
+						switch parts[1] {
+						case "github.gob":
+							githubFile = path
+						case "settings.gob":
+							settingsFile = path
+						}
+					}
+				}
+				return nil
+			})
+		if err != nil {
+			http.Redirect(w, r, "/", http.StatusInternalServerError)
+			return
+		}
+		// TODO: populate label dropdowns from GitHub storage
+		// [X] retrieve GitHub repo ID
+		// [X] pull in GitHub files w/ matching ID
+		// [X] pull in settings files w/ matching ID
+		// [ ] conflate file contents in-memory
+		// [ ] populate into template
+		// [ ] execute template
+		// TODO: collect label selections into "snapshot"
+	} else {
+		http.Redirect(w, r, "/", http.StatusBadRequest)
+		return
 	}
 }
 

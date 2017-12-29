@@ -57,7 +57,7 @@ func Test_staticHandler(t *testing.T) {
 	}
 }
 
-func Test_consoleHandler(t *testing.T) {
+func Test_reposHandler(t *testing.T) {
 	// Dummy GitHub server to return values for ListUserInstallations.
 	mux := http.NewServeMux()
 	mux.HandleFunc("/user/installations/5535/repositories", func(w http.ResponseWriter, r *http.Request) {
@@ -69,6 +69,7 @@ func Test_consoleHandler(t *testing.T) {
 	mux.HandleFunc("/repos/contingency/jedi/labels", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `[{"name":"definitely-use"}]`)
 	})
+
 	server := httptest.NewServer(mux)
 	testURL, _ := url.Parse(server.URL + "/")
 
@@ -80,7 +81,7 @@ func Test_consoleHandler(t *testing.T) {
 	}
 
 	assert := assert.New(t)
-	handler := http.HandlerFunc(consoleHandler)
+	handler := http.HandlerFunc(reposHandler)
 
 	tests := []struct {
 		name   string
@@ -100,11 +101,58 @@ func Test_consoleHandler(t *testing.T) {
 			map[string]string{"state": oauthState},
 			http.StatusOK,
 		},
+	}
+
+	for i := range tests {
+		req.Method = tests[i].method
+		req.Form = url.Values{}
+		for k, v := range tests[i].forms {
+			req.Form.Set(k, v)
+		}
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+
+		assert.Equal(
+			tests[i].result, rec.Code,
+			fmt.Sprint(tests[i].name),
+		)
+		nums := []string{"-65", "-66"}
+		for i := range nums {
+			filename := nums[i] + "_github.gob"
+			if _, err := os.Stat(filename); err == nil {
+				os.Remove(filename)
+			}
+		}
+	}
+}
+
+func Test_consoleHandler(t *testing.T) {
+	assert := assert.New(t)
+	handler := http.HandlerFunc(consoleHandler)
+
+	tests := []struct {
+		name   string
+		method string
+		forms  map[string]string
+		result int
+	}{
+		{
+			"reject GET method",
+			"GET",
+			map[string]string{"state": ""},
+			http.StatusBadRequest,
+		},
 		{
 			"POST without state",
 			"POST",
 			map[string]string{"state": ""},
 			http.StatusTemporaryRedirect,
+		},
+		{
+			"POST with state",
+			"POST",
+			map[string]string{"state": oauthState, "repo-selection": "1"},
+			http.StatusOK, // TEMPORARY
 		},
 	}
 
