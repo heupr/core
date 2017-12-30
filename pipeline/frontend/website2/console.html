@@ -9,18 +9,6 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/js/bootstrap-select.min.js"></script>
-
-    <script>
-    $(document).ready(function() {
-      var animals = ["Bantha", "Eopie", "Dewback", "Ronto"]; // TEMPORARY
-      var labels = '';
-      for (i=0;i<animals.length;i++){
-         labels += '<option value="'+ animals[i] + '">' + animals[i] + '</option>';
-      }
-      $(".selectpicker.labels").append(labels);
-    });
-    </script>
-
     <style>
       .navbar {
         margin-bottom: 0;
@@ -111,6 +99,8 @@
         <div class="row" id="bucket-default">
           <div class="col-sm-4">
             <div>
+              {{ }}
+
               <select class="selectpicker labels" data-live-search="true" multiple="true" title="Select label(s)..."></select>
             </div>
           </div>

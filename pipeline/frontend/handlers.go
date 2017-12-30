@@ -21,6 +21,11 @@ import (
 	"core/utils"
 )
 
+// TODO: Add in uniformed error handling function.
+// [ ] PROD boolean (generates Slack message)
+// [ ] accepts error type argument
+// [ ] returns redirect w/ arguments
+
 // TODO: Add in consts for HTTP statuses.
 
 func httpRedirect(w http.ResponseWriter, r *http.Request) {
@@ -81,8 +86,9 @@ var newClient = func(code string) (*github.Client, error) {
 }
 
 type storage struct {
-	Name   string
-	Labels []string
+	Name       string
+	Labels     []string
+	Selections map[string][]string
 }
 
 // Dropdowns is a holder for information to be populated into the template.
@@ -100,11 +106,11 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 		code := r.FormValue("code")
 		client, err := newClient(code)
 		if err != nil {
-			http.Redirect(w, r, "/", http.StatusInternalServerError)
 			utils.AppLog.Error(
 				"failure creating frontend client",
 				zap.Error(err),
 			)
+			http.Redirect(w, r, "/", http.StatusInternalServerError)
 			return
 		}
 
@@ -114,11 +120,12 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 		for {
 			repo, resp, err := client.Apps.ListUserRepos(ctx, 5535, opts)
 			if err != nil {
-				http.Redirect(w, r, "/", http.StatusInternalServerError)
 				utils.AppLog.Error(
 					"error collecting user repos",
 					zap.Error(err),
 				)
+				http.Redirect(w, r, "/", http.StatusInternalServerError)
+				return
 			}
 			for i := range repo {
 				repos[*repo[i].ID] = *repo[i].FullName
@@ -143,11 +150,12 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 					opts,
 				)
 				if err != nil {
-					http.Redirect(w, r, "/", http.StatusInternalServerError)
 					utils.AppLog.Error(
 						"error collecting repo labels",
 						zap.Error(err),
 					)
+					http.Redirect(w, r, "/", http.StatusInternalServerError)
+					return
 				}
 				for i := range l {
 					labels[key] = append(labels[key], *l[i].Name)
@@ -162,27 +170,49 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for id, name := range repos {
-			// TODO: Check to see if the file exists.
-			file, err := os.Create(strconv.Itoa(id) + "_github.gob")
-			defer file.Close()
+			file := &os.File{}
+			filename := strconv.Itoa(id) + "_github.gob"
+			_, err := os.Stat(filename)
 			if err != nil {
-				http.Redirect(w, r, "/", http.StatusInternalServerError)
+				if os.IsNotExist(err) {
+					file, err = os.Create(filename)
+					defer file.Close()
+					if err != nil {
+						utils.AppLog.Error(
+							"error creating github info file",
+							zap.Error(err),
+						)
+						http.Redirect(
+							w,
+							r,
+							"/",
+							http.StatusInternalServerError,
+						)
+						return
+					}
+				}
+			}
+			if err := os.Truncate(filename, 0); err != nil {
 				utils.AppLog.Error(
-					"error creating github info file",
+					"error truncating github info file",
 					zap.Error(err),
 				)
+				http.Redirect(w, r, "/", http.StatusInternalServerError)
+				return
 			}
+
 			s := storage{
 				Name:   name,
 				Labels: labels[id],
 			}
 			encoder := gob.NewEncoder(file)
 			if err := encoder.Encode(s); err != nil {
-				http.Redirect(w, r, "/", http.StatusInternalServerError)
 				utils.AppLog.Error(
 					"error encoding github info to file",
 					zap.Error(err),
 				)
+				http.Redirect(w, r, "/", http.StatusInternalServerError)
+				return
 			}
 		}
 
@@ -191,7 +221,7 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 			Repos: repos,
 		}
 
-		t, err := template.ParseFiles("website2/console.html")
+		t, err := template.ParseFiles("website2/repos.html")
 		if err != nil {
 			if PROD {
 				utils.SlackLog.Error("Repos selection page", zap.Error(err))
@@ -217,20 +247,13 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		githubFile, settingsFile := "", ""
+		files := []string{}
 		err := filepath.Walk(
 			"./",
 			func(path string, info os.FileInfo, err error) error {
-				if filepath.Ext(path) == ".gob" {
-					parts := strings.Split(path, "_")
-					if parts[0] == repo {
-						switch parts[1] {
-						case "github.gob":
-							githubFile = path
-						case "settings.gob":
-							settingsFile = path
-						}
-					}
+				parts := strings.Split(path, "_")
+				if filepath.Ext(path) == ".gob" && parts[0] == repo {
+					files = append(files, path)
 				}
 				return nil
 			})
@@ -238,14 +261,28 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/", http.StatusInternalServerError)
 			return
 		}
+
+		for i := range files {
+			f, err := os.Open(files[i])
+			if err != nil {
+				http.Redirect(w, r, "/", http.StatusInternalServerError)
+				return
+			}
+			decoder := gob.NewDecoder(f)
+			s := storage{}
+			decoder.Decode(&s)
+		}
+
 		// TODO: populate label dropdowns from GitHub storage
 		// [X] retrieve GitHub repo ID
 		// [X] pull in GitHub files w/ matching ID
 		// [X] pull in settings files w/ matching ID
-		// [ ] conflate file contents in-memory
+		// [X] collect data from both files
+		// [X] conflate file contents in-memory
 		// [ ] populate into template
 		// [ ] execute template
 		// TODO: collect label selections into "snapshot"
+
 	} else {
 		http.Redirect(w, r, "/", http.StatusBadRequest)
 		return
