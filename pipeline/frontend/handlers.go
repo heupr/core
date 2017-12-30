@@ -3,7 +3,7 @@ package frontend
 import (
 	"context"
 	"encoding/gob"
-	// "fmt" // TEMPORARY
+	"fmt" // TEMPORARY
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -170,49 +170,52 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for id, name := range repos {
-			file := &os.File{}
-			filename := strconv.Itoa(id) + "_github.gob"
-			_, err := os.Stat(filename)
-			if err != nil {
-				if os.IsNotExist(err) {
-					file, err = os.Create(filename)
-					defer file.Close()
-					if err != nil {
-						utils.AppLog.Error(
-							"error creating github info file",
-							zap.Error(err),
-						)
-						http.Redirect(
-							w,
-							r,
-							"/",
-							http.StatusInternalServerError,
-						)
-						return
-					}
+			filename := strconv.Itoa(id) + ".gob"
+			if _, err := os.Stat(filename); os.IsNotExist(err) {
+				file, err := os.Create(filename)
+				defer file.Close()
+				if err != nil {
+					utils.AppLog.Error(
+						"error creating storage file",
+						zap.Error(err),
+					)
+					http.Redirect(w, r, "/", http.StatusInternalServerError)
+					return
 				}
-			}
-			if err := os.Truncate(filename, 0); err != nil {
-				utils.AppLog.Error(
-					"error truncating github info file",
-					zap.Error(err),
-				)
-				http.Redirect(w, r, "/", http.StatusInternalServerError)
-				return
-			}
 
-			s := storage{
-				Name:   name,
-				Labels: labels[id],
-			}
-			encoder := gob.NewEncoder(file)
-			if err := encoder.Encode(s); err != nil {
-				utils.AppLog.Error(
-					"error encoding github info to file",
-					zap.Error(err),
-				)
-				http.Redirect(w, r, "/", http.StatusInternalServerError)
-				return
+				s := storage{
+					Name:   name,
+					Labels: labels[id],
+				}
+				encoder := gob.NewEncoder(file)
+				if err := encoder.Encode(s); err != nil {
+					utils.AppLog.Error(
+						"error encoding info to new file",
+						zap.Error(err),
+					)
+					http.Redirect(w, r, "/", http.StatusInternalServerError)
+					return
+				}
+			} else {
+				file, err := os.Open(filename)
+				defer file.Close()
+				if err != nil {
+					http.Redirect(w, r, "/", http.StatusInternalServerError)
+					return
+				}
+				decoder := gob.NewDecoder(file)
+				s := storage{}
+				decoder.Decode(&s)
+				s.Labels = labels[id]
+				encoder := gob.NewEncoder(file)
+				if err := encoder.Encode(s); err != nil {
+					utils.AppLog.Error(
+						"error re-encoding info to file",
+						zap.Error(err),
+					)
+					http.Redirect(w, r, "/", http.StatusInternalServerError)
+					return
+				}
 			}
 		}
 
@@ -247,13 +250,13 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		files := []string{}
+		file := ""
 		err := filepath.Walk(
 			"./",
 			func(path string, info os.FileInfo, err error) error {
-				parts := strings.Split(path, "_")
-				if filepath.Ext(path) == ".gob" && parts[0] == repo {
-					files = append(files, path)
+				name := strings.TrimSuffix(path, filepath.Ext(path))
+				if filepath.Ext(path) == ".gob" && name == repo {
+					file = path
 				}
 				return nil
 			})
@@ -262,16 +265,15 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		for i := range files {
-			f, err := os.Open(files[i])
-			if err != nil {
-				http.Redirect(w, r, "/", http.StatusInternalServerError)
-				return
-			}
-			decoder := gob.NewDecoder(f)
-			s := storage{}
-			decoder.Decode(&s)
+		f, err := os.Open(file)
+		if err != nil {
+			fmt.Println("HERE") // TEMPORARY
+			http.Redirect(w, r, "/", http.StatusInternalServerError)
+			return
 		}
+		decoder := gob.NewDecoder(f)
+		s := storage{}
+		decoder.Decode(&s)
 
 		// TODO: populate label dropdowns from GitHub storage
 		// [X] retrieve GitHub repo ID

@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"encoding/gob"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -118,7 +119,7 @@ func Test_reposHandler(t *testing.T) {
 		)
 		nums := []string{"-65", "-66"}
 		for i := range nums {
-			filename := nums[i] + "_github.gob"
+			filename := nums[i] + ".gob"
 			if _, err := os.Stat(filename); err == nil {
 				os.Remove(filename)
 			}
@@ -151,12 +152,24 @@ func Test_consoleHandler(t *testing.T) {
 		{
 			"POST with state",
 			"POST",
-			map[string]string{"state": oauthState, "repo-selection": "1"},
+			map[string]string{"state": oauthState, "repo-selection": "-65"},
 			http.StatusOK, // TEMPORARY
 		},
 	}
 
 	for i := range tests {
+		f, err := os.Create("-65.gob")
+		if err != nil {
+			t.Error("failure creating test gob file")
+		}
+		s := storage{
+			Name: "contingency/chancellor",
+		}
+		encoder := gob.NewEncoder(f)
+		if err := encoder.Encode(s); err != nil {
+			t.Error("failed encoding gob file")
+		}
+
 		req.Method = tests[i].method
 		req.Form = url.Values{}
 		for k, v := range tests[i].forms {
@@ -171,7 +184,7 @@ func Test_consoleHandler(t *testing.T) {
 		)
 		nums := []string{"-65", "-66"}
 		for i := range nums {
-			filename := nums[i] + "_github.gob"
+			filename := nums[i] + ".gob"
 			if _, err := os.Stat(filename); err == nil {
 				os.Remove(filename)
 			}
