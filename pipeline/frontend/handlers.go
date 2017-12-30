@@ -56,7 +56,7 @@ func staticHandler(filepath string) http.HandlerFunc {
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(string(data)))
+		w.Write(data)
 	})
 }
 
@@ -309,7 +309,7 @@ func setupCompleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(string(data)))
+	w.Write(data)
 }
 
 // NOTE: Depreciate this code.
