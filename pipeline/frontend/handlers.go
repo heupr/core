@@ -51,7 +51,7 @@ func staticHandler(filepath string) http.HandlerFunc {
 					zap.Error(err),
 				)
 			}
-			http.Redirect(w, r, "/", http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -100,7 +100,7 @@ type Dropdowns struct {
 func reposHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		if oauthState != r.FormValue("state") {
-			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+			http.Error(w, "authorization error", http.StatusUnauthorized)
 			return
 		}
 		code := r.FormValue("code")
@@ -110,7 +110,7 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 				"failure creating frontend client",
 				zap.Error(err),
 			)
-			http.Redirect(w, r, "/", http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -124,7 +124,11 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 					"error collecting user repos",
 					zap.Error(err),
 				)
-				http.Redirect(w, r, "/", http.StatusInternalServerError)
+				http.Error(
+					w,
+					"error collecting user repos",
+					http.StatusInternalServerError,
+				)
 				return
 			}
 			for i := range repo {
@@ -154,7 +158,11 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 						"error collecting repo labels",
 						zap.Error(err),
 					)
-					http.Redirect(w, r, "/", http.StatusInternalServerError)
+					http.Error(
+						w,
+						"error collecting repo labels",
+						http.StatusInternalServerError,
+					)
 					return
 				}
 				for i := range l {
@@ -179,7 +187,11 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 						"error creating storage file",
 						zap.Error(err),
 					)
-					http.Redirect(w, r, "/", http.StatusInternalServerError)
+					http.Error(
+						w,
+						"error creating storage file",
+						http.StatusInternalServerError,
+					)
 					return
 				}
 
@@ -193,14 +205,18 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 						"error encoding info to new file",
 						zap.Error(err),
 					)
-					http.Redirect(w, r, "/", http.StatusInternalServerError)
+					http.Error(
+						w,
+						"error encoding info to new file",
+						http.StatusInternalServerError,
+					)
 					return
 				}
 			} else {
 				file, err := os.Open(filename)
 				defer file.Close()
 				if err != nil {
-					http.Redirect(w, r, "/", http.StatusInternalServerError)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 				decoder := gob.NewDecoder(file)
@@ -213,7 +229,7 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 						"error re-encoding info to file",
 						zap.Error(err),
 					)
-					http.Redirect(w, r, "/", http.StatusInternalServerError)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 			}
@@ -229,7 +245,7 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 			if PROD {
 				utils.SlackLog.Error("Repos selection page", zap.Error(err))
 			}
-			http.Redirect(w, r, "/", http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		t.Execute(w, dropdowns)
@@ -240,13 +256,13 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		r.ParseForm()
 		if r.Form["state"][0] != oauthState {
-			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+			http.Error(w, "authorization error", http.StatusUnauthorized)
 			return
 		}
 
 		repo := r.Form["repo-selection"][0]
 		if repo == "" {
-			http.Redirect(w, r, "/", http.StatusBadRequest)
+			http.Error(w, "request erro", http.StatusBadRequest)
 			return
 		}
 
@@ -261,14 +277,14 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 				return nil
 			})
 		if err != nil {
-			http.Redirect(w, r, "/", http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		f, err := os.Open(file)
 		if err != nil {
 			fmt.Println("HERE") // TEMPORARY
-			http.Redirect(w, r, "/", http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		decoder := gob.NewDecoder(f)
@@ -286,7 +302,7 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 		// TODO: collect label selections into "snapshot"
 
 	} else {
-		http.Redirect(w, r, "/", http.StatusBadRequest)
+		http.Error(w, "error loading console", http.StatusBadRequest)
 		return
 	}
 }

@@ -94,7 +94,7 @@ func Test_reposHandler(t *testing.T) {
 			"GET without state",
 			"GET",
 			map[string]string{"state": ""},
-			http.StatusTemporaryRedirect,
+			http.StatusUnauthorized,
 		},
 		{
 			"passing GET",
@@ -147,7 +147,7 @@ func Test_consoleHandler(t *testing.T) {
 			"POST without state",
 			"POST",
 			map[string]string{"state": ""},
-			http.StatusTemporaryRedirect,
+			http.StatusUnauthorized,
 		},
 		{
 			"POST with state",
