@@ -310,7 +310,7 @@ func setupCompleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	utils.AppLog.Info("Completed user signed up")
-	slackMsg("Completed user signed up")
+	//slackMsg("Completed user signed up")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
