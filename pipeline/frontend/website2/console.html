@@ -99,9 +99,11 @@
         <div class="row" id="bucket-default">
           <div class="col-sm-4">
             <div>
-              {{ }}
-
-              <select class="selectpicker labels" data-live-search="true" multiple="true" title="Select label(s)..."></select>
+              <select class="selectpicker labels" name="default-labels" data-live-search="true" multiple="true" title="Select label(s)...">
+                {{ range $label := .Labels }}
+                <option value="{{ $label }}">{{ $label }}</option>
+                {{ end }}
+              </select>
             </div>
           </div>
         </div>
@@ -117,7 +119,11 @@
             </div>
 
             <div>
-              <select class="selectpicker labels" data-live-search="true" multiple="true" title="Select label(s)..."></select>
+              <select class="selectpicker labels" name="dynamic-labels" data-live-search="true" multiple="true" title="Select label(s)...">
+                {{ range $label := .Labels }}
+                <option value="{{ $label }}">{{ $label }}</option>
+                {{ end }}
+              </select>
             </div>
 
             <small>

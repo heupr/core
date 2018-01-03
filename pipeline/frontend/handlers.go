@@ -289,16 +289,13 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 		s := storage{}
 		decoder.Decode(&s)
 
-		// TODO: populate label dropdowns from GitHub storage
-		// [X] retrieve GitHub repo ID
-		// [X] pull in GitHub files w/ matching ID
-		// [X] pull in settings files w/ matching ID
-		// [X] collect data from both files
-		// [X] conflate file contents in-memory
-		// [ ] populate into template
-		// [ ] execute template
-		// TODO: collect label selections into "snapshot"
-
+		t, err := template.ParseFiles("website2/console.html")
+		if err != nil {
+			slackErr("Settings console page", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		t.Execute(w, s)
 	} else {
 		http.Error(w, "error loading console", http.StatusBadRequest)
 		return
