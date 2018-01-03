@@ -21,12 +21,17 @@ import (
 	"core/utils"
 )
 
-// TODO: Add in uniformed error handling function.
-// [ ] PROD boolean (generates Slack message)
-// [ ] accepts error type argument
-// [ ] returns redirect w/ arguments
+func slackErr(msg string, err error) {
+	if PROD {
+		utils.SlackLog.Error(msg, zap.Error(err))
+	}
+}
 
-// TODO: Add in consts for HTTP statuses.
+func slackMsg(msg string) {
+	if PROD {
+		utils.SlackLog.Info(msg)
+	}
+}
 
 func httpRedirect(w http.ResponseWriter, r *http.Request) {
 	if PROD {
@@ -45,12 +50,7 @@ func staticHandler(filepath string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data, err := ioutil.ReadFile(filepath)
 		if err != nil {
-			if PROD {
-				utils.SlackLog.Error(
-					"Error generating landing page",
-					zap.Error(err),
-				)
-			}
+			slackErr("Error generating landing page", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -242,9 +242,7 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 
 		t, err := template.ParseFiles("website2/repos.html")
 		if err != nil {
-			if PROD {
-				utils.SlackLog.Error("Repos selection page", zap.Error(err))
-			}
+			slackErr("Repos selection page", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -310,19 +308,12 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 func setupCompleteHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := ioutil.ReadFile("website2/setup-complete.html")
 	if err != nil {
-		if PROD {
-			utils.SlackLog.Error(
-				"Error generating setup complete page",
-				zap.Error(err),
-			)
-		}
+		slackErr("Error generating setup complete page", err)
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
 	}
 	utils.AppLog.Info("Completed user signed up")
-	if PROD {
-		utils.SlackLog.Info("Completed user signed up")
-	}
+	slackMsg("Completed user signed up")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
