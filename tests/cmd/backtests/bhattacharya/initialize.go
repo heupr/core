@@ -123,7 +123,7 @@ func (t *BackTestRunner) Run(repo string) {
 
 	where := groupby.Where(func(groupby interface{}) bool {
 		// NOTE: THIS CAN BE MANIPULATED (between 10-15 max so far)
-		return len(groupby.(Group).Group) >= 10
+		return len(groupby.(Group).Group) >= 1
 	})
 
 	orderby := where.OrderByDescending(func(where interface{}) interface{} {

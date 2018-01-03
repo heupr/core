@@ -96,3 +96,21 @@ func (g *Gateway) GetContributors(owner, repo string) ([]*github.Contributor, er
 	}
 	return output, nil
 }
+
+func (g *Gateway) GetLabels(owner, repo string) ([]*github.Label, error) {
+	options := &github.ListOptions{PerPage: 100}
+	output := []*github.Label{}
+	for {
+		labels, resp, err := g.Client.Issues.ListLabels(context.Background(), owner, repo, options)
+		if err != nil {
+			return nil, err
+		}
+		output = append(output, labels...)
+		if resp.NextPage == 0 || g.UnitTesting {
+			break
+		} else {
+			options.Page = resp.NextPage
+		}
+	}
+	return output, nil
+}
