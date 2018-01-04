@@ -28,35 +28,52 @@ func routes() *http.ServeMux {
 
 // LaunchServer spins up goroutines for primary and redirect listeners.
 func (fs *FrontendServer) LaunchServer(secure, unsecure, cert, key string) {
-	// Primary server with HTTPS.
-	fs.Primary = http.Server{
-		Addr:    secure,
-		Handler: routes(),
-	}
-	go func() {
-		if err := fs.Primary.ListenAndServeTLS(cert, key); err != nil {
-			utils.AppLog.Error(
-				"primary server failed to start",
-				zap.Error(err),
-			)
-			panic(err)
+	if PROD {
+		// Primary server with HTTPS.
+		fs.Primary = http.Server{
+			Addr:    secure,
+			Handler: routes(),
 		}
-	}()
+		go func() {
+			if err := fs.Primary.ListenAndServeTLS(cert, key); err != nil {
+				utils.AppLog.Error(
+					"primary server failed to start",
+					zap.Error(err),
+				)
+				panic(err)
+			}
+		}()
 
-	// For redirection purposes only.
-	fs.Redirect = http.Server{
-		Addr:    unsecure,
-		Handler: http.HandlerFunc(httpRedirect),
-	}
-	go func() {
-		if err := fs.Redirect.ListenAndServe(); err != nil {
-			utils.AppLog.Error(
-				"redirect server failed to start",
-				zap.Error(err),
-			)
-			panic(err)
+		// For redirection purposes only.
+		fs.Redirect = http.Server{
+			Addr:    unsecure,
+			Handler: http.HandlerFunc(httpRedirect),
 		}
-	}()
+		go func() {
+			if err := fs.Redirect.ListenAndServe(); err != nil {
+				utils.AppLog.Error(
+					"redirect server failed to start",
+					zap.Error(err),
+				)
+				panic(err)
+			}
+		}()
+	} else {
+		// Primary server with HTTP - Testing Only. Ngrok Doesn't Play Nice with HTTPS.
+		fs.Primary = http.Server{
+			Addr:    unsecure,
+			Handler: routes(),
+		}
+		go func() {
+			if err := fs.Primary.ListenAndServe(); err != nil {
+				utils.AppLog.Error(
+					"primary server failed to start",
+					zap.Error(err),
+				)
+				panic(err)
+			}
+		}()
+	}
 }
 
 // Start provides live/test LaunchServer with necessary startup information.
