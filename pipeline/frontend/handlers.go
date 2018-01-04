@@ -303,17 +303,32 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func setupCompleteHandler(w http.ResponseWriter, r *http.Request) {
-	data, err := ioutil.ReadFile("website2/setup-complete.html")
-	if err != nil {
-		slackErr("Error generating setup complete page", err)
-		http.Redirect(w, r, "/", http.StatusInternalServerError)
+	if r.Method == "POST" {
+		r.ParseForm()
+
+		data, err := ioutil.ReadFile("website2/setup-complete.html")
+		if err != nil {
+			if PROD {
+				utils.SlackLog.Error(
+					"Error generating setup complete page",
+					zap.Error(err),
+				)
+			}
+			http.Redirect(w, r, "/", http.StatusInternalServerError)
+			return
+		}
+		utils.AppLog.Info("Completed user signed up")
+		if PROD {
+			utils.SlackLog.Info("Completed user signed up")
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	} else {
+		http.Error(w, "error loading console", http.StatusBadRequest)
 		return
 	}
-	utils.AppLog.Info("Completed user signed up")
-	//slackMsg("Completed user signed up")
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+
 }
 
 // NOTE: Depreciate this code.

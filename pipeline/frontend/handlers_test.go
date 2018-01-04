@@ -3,7 +3,7 @@ package frontend
 import (
 	"encoding/gob"
 	"fmt"
-	"io/ioutil"
+	// "io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -194,32 +194,34 @@ func Test_consoleHandler(t *testing.T) {
 
 func Test_setupCompleteHandler(t *testing.T) {
 	assert := assert.New(t)
-	rec := httptest.NewRecorder()
 	handler := http.HandlerFunc(setupCompleteHandler)
-	handler.ServeHTTP(rec, req)
 
-	wanted := http.StatusOK
-	received := rec.Code
-	assert.Equal(
-		wanted, received,
-		fmt.Sprintf(
-			"handler returning incorrect status code; received %v, wanted %v",
-			received, wanted,
-		),
-	)
-
-	setup, err := ioutil.ReadFile("website2/setup-complete.html")
-	if err != nil {
-		t.Errorf("Error reading from setup-complete file")
+	tests := []struct {
+		name   string
+		method string
+		result int
+	}{
+		{
+			"Rejected GET request",
+			"GET",
+			http.StatusBadRequest,
+		},
+		{
+			"Accepted POST request",
+			"POST",
+			http.StatusOK,
+		},
 	}
 
-	// Check that the response body is correct.
-	assert.Equal(
-		rec.Body.String(),
-		string(setup),
-		fmt.Sprintf(
-			"incorrect response body\n%v",
-			rec.Body.String(),
-		),
-	)
+	for i := range tests {
+		req.Method = tests[i].method
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+
+		assert.Equal(
+			tests[i].result,
+			rec.Code,
+			tests[i].name,
+		)
+	}
 }
