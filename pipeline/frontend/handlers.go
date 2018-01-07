@@ -37,12 +37,7 @@ func httpRedirect(w http.ResponseWriter, r *http.Request) {
 	if PROD {
 		http.Redirect(w, r, "https://heupr.io", http.StatusMovedPermanently)
 	} else {
-		http.Redirect(
-			w,
-			r,
-			"https://127.0.0.1:8081",
-			http.StatusMovedPermanently,
-		)
+		http.Redirect(w, r, "https://127.0.0.1:8081", http.StatusMovedPermanently)
 	}
 }
 
@@ -85,54 +80,91 @@ var newClient = func(code string) (*github.Client, error) {
 	return client, nil
 }
 
-type storage struct {
-	Name       string
-	Labels     []string
-	Selections map[string][]string
+type label struct {
+	Name     string
+	Selected bool
 }
 
-// Dropdowns is a holder for information to be populated into the template.
-type Dropdowns struct {
-	Repos  map[int]string
-	Labels map[int][]string
+type storage struct {
+	Name    string // FullName for the given repo.
+	Buckets map[string][]label
+}
+
+func updateStorage(s *storage, labels []string) {
+	for name, bucket := range s.Buckets {
+		updated := []label{}
+		for _, new := range labels {
+			for _, old := range bucket {
+				if new == old.Name {
+					updated = append(updated, label{
+						Name:     old.Name,
+						Selected: old.Selected,
+					})
+				} else {
+					updated = append(updated, label{
+						Name: new,
+					})
+				}
+			}
+		}
+		s.Buckets[name] = updated
+	}
 }
 
 func reposHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		if oauthState != r.FormValue("state") {
-			http.Error(w, "authorization error", http.StatusUnauthorized)
+	if r.Method != "GET" {
+		http.Error(w, "bad request method", http.StatusBadRequest)
+		return
+	}
+	if oauthState != r.FormValue("state") {
+		http.Error(w, "authorization error", http.StatusUnauthorized)
+		return
+	}
+	code := r.FormValue("code")
+	client, err := newClient(code)
+	if err != nil {
+		utils.AppLog.Error(
+			"failure creating frontend client",
+			zap.Error(err),
+		)
+		http.Error(w, "client failure", http.StatusInternalServerError)
+		return
+	}
+
+	opts := &github.ListOptions{PerPage: 100}
+	repos := make(map[int]string) // NOTE: NEEDED FOR RENDERING AS IS
+	ctx := context.Background()
+	for {
+		repo, resp, err := client.Apps.ListUserRepos(ctx, 5535, opts)
+		if err != nil {
+			utils.AppLog.Error("error collecting user repos", zap.Error(err))
+			http.Error(w, "error collecting user repos", http.StatusInternalServerError)
 			return
 		}
-		code := r.FormValue("code")
-		client, err := newClient(code)
-		if err != nil {
-			utils.AppLog.Error(
-				"failure creating frontend client",
-				zap.Error(err),
-			)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		for i := range repo {
+			repos[*repo[i].ID] = *repo[i].FullName
 		}
 
-		opts := &github.ListOptions{PerPage: 100}
-		repos := make(map[int]string)
-		ctx := context.Background()
+		if resp.NextPage == 0 {
+			break
+		} else {
+			opts.Page = resp.NextPage
+		}
+	}
+
+	opts = &github.ListOptions{PerPage: 100}
+	labels := make(map[int][]string)
+	for key, value := range repos {
+		name := strings.Split(value, "/")
 		for {
-			repo, resp, err := client.Apps.ListUserRepos(ctx, 5535, opts)
+			l, resp, err := client.Issues.ListLabels(ctx, name[0], name[1], opts)
 			if err != nil {
-				utils.AppLog.Error(
-					"error collecting user repos",
-					zap.Error(err),
-				)
-				http.Error(
-					w,
-					"error collecting user repos",
-					http.StatusInternalServerError,
-				)
+				utils.AppLog.Error("error collecting repo labels", zap.Error(err))
+				http.Error(w, "error collecting repo labels", http.StatusInternalServerError)
 				return
 			}
-			for i := range repo {
-				repos[*repo[i].ID] = *repo[i].FullName
+			for i := range l {
+				labels[key] = append(labels[key], *l[i].Name)
 			}
 
 			if resp.NextPage == 0 {
@@ -141,113 +173,70 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 				opts.Page = resp.NextPage
 			}
 		}
-
-		opts = &github.ListOptions{PerPage: 100}
-		labels := make(map[int][]string)
-		for key, value := range repos {
-			name := strings.Split(value, "/")
-			for {
-				l, resp, err := client.Issues.ListLabels(
-					ctx,
-					name[0],
-					name[1],
-					opts,
-				)
-				if err != nil {
-					utils.AppLog.Error(
-						"error collecting repo labels",
-						zap.Error(err),
-					)
-					http.Error(
-						w,
-						"error collecting repo labels",
-						http.StatusInternalServerError,
-					)
-					return
-				}
-				for i := range l {
-					labels[key] = append(labels[key], *l[i].Name)
-				}
-
-				if resp.NextPage == 0 {
-					break
-				} else {
-					opts.Page = resp.NextPage
-				}
-			}
-		}
-
-		for id, name := range repos {
-			filename := strconv.Itoa(id) + ".gob"
-			if _, err := os.Stat(filename); os.IsNotExist(err) {
-				file, err := os.Create(filename)
-				defer file.Close()
-				if err != nil {
-					utils.AppLog.Error(
-						"error creating storage file",
-						zap.Error(err),
-					)
-					http.Error(
-						w,
-						"error creating storage file",
-						http.StatusInternalServerError,
-					)
-					return
-				}
-
-				s := storage{
-					Name:   name,
-					Labels: labels[id],
-				}
-				encoder := gob.NewEncoder(file)
-				if err := encoder.Encode(s); err != nil {
-					utils.AppLog.Error(
-						"error encoding info to new file",
-						zap.Error(err),
-					)
-					http.Error(
-						w,
-						"error encoding info to new file",
-						http.StatusInternalServerError,
-					)
-					return
-				}
-			} else {
-				file, err := os.Open(filename)
-				defer file.Close()
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-				decoder := gob.NewDecoder(file)
-				s := storage{}
-				decoder.Decode(&s)
-				s.Labels = labels[id]
-				encoder := gob.NewEncoder(file)
-				if err := encoder.Encode(s); err != nil {
-					utils.AppLog.Error(
-						"error re-encoding info to file",
-						zap.Error(err),
-					)
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-			}
-		}
-
-		// NOTE: Possibly change to an anonymous struct.
-		dropdowns := Dropdowns{
-			Repos: repos,
-		}
-
-		t, err := template.ParseFiles("website2/repos.html")
-		if err != nil {
-			slackErr("Repos selection page", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		t.Execute(w, dropdowns)
 	}
+
+	for id, name := range repos {
+		filename := strconv.Itoa(id) + ".gob"
+		if _, err := os.Stat(filename); os.IsNotExist(err) {
+			file, err := os.Create(filename)
+			defer file.Close()
+			if err != nil {
+				utils.AppLog.Error("error creating storage file", zap.Error(err))
+				http.Error(w, "error creating storage file", http.StatusInternalServerError)
+				return
+			}
+
+			s := storage{
+				Name:    name,
+				Buckets: make(map[string][]label),
+			}
+
+			for _, l := range labels[id] {
+				s.Buckets[""] = append(s.Buckets[""], label{Name: l})
+			}
+
+			encoder := gob.NewEncoder(file)
+			if err := encoder.Encode(s); err != nil {
+				utils.AppLog.Error("error encoding info to new file", zap.Error(err))
+				http.Error(w, "error encoding info to new file", http.StatusInternalServerError)
+				return
+			}
+		} else {
+			file, err := os.Open(filename)
+			defer file.Close()
+			if err != nil {
+				http.Error(w, "error opening storage file", http.StatusInternalServerError)
+				return
+			}
+			decoder := gob.NewDecoder(file)
+			s := storage{}
+			decoder.Decode(&s)
+
+			updateStorage(&s, labels[id])
+
+			encoder := gob.NewEncoder(file)
+			if err := encoder.Encode(s); err != nil {
+				utils.AppLog.Error("error re-encoding info to file", zap.Error(err))
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+	}
+
+	// NOTE: Possibly change to an anonymous struct.
+	input := struct {
+		Repos map[int]string
+	}{
+		Repos: repos,
+	}
+
+	t, err := template.ParseFiles("website2/repos.html")
+	if err != nil {
+		slackErr("Repos selection page", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	t.Execute(w, input)
 }
 
 func consoleHandler(w http.ResponseWriter, r *http.Request) {
@@ -308,19 +297,12 @@ func setupCompleteHandler(w http.ResponseWriter, r *http.Request) {
 
 		data, err := ioutil.ReadFile("website2/setup-complete.html")
 		if err != nil {
-			if PROD {
-				utils.SlackLog.Error(
-					"Error generating setup complete page",
-					zap.Error(err),
-				)
-			}
-			http.Redirect(w, r, "/", http.StatusInternalServerError)
+			slackErr("Error generating setup complete page", err)
+			http.Error(w, "/", http.StatusInternalServerError)
 			return
 		}
 		utils.AppLog.Info("Completed user signed up")
-		if PROD {
-			utils.SlackLog.Info("Completed user signed up")
-		}
+		slackMsg("Completed user signed up")
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		w.Write(data)
