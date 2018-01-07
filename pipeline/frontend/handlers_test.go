@@ -170,31 +170,36 @@ func Test_consoleHandler(t *testing.T) {
 	tests := []struct {
 		name   string
 		method string
+		file   string
 		forms  map[string]string
 		result int
 	}{
 		{
 			"reject GET method",
 			"GET",
-			map[string]string{"state": ""},
+			"rejectGet",
+			make(map[string]string),
 			http.StatusBadRequest,
 		},
 		{
-			"POST without state",
+			"breaking gob file",
 			"POST",
-			map[string]string{"state": ""},
-			http.StatusUnauthorized,
+			"rejectGob",
+			map[string]string{"repo-selection": "-65"},
+			http.StatusInternalServerError,
 		},
 		{
-			"POST with state",
+			"passing POST",
 			"POST",
-			map[string]string{"state": oauthState, "repo-selection": "-65"},
-			http.StatusOK, // TEMPORARY
+			"-65.gob",
+			map[string]string{"repo-selection": "-65"},
+			http.StatusOK,
 		},
 	}
 
 	for i := range tests {
-		f, err := os.Create("-65.gob")
+		f, err := os.Create(tests[i].file)
+		defer os.Remove(tests[i].file)
 		if err != nil {
 			t.Error("failure creating test gob file")
 		}
@@ -208,8 +213,10 @@ func Test_consoleHandler(t *testing.T) {
 
 		req.Method = tests[i].method
 		req.Form = url.Values{}
-		for k, v := range tests[i].forms {
-			req.Form.Set(k, v)
+		if len(tests[i].forms) > 0 {
+			for k, v := range tests[i].forms {
+				req.Form.Set(k, v)
+			}
 		}
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
@@ -218,13 +225,6 @@ func Test_consoleHandler(t *testing.T) {
 			tests[i].result, rec.Code,
 			fmt.Sprint(tests[i].name),
 		)
-		nums := []string{"-65", "-66"}
-		for i := range nums {
-			filename := nums[i] + ".gob"
-			if _, err := os.Stat(filename); err == nil {
-				os.Remove(filename)
-			}
-		}
 	}
 }
 

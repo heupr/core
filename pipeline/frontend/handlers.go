@@ -3,7 +3,6 @@ package frontend
 import (
 	"context"
 	"encoding/gob"
-	"fmt" // TEMPORARY
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/gorilla/schema"
+	"github.com/gorilla/sessions"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	ghoa "golang.org/x/oauth2/github"
@@ -46,7 +46,7 @@ func staticHandler(filepath string) http.HandlerFunc {
 		data, err := ioutil.ReadFile(filepath)
 		if err != nil {
 			slackErr("Error generating landing page", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "error rendering page", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -64,7 +64,10 @@ var (
 		Endpoint:     ghoa.Endpoint,
 	}
 	oauthState = "tenebrous-plagueis-sidious-maul-tyrannus-vader"
+	store      = sessions.NewCookieStore([]byte("yoda-dooku-jinn-kenobi-skywalker-tano"))
 )
+
+const sessionName = "heupr-session"
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	url := oauthConfig.AuthCodeURL(oauthState, oauth2.AccessTypeOnline)
@@ -126,8 +129,16 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	session, err := store.Get(r, sessionName)
+	session.Options.MaxAge = 0
+	if err != nil {
+		http.Error(w, "error establishing session", http.StatusInternalServerError)
+		return
+	}
+	session.Save(r, w)
+
 	opts := &github.ListOptions{PerPage: 100}
-	repos := make(map[int]string) // NOTE: NEEDED FOR RENDERING AS IS
+	repos := make(map[int]string)
 	ctx := context.Background()
 	for {
 		repo, resp, err := client.Apps.ListUserRepos(ctx, 5535, opts)
@@ -212,13 +223,12 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 			encoder := gob.NewEncoder(file)
 			if err := encoder.Encode(s); err != nil {
 				utils.AppLog.Error("error re-encoding info to file", zap.Error(err))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, "error storing user settings", http.StatusInternalServerError)
 				return
 			}
 		}
 	}
 
-	// NOTE: Possibly change to an anonymous struct.
 	input := struct {
 		Repos map[int]string
 	}{
@@ -228,62 +238,62 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles("website2/repos.html")
 	if err != nil {
 		slackErr("Repos selection page", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "error loading repo selections", http.StatusInternalServerError)
 		return
 	}
 	t.Execute(w, input)
 }
 
 func consoleHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		r.ParseForm()
-		if r.Form["state"][0] != oauthState {
-			http.Error(w, "authorization error", http.StatusUnauthorized)
-			return
-		}
-
-		repo := r.Form["repo-selection"][0]
-		if repo == "" {
-			http.Error(w, "request erro", http.StatusBadRequest)
-			return
-		}
-
-		file := ""
-		err := filepath.Walk(
-			"./",
-			func(path string, info os.FileInfo, err error) error {
-				name := strings.TrimSuffix(path, filepath.Ext(path))
-				if filepath.Ext(path) == ".gob" && name == repo {
-					file = path
-				}
-				return nil
-			})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		f, err := os.Open(file)
-		if err != nil {
-			fmt.Println("HERE") // TEMPORARY
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		decoder := gob.NewDecoder(f)
-		s := storage{}
-		decoder.Decode(&s)
-
-		t, err := template.ParseFiles("website2/console.html")
-		if err != nil {
-			slackErr("Settings console page", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		t.Execute(w, s)
-	} else {
-		http.Error(w, "error loading console", http.StatusBadRequest)
+	if r.Method != "POST" {
+		http.Error(w, "bad request method", http.StatusBadRequest)
 		return
 	}
+
+	session, err := store.Get(r, sessionName)
+	session.Options.MaxAge = 0
+	if err != nil {
+		http.Error(w, "error establishing session", http.StatusInternalServerError)
+		return
+	}
+	session.Save(r, w)
+
+	r.ParseForm()
+	repoID := r.Form["repo-selection"][0]
+	if repoID == "" {
+		http.Error(w, "request error", http.StatusBadRequest)
+		return
+	}
+
+	file := ""
+	err = filepath.Walk("./", func(path string, info os.FileInfo, err error) error {
+		name := strings.TrimSuffix(path, filepath.Ext(path))
+		if filepath.Ext(path) == ".gob" && name == repoID {
+			file = path
+		}
+		return nil
+	})
+	if err != nil {
+		http.Error(w, "error retrieving user settings", http.StatusInternalServerError)
+		return
+	}
+
+	f, err := os.Open(file)
+	if err != nil {
+		http.Error(w, "error opening user settings", http.StatusInternalServerError)
+		return
+	}
+	decoder := gob.NewDecoder(f)
+	s := storage{}
+	decoder.Decode(&s)
+
+	t, err := template.ParseFiles("website2/console.html")
+	if err != nil {
+		slackErr("Settings console page", err)
+		http.Error(w, "error loading console", http.StatusInternalServerError)
+		return
+	}
+	t.Execute(w, s)
 }
 
 func setupCompleteHandler(w http.ResponseWriter, r *http.Request) {
