@@ -91,23 +91,18 @@ type storage struct {
 }
 
 func updateStorage(s *storage, labels []string) {
-	for name, bucket := range s.Buckets {
+	for bcktName, bcktLabels := range s.Buckets {
 		updated := []label{}
-		for _, new := range labels {
-			for _, old := range bucket {
-				if new == old.Name {
-					updated = append(updated, label{
-						Name:     old.Name,
-						Selected: old.Selected,
-					})
-				} else {
-					updated = append(updated, label{
-						Name: new,
-					})
+		for i := range labels {
+			label := label{Name: labels[i]}
+			for j := range bcktLabels {
+				if labels[i] == bcktLabels[j].Name {
+					label.Selected = bcktLabels[j].Selected
 				}
 			}
+			updated = append(updated, label)
 		}
-		s.Buckets[name] = updated
+		s.Buckets[bcktName] = updated
 	}
 }
 

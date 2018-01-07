@@ -58,6 +58,42 @@ func Test_staticHandler(t *testing.T) {
 	}
 }
 
+func Test_updateStorage(t *testing.T) {
+	s := storage{
+		Name: "watto/junkshop",
+		Buckets: map[string][]label{
+			"cost": []label{
+				label{
+					Name:     "less-100-peggats",
+					Selected: true,
+				},
+				label{
+					Name:     "equal-100-peggats",
+					Selected: true,
+				},
+				label{
+					Name:     "junk",
+					Selected: false,
+				},
+			},
+		},
+	}
+	labels := []string{
+		"less-100-peggats",
+		"equal-100-peggats",
+		"more-100-peggats",
+		"junk",
+	}
+	updateStorage(&s, labels)
+	assert := assert.New(t)
+	assert.Equal(
+		len(labels),
+		len(s.Buckets["cost"]),
+		"update storage failing",
+	)
+
+}
+
 func Test_reposHandler(t *testing.T) {
 	// Dummy GitHub server to return values for ListUserInstallations.
 	mux := http.NewServeMux()
