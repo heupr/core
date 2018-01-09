@@ -223,7 +223,7 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 			encoder := gob.NewEncoder(file)
 			if err := encoder.Encode(s); err != nil {
 				utils.AppLog.Error("error re-encoding info to file", zap.Error(err))
-				http.Error(w, "error storing user settings", http.StatusInternalServerError)
+				http.Error(w, "error storing user indo", http.StatusInternalServerError)
 				return
 			}
 		}
@@ -250,20 +250,21 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := store.Get(r, sessionName)
-	session.Options.MaxAge = 0
-	if err != nil {
-		http.Error(w, "error establishing session", http.StatusInternalServerError)
-		return
-	}
-	session.Save(r, w)
-
 	r.ParseForm()
 	repoID := r.Form["repo-selection"][0]
 	if repoID == "" {
 		http.Error(w, "request error", http.StatusBadRequest)
 		return
 	}
+
+	session, err := store.Get(r, sessionName)
+	session.Options.MaxAge = 0
+	if err != nil {
+		http.Error(w, "error establishing session", http.StatusInternalServerError)
+		return
+	}
+	session.Values["repoID"] = repoID
+	session.Save(r, w)
 
 	file := ""
 	err = filepath.Walk("./", func(path string, info os.FileInfo, err error) error {
@@ -283,6 +284,7 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error opening user settings", http.StatusInternalServerError)
 		return
 	}
+	defer f.Close()
 	decoder := gob.NewDecoder(f)
 	s := storage{}
 	decoder.Decode(&s)
@@ -296,26 +298,83 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, s)
 }
 
-func setupCompleteHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		r.ParseForm()
-
-		data, err := ioutil.ReadFile("website2/setup-complete.html")
-		if err != nil {
-			slackErr("Error generating setup complete page", err)
-			http.Error(w, "/", http.StatusInternalServerError)
-			return
+func updateSettings(s *storage, form map[string][]string) {
+	for name, bucket := range s.Buckets {
+		for i := range bucket {
+			for j := range form[name] {
+				if bucket[i].Name == form[name][j] {
+					bucket[i].Selected = true
+					break
+				} else {
+					bucket[i].Selected = false
+				}
+			}
 		}
-		utils.AppLog.Info("Completed user signed up")
-		slackMsg("Completed user signed up")
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
-	} else {
-		http.Error(w, "error loading console", http.StatusBadRequest)
+	}
+}
+
+func setupCompleteHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "bad request method", http.StatusBadRequest)
 		return
 	}
 
+	r.ParseForm()
+	session, err := store.Get(r, sessionName)
+	session.Options.MaxAge = 0
+	if err != nil {
+		http.Error(w, "error establishing session", http.StatusInternalServerError)
+		return
+	}
+	repoID := session.Values["repoID"]
+	delete(session.Values, "repoID")
+	session.Save(r, w)
+
+	// NOTE: Possibly refactor this logic into helper function.
+	// - This could potentially just be the anonymous function argument.
+	file := ""
+	err = filepath.Walk("./", func(path string, info os.FileInfo, err error) error {
+		name := strings.TrimSuffix(path, filepath.Ext(path))
+		if filepath.Ext(path) == ".gob" && name == repoID {
+			file = path
+		}
+		return nil
+	})
+	if err != nil {
+		http.Error(w, "error retrieving user settings", http.StatusInternalServerError)
+		return
+	}
+
+	f, err := os.OpenFile(file, os.O_WRONLY, 0644)
+	if err != nil {
+		http.Error(w, "error opening user settings", http.StatusInternalServerError)
+		return
+	}
+	defer f.Close()
+	decoder := gob.NewDecoder(f)
+	s := storage{}
+	decoder.Decode(&s)
+
+	updateSettings(&s, r.Form)
+
+	encoder := gob.NewEncoder(f)
+	if err := encoder.Encode(s); err != nil {
+		utils.AppLog.Error("error re-encoding settings to file", zap.Error(err))
+		http.Error(w, "error storing user settings", http.StatusInternalServerError)
+		return
+	}
+
+	data, err := ioutil.ReadFile("website2/setup-complete.html")
+	if err != nil {
+		slackErr("Error generating setup complete page", err)
+		http.Error(w, "/", http.StatusInternalServerError)
+		return
+	}
+	utils.AppLog.Info("Completed user signed up")
+	slackMsg("Completed user signed up")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
 
 // NOTE: Depreciate this code.

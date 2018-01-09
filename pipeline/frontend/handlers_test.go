@@ -3,7 +3,6 @@ package frontend
 import (
 	"encoding/gob"
 	"fmt"
-	// "io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -177,7 +176,7 @@ func Test_consoleHandler(t *testing.T) {
 		{
 			"reject GET method",
 			"GET",
-			"rejectGet",
+			"rejectGET",
 			make(map[string]string),
 			http.StatusBadRequest,
 		},
@@ -228,6 +227,56 @@ func Test_consoleHandler(t *testing.T) {
 	}
 }
 
+func Test_updateSettings(t *testing.T) {
+	assert := assert.New(t)
+	s := storage{
+		Name: "watto/junkshop",
+		Buckets: map[string][]label{
+			"cost": []label{
+				label{
+					Name:     "less-100-peggats",
+					Selected: true,
+				},
+				label{
+					Name:     "junk",
+					Selected: true,
+				},
+				label{
+					Name:     "equal-100-peggats",
+					Selected: true,
+				},
+				label{
+					Name:     "more-100-peggats",
+					Selected: false,
+				},
+			},
+		},
+	}
+	labels := map[string][]string{
+		"cost": []string{
+			"less-100-peggats",
+			"equal-100-peggats",
+			"more-100-peggats",
+		},
+	}
+	updateSettings(&s, labels)
+
+	count := func(s storage) (cnt int) {
+		for i := range s.Buckets["cost"] {
+			if s.Buckets["cost"][i].Selected {
+				cnt++
+			}
+		}
+		return
+	}(s)
+
+	assert.Equal(
+		(len(labels["cost"])),
+		count,
+		"trying this out",
+	)
+}
+
 func Test_setupCompleteHandler(t *testing.T) {
 	assert := assert.New(t)
 	handler := http.HandlerFunc(setupCompleteHandler)
@@ -235,21 +284,37 @@ func Test_setupCompleteHandler(t *testing.T) {
 	tests := []struct {
 		name   string
 		method string
+		file   string
 		result int
 	}{
 		{
 			"Rejected GET request",
 			"GET",
+			"rejectGET",
 			http.StatusBadRequest,
 		},
 		{
 			"Accepted POST request",
 			"POST",
+			"-65.gob",
 			http.StatusOK,
 		},
 	}
 
 	for i := range tests {
+		f, err := os.Create(tests[i].file)
+		defer os.Remove(tests[i].file)
+		if err != nil {
+			t.Error("failure creating test gob file")
+		}
+		s := storage{
+			Name: "contingency/chancellor",
+		}
+		encoder := gob.NewEncoder(f)
+		if err := encoder.Encode(s); err != nil {
+			t.Error("failed encoding gob file")
+		}
+
 		req.Method = tests[i].method
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
