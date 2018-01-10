@@ -244,6 +244,16 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, input)
 }
 
+func generateWalkFunc(file *string, repoID string) func(string, os.FileInfo, error) error {
+	return func(path string, info os.FileInfo, err error) error {
+		name := strings.TrimSuffix(path, filepath.Ext(path))
+		if filepath.Ext(path) == ".gob" && name == repoID {
+			*file = path
+		}
+		return nil
+	}
+}
+
 func consoleHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "bad request method", http.StatusBadRequest)
@@ -267,13 +277,7 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 	session.Save(r, w)
 
 	file := ""
-	err = filepath.Walk("./", func(path string, info os.FileInfo, err error) error {
-		name := strings.TrimSuffix(path, filepath.Ext(path))
-		if filepath.Ext(path) == ".gob" && name == repoID {
-			file = path
-		}
-		return nil
-	})
+	err = filepath.Walk("./", generateWalkFunc(&file, repoID))
 	if err != nil {
 		http.Error(w, "error retrieving user settings", http.StatusInternalServerError)
 		return
@@ -330,16 +334,8 @@ func setupCompleteHandler(w http.ResponseWriter, r *http.Request) {
 	delete(session.Values, "repoID")
 	session.Save(r, w)
 
-	// NOTE: Possibly refactor this logic into helper function.
-	// - This could potentially just be the anonymous function argument.
 	file := ""
-	err = filepath.Walk("./", func(path string, info os.FileInfo, err error) error {
-		name := strings.TrimSuffix(path, filepath.Ext(path))
-		if filepath.Ext(path) == ".gob" && name == repoID {
-			file = path
-		}
-		return nil
-	})
+	err = filepath.Walk("./", generateWalkFunc(&file, repoID.(string)))
 	if err != nil {
 		http.Error(w, "error retrieving user settings", http.StatusInternalServerError)
 		return
