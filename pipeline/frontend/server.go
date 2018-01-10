@@ -20,11 +20,15 @@ type Server struct {
 	httpClient http.Client
 }
 
-// TODO: This needs to be updated as well to include additional handlers.
 func routes() *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.Handle("/", mainHandler)
+	mux.HandleFunc("/", staticHandler("../website2/landing-page.html"))
+    mux.HandleFunc("/repos", reposHandler)
+    mux.HandleFunc("/console", consoleHandler)
 	mux.HandleFunc("/setup_complete", setupCompleteHandler)
+    mux.HandleFunc("/docs", staticHandler("../website2/docs.html"))
+    mux.HandleFunc("/privacy_policy", staticHandler("../website2/privacy-policy.html"))
+    mux.HandleFunc("/terms_of_use", staticHandler("../website2/terms-of-use.html"))
 	return mux
 }
 
