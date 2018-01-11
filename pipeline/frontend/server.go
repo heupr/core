@@ -22,13 +22,13 @@ type Server struct {
 
 func routes() *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", staticHandler("../website2/landing-page.html"))
-    mux.HandleFunc("/repos", reposHandler)
-    mux.HandleFunc("/console", consoleHandler)
-	mux.HandleFunc("/setup_complete", setupCompleteHandler)
-    mux.HandleFunc("/docs", staticHandler("../website2/docs.html"))
-    mux.HandleFunc("/privacy_policy", staticHandler("../website2/privacy-policy.html"))
-    mux.HandleFunc("/terms_of_use", staticHandler("../website2/terms-of-use.html"))
+	mux.HandleFunc("/", render("../templates/home.html"))
+	mux.HandleFunc("/repos", repos)
+	mux.HandleFunc("/console", console)
+	mux.HandleFunc("/complete", complete)
+	mux.HandleFunc("/docs", render("../templates/docs.html"))
+	mux.HandleFunc("/privacy", render("../templates/privacy.html"))
+	mux.HandleFunc("/terms", render("../templates/terms.html"))
 	return mux
 }
 

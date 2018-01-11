@@ -23,40 +23,6 @@ func init() {
 	*req = *r
 }
 
-func Test_httpRedirect(t *testing.T) {
-	assert := assert.New(t)
-	rec := httptest.NewRecorder()
-	handler := http.HandlerFunc(httpRedirect)
-	handler.ServeHTTP(rec, req)
-
-	// This redirects from the non-PROD else check in the production code.
-	assert.Equal(http.StatusMovedPermanently, rec.Code, nil)
-}
-
-func Test_staticHandler(t *testing.T) {
-	assert := assert.New(t)
-
-	// More files/scenarios can be added here as desired.
-	tests := []struct {
-		filepath string
-		result   int
-	}{
-		{"", http.StatusInternalServerError},
-		{"website2/landing-page.html", http.StatusOK},
-		{"website2/docs.html", http.StatusOK},
-	}
-
-	for i := range tests {
-		rec := httptest.NewRecorder()
-		staticHandler(tests[i].filepath).ServeHTTP(rec, req)
-
-		assert.Equal(
-			tests[i].result, rec.Code,
-			fmt.Sprint("filepath ", tests[i].filepath),
-		)
-	}
-}
-
 func Test_updateStorage(t *testing.T) {
 	s := storage{
 		Name: "watto/junkshop",
@@ -93,7 +59,7 @@ func Test_updateStorage(t *testing.T) {
 
 }
 
-func Test_reposHandler(t *testing.T) {
+func Test_repos(t *testing.T) {
 	// Dummy GitHub server to return values for ListUserInstallations.
 	mux := http.NewServeMux()
 	mux.HandleFunc("/user/installations/5535/repositories", func(w http.ResponseWriter, r *http.Request) {
@@ -117,7 +83,7 @@ func Test_reposHandler(t *testing.T) {
 	}
 
 	assert := assert.New(t)
-	handler := http.HandlerFunc(reposHandler)
+	handler := http.HandlerFunc(repos)
 
 	tests := []struct {
 		name   string
@@ -162,9 +128,9 @@ func Test_reposHandler(t *testing.T) {
 	}
 }
 
-func Test_consoleHandler(t *testing.T) {
+func Test_console(t *testing.T) {
 	assert := assert.New(t)
-	handler := http.HandlerFunc(consoleHandler)
+	handler := http.HandlerFunc(console)
 
 	tests := []struct {
 		name   string
@@ -277,9 +243,9 @@ func Test_updateSettings(t *testing.T) {
 	)
 }
 
-func Test_setupCompleteHandler(t *testing.T) {
+func Test_complete(t *testing.T) {
 	assert := assert.New(t)
-	handler := http.HandlerFunc(setupCompleteHandler)
+	handler := http.HandlerFunc(complete)
 
 	tests := []struct {
 		name   string

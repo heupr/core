@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/gob"
 	"html/template"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -33,28 +32,6 @@ func slackMsg(msg string) {
 	}
 }
 
-func httpRedirect(w http.ResponseWriter, r *http.Request) {
-	if PROD {
-		http.Redirect(w, r, "https://heupr.io", http.StatusMovedPermanently)
-	} else {
-		http.Redirect(w, r, "https://127.0.0.1:8081", http.StatusMovedPermanently)
-	}
-}
-
-func staticHandler(filepath string) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		data, err := ioutil.ReadFile(filepath)
-		if err != nil {
-			slackErr("Error generating landing page", err)
-			http.Error(w, "error rendering page", http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
-	})
-}
-
 var (
 	oauthConfig = &oauth2.Config{
 		// NOTE: These will need to be added for production.
@@ -69,7 +46,7 @@ var (
 
 const sessionName = "heupr-session"
 
-func loginHandler(w http.ResponseWriter, r *http.Request) {
+func login(w http.ResponseWriter, r *http.Request) {
 	url := oauthConfig.AuthCodeURL(oauthState, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
@@ -109,7 +86,7 @@ func updateStorage(s *storage, labels []string) {
 	}
 }
 
-func reposHandler(w http.ResponseWriter, r *http.Request) {
+func repos(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "bad request method", http.StatusBadRequest)
 		return
@@ -235,7 +212,7 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 		Repos: repos,
 	}
 
-	t, err := template.ParseFiles("website2/repos.html")
+	t, err := template.ParseFiles("templates/repos.html")
 	if err != nil {
 		slackErr("Repos selection page", err)
 		http.Error(w, "error loading repo selections", http.StatusInternalServerError)
@@ -254,7 +231,7 @@ func generateWalkFunc(file *string, repoID string) func(string, os.FileInfo, err
 	}
 }
 
-func consoleHandler(w http.ResponseWriter, r *http.Request) {
+func console(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "bad request method", http.StatusBadRequest)
 		return
@@ -293,7 +270,7 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 	s := storage{}
 	decoder.Decode(&s)
 
-	t, err := template.ParseFiles("website2/console.html")
+	t, err := template.ParseFiles("templates/console.html")
 	if err != nil {
 		slackErr("Settings console page", err)
 		http.Error(w, "error loading console", http.StatusInternalServerError)
@@ -317,7 +294,7 @@ func updateSettings(s *storage, form map[string][]string) {
 	}
 }
 
-func setupCompleteHandler(w http.ResponseWriter, r *http.Request) {
+func complete(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "bad request method", http.StatusBadRequest)
 		return
@@ -360,17 +337,19 @@ func setupCompleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := ioutil.ReadFile("website2/setup-complete.html")
+	tmpl, err := template.ParseFiles("templates/complete.html")
 	if err != nil {
 		slackErr("Error generating setup complete page", err)
 		http.Error(w, "/", http.StatusInternalServerError)
 		return
 	}
+	if err := tmpl.Execute(w, ""); err != nil {
+		slackErr("Error rendering complete page", err)
+		http.Error(w, "error rendering complete page", http.StatusInternalServerError)
+		return
+	}
 	utils.AppLog.Info("Completed user signed up")
 	slackMsg("Completed user signed up")
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
 }
 
 // NOTE: Depreciate this code.
