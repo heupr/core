@@ -29,6 +29,7 @@ func routes() *http.ServeMux {
 	mux.HandleFunc("/docs", render("../templates/docs.html"))
 	mux.HandleFunc("/privacy", render("../templates/privacy.html"))
 	mux.HandleFunc("/terms", render("../templates/terms.html"))
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("../static"))))
 	return mux
 }
 

@@ -13,9 +13,15 @@ func httpRedirect(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// baseHTML is necessary for unit testing purposes.
+var baseHTML = "../templates/base.html"
+
 func render(filepath string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles(filepath)
+		tmpl, err := template.ParseFiles([]string{
+			baseHTML,
+			filepath,
+		}...)
 		if err != nil {
 			slackErr("Error parsing "+filepath, err)
 			http.Error(w, "error parsing static page", http.StatusInternalServerError)

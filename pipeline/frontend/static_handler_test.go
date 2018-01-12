@@ -41,6 +41,7 @@ func Test_render(t *testing.T) {
 		{"templates/docs.html", http.StatusOK},
 	}
 
+	baseHTML = "templates/base.html"
 	for i := range tests {
 		rec := httptest.NewRecorder()
 		req := newReq("GET")
