@@ -46,19 +46,19 @@ li {
   padding: 25px;
 }
 
+a.directory-link {
+color: #DC143C;
+font-family: sans-serif;
+text-decoration: none;
+font-size: 20px;
+font-weight: bold;
+margin: 4px;
+}
+
 .disclosure-container {
   bottom: 0px;
   padding: 25px;
   position: fixed;
-}
-
-a.directory-link {
-  color: #DC143C;
-  font-family: sans-serif;
-  text-decoration: none;
-  font-size: 20px;
-  font-weight: bold;
-  margin: 4px;
 }
 
 a.disclosure-link {
