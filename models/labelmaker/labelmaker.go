@@ -10,10 +10,20 @@ import (
 	languagepb "google.golang.org/genproto/googleapis/cloud/language/v1"
 )
 
+const (
+        Unknown = iota
+        Bug
+        Feature
+        Improvement
+)
+
 // DOC: LBClassifier is the struct implemented as the model algorithm.
 type LBModel struct {
-	Classifier *LBClassifier
-	labels     []string
+	Classifier 				*LBClassifier
+	labels     				[]string
+	FeatureLabel			*string
+	BugLabel					*string
+	ImprovementLabel	*string
 }
 
 func (c *LBModel) IsBootstrapped() bool {
@@ -43,8 +53,25 @@ func (c *LBModel) ExperimentalPredict(input conflation.ExpandedIssue) ([]string,
 	return results, err
 }
 
+func (c *LBModel) BugOrFeature(input conflation.ExpandedIssue) (*string, error) {
+	result, err := c.Classifier.BugOrFeature(input)
+	if err != nil {
+		return nil, err
+	}
+	switch result {
+		case Bug:
+			return c.BugLabel, nil
+    case Feature:
+      return c.FeatureLabel, nil
+    case Improvement:
+      return c.ImprovementLabel, nil
+  }
+	return nil, nil
+}
+
 type LBClassifier struct {
 	Client  *language.Client
+	Gateway	CachedNlpGateway
 	Ctx     context.Context
 	classes []LBLabel
 }
@@ -62,6 +89,81 @@ func (c *LBClassifier) Learn(labels []string) {
 			c.classes = append(c.classes, *label)
 		}
 	}
+}
+
+func (c *LBClassifier) BugOrFeature(input conflation.ExpandedIssue) (int, error) {
+	label, err :=  c.BugOrFeatureTitle(*input.Issue.Title, *input.Issue.Body)
+	if err != nil {
+		return Unknown, err
+	}
+	/*
+	if label == nil {
+		label, err =  c.BugOrFeatureBody(*input.Issue.Body)
+	}*/
+	return label, err
+}
+
+func (c *LBClassifier) BugOrFeatureTitle(input string, body string) (int, error) {
+	sentiment, err := c.Gateway.AnalyzeSentiment(input)
+	if err != nil {
+		return Unknown, err
+	}
+
+	if c.IsImprovement(input) {
+		return Improvement, nil
+	}
+
+	if sentiment.DocumentSentiment.Magnitude > 0.5 && sentiment.DocumentSentiment.Score <= -0.8 {
+		return Bug, nil
+	}
+	if sentiment.DocumentSentiment.Magnitude > 0.5 && sentiment.DocumentSentiment.Score >= 0.6 {
+		return Feature, nil
+	}
+	//max(0.2, 0.4)
+	if c.isVerb(input) && sentiment.DocumentSentiment.Magnitude > 0.2 && sentiment.DocumentSentiment.Score >= 0.4 {
+		return Feature, nil
+	}
+	return Unknown, nil
+}
+
+func (c *LBClassifier) BugOrFeatureBody(input string) (int, error) {
+	sentiment, err := c.Gateway.AnalyzeSentiment(input)
+	if err != nil {
+		return Unknown, err
+	}
+	length := 2
+	if len(sentiment.Sentences) < length {
+		length = len(sentiment.Sentences)
+	}
+	for i := 0; i < length; i++ {
+		if sentiment.Sentences[i].Sentiment.Magnitude > 0.5 && sentiment.Sentences[i].Sentiment.Score <= -0.8 {
+			return Bug, nil
+		}
+		if sentiment.Sentences[i].Sentiment.Magnitude > 0.5 && sentiment.Sentences[i].Sentiment.Score >= 0.6 {
+			return Feature, nil
+		}
+	}
+	return Unknown, nil
+}
+
+func (c *LBClassifier) RelaxedBugOrFeatureBody(input string) (int, error) {
+	sentiment, err := c.Gateway.AnalyzeSentiment(input)
+	if err != nil {
+		return Unknown, err
+	}
+	length := 2
+	if len(sentiment.Sentences) < length {
+		length = len(sentiment.Sentences)
+	}
+	for i := 0; i < length; i++ {
+		if sentiment.Sentences[i].Sentiment.Magnitude > 0.5 && sentiment.Sentences[i].Sentiment.Score <= -0.4 {
+			return Bug, nil
+		}
+		if sentiment.Sentences[i].Sentiment.Magnitude > 0.5 && sentiment.Sentences[i].Sentiment.Score >= 0.5 {
+			return Feature, nil
+		}
+	}
+	return Unknown, nil
 }
 
 
@@ -150,17 +252,17 @@ func (c *LBClassifier) normalizeLabels(input string) []LBLabel {
 }
 
 
+func (c *LBClassifier) isVerb(input string) bool {
+	syntax, _ := c.Gateway.AnalyzeSyntax(input)
+	if len(syntax.Tokens) == 0 {
+    return false
+  }
+	return syntax.Tokens[0].PartOfSpeech.Tag == languagepb.PartOfSpeech_VERB
+}
+
+
 func (c *LBClassifier) normalizeLabel(input string) *LBLabel {
-	//TODO Remove Duplicate Code. Not necessary for MVP.
-	syntax, _ := c.Client.AnalyzeSyntax(c.Ctx, &languagepb.AnalyzeSyntaxRequest{
-		Document: &languagepb.Document{
-			Source: &languagepb.Document_Content{
-				Content: input,
-			},
-			Type: languagepb.Document_PLAIN_TEXT,
-		},
-		EncodingType: languagepb.EncodingType_UTF8,
-	})
+	syntax, _ := c.Gateway.AnalyzeSyntax(input)
 
   if len(syntax.Tokens) == 0 {
     return nil
@@ -176,4 +278,54 @@ func (c *LBClassifier) normalizeLabel(input string) *LBLabel {
     }
 	}
   return &LBLabel{Text: input, NormalizedText: rootWord, LinkedWords: linkedWords}
+}
+
+//IMO I think an "Improvement" is an artificial construct. Whereas Bug/Feature are innate.
+//This particular artificial construct has very well defined boundaries. We are utilizing the boundaries defined in this research.
+//Unfortunately we need this logic because otherwise Improvements are "misclassified" as Bug/Features.
+//Perhaps hidden beneath these specifics lies some innate generalitiy.
+//TODO: Generalize as much as possible. Automatically Verify boundaries for each repo that signs up.
+func (c *LBClassifier) IsImprovement(input string) bool {
+	if (strings.HasPrefix(input, "Improve")) {
+		return true
+	}
+
+	if (strings.Contains(input, "dependency")) {
+		if (strings.HasPrefix(input, "Replace") || strings.HasPrefix(input, "Upgrade") || strings.HasPrefix(input, "Remove")) {
+			return true
+		}
+	}
+
+	if (strings.Contains(input, "memory usage")) {
+		if (strings.Contains(input, "Reduce") || strings.Contains(input, "reduce") || strings.Contains(input, "High") || strings.Contains(input, "high")) {
+			return true
+		}
+	}
+
+	if (strings.Contains(input, "exception message")) {
+		return true
+	}
+
+	if (strings.Contains(input, "Performance improvement") || strings.Contains(input, "performance improvement")) {
+		return true
+	}
+
+	if (strings.Contains(input, "Poor performance") || strings.Contains(input, "poor performance")) {
+		return true
+	}
+
+	if (strings.HasPrefix(input, "Optimize") || strings.HasPrefix(input, "optimize") || strings.HasPrefix(input, "Optimization") || strings.HasPrefix(input, "optimization")) {
+		return true
+	}
+
+	if (strings.HasPrefix(input, "Log")) {
+		return true
+	}
+
+	/*
+	if (strings.HasPrefix(input, "Limit")) {
+		return true
+	}*/
+
+	return false
 }
