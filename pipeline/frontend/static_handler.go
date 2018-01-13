@@ -27,10 +27,6 @@ func render(filepath string) http.HandlerFunc {
 			http.Error(w, "error parsing static page", http.StatusInternalServerError)
 			return
 		}
-		if err := tmpl.Execute(w, ""); err != nil {
-			slackErr("Error rendering "+filepath, err)
-			http.Error(w, "error rendering static page", http.StatusInternalServerError)
-			return
-		}
+		err = tmpl.Execute(w, "")
 	})
 }
