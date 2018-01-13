@@ -1,125 +1,104 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>Heupr Console</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/css/bootstrap-select.min.css">
-    <link rel="stylesheet" type="text/css" href="heupr.css" media="screen">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/js/bootstrap-select.min.js"></script>
-  </head>
-</html>
+{{ define "panel" }}
 
-<nav class="navbar">
-  <a class="navbar-brand" href="#">Heupr</a>
-</nav>
+{{ end }}
 
-<div>
-  <div class="row">
-    <div class="col-sm-2"></div>
-    <div class="col-sm-8">
-      <form role="form" id="label-settings" action="#" method="POST" onsubmit="saveSettings(); return false">
-      <script>
-      function saveSettings() {
-        // NOTE: This is a crude check to ensure unique bucket names are used.
-        var names = [];
-        $(".col-sm-4.bucket").each(function() {
-          names.push($(this).find(".form-control").val())
-        });
-        names.sort();
-        var filtered = names.filter( function(v, i, a) {
-          return !i || v !== a[i-1];
-        });
-        if (names.length != filtered.length) {
-          alert("Please enter unique bucket descriptions");
-          return;
-        }
-      }
-      </script>
-        <h2>Label options</h2>
-        <hr>
-        <h4>
-          <small>
-            <span class="glyphicon glyphicon-info-sign" title="Applied to all newly raised issues"></span>
-          </small> Default label(s)
-        </h4>
-        <div class="row" id="bucket-default">
-          <div class="col-sm-4">
-            <div>
-              <select class="selectpicker labels" name="default-labels" data-live-search="true" multiple="true" title="Select label(s)...">
-                {{ range $label := .Labels }}
-                <option value="{{ $label }}">{{ $label }}</option>
-                {{ end }}
-              </select>
-            </div>
-          </div>
+{{ define "body" }}
+  <form role="form" id="label-settings" action="#" method="POST" onsubmit="saveSettings(); return false">
+  <script>
+  function saveSettings() {
+    // NOTE: This is a crude check to ensure unique bucket names are used.
+    var names = [];
+    $(".col-sm-4.bucket").each(function() {
+      names.push($(this).find(".form-control").val())
+    });
+    names.sort();
+    var filtered = names.filter( function(v, i, a) {
+      return !i || v !== a[i-1];
+    });
+    if (names.length != filtered.length) {
+      alert("Please enter unique bucket descriptions");
+      return;
+    }
+  }
+  </script>
+    <h2>Label options</h2>
+    <hr>
+    <h4>
+      <small>
+        <span class="glyphicon glyphicon-info-sign" title="Applied to all newly raised issues"></span>
+      </small> Default label(s)
+    </h4>
+    <div class="row" id="bucket-default">
+      <div class="col-sm-4">
+        <div>
+          <select class="selectpicker labels" name="default-labels" data-live-search="true" multiple="true" title="Select label(s)...">
+            {{ range $label := .Labels }}
+            <option value="{{ $label }}">{{ $label }}</option>
+            {{ end }}
+          </select>
         </div>
-        <h4>
-          <small>
-            <span class="glyphicon glyphicon-info-sign" title="Labels chosen by Heupr for newly raised issues"></span>
-          </small> Dynamic label(s)
-        </h4>
-        <div class="row" id="bucket-row">
-          <div class="col-sm-4 bucket">
-            <div>
-              <input class="form-control" type="text" name="description" placeholder="Bucket description">
-            </div>
-
-            <div>
-              <select class="selectpicker labels" name="dynamic-labels" data-live-search="true" multiple="true" title="Select label(s)...">
-                {{ range $label := .Labels }}
-                <option value="{{ $label }}">{{ $label }}</option>
-                {{ end }}
-              </select>
-            </div>
-
-            <small>
-              <span class="glyphicon glyphicon-info-sign" title="Add another class of labels"></span>
-            </small>
-
-            <span>
-              <button class="btn btn-primary" type="button" onclick="addBucket()">Add bucket</button>
-            </span>
-            <script>
-            function addBucket() {
-              var cln = $(".bucket:first").clone();
-              cln.appendTo("#bucket-row");
-              cln.find(".form-control").val("");
-              cln.find(".bootstrap-select").replaceWith(function() { return $("select", this); });
-              cln.find("select").selectpicker();
-            }
-            </script>
-
-            <small>
-              <span class="glyphicon glyphicon-info-sign" title="Remove this class of labels"></span>
-            </small>
-
-            <span>
-              <button class="btn btn-primary" type="button" onclick="removeBucket(this)">Remove bucket</button>
-            </span>
-            <script>
-            function removeBucket(elmnt) {
-              var lst = document.getElementById("bucket-row");
-              var cnt = lst.childElementCount;
-              if (cnt == 1) {
-                alert("Cannot remove bucket");
-              } else {
-                var inpt = confirm("Are you sure you want to remove the bucket?");
-                if (inpt == true) {
-                  lst.removeChild(elmnt.parentElement.parentElement);
-                }
-              }
-            }
-            </script>
-          </div>
-        </div>
-        <br>
-        <input type="submit" class="btn btn-primary" value="Save">
-      </form>
+      </div>
     </div>
-    <div class="col-sm-2"></div>
-  </div>
-</div>
+    <h4>
+      <small>
+        <span class="glyphicon glyphicon-info-sign" title="Labels chosen by Heupr for newly raised issues"></span>
+      </small> Dynamic label(s)
+    </h4>
+    <div class="row" id="bucket-row">
+      <div class="col-sm-4 bucket">
+        <div>
+          <input class="form-control" type="text" name="description" placeholder="Bucket description">
+        </div>
+
+        <div>
+          <select class="selectpicker labels" name="dynamic-labels" data-live-search="true" multiple="true" title="Select label(s)...">
+            {{ range $label := .Labels }}
+            <option value="{{ $label }}">{{ $label }}</option>
+            {{ end }}
+          </select>
+        </div>
+
+        <small>
+          <span class="glyphicon glyphicon-info-sign" title="Add another class of labels"></span>
+        </small>
+
+        <span>
+          <button class="btn btn-primary" type="button" onclick="addBucket()">Add bucket</button>
+        </span>
+        <script>
+        function addBucket() {
+          var cln = $(".bucket:first").clone();
+          cln.appendTo("#bucket-row");
+          cln.find(".form-control").val("");
+          cln.find(".bootstrap-select").replaceWith(function() { return $("select", this); });
+          cln.find("select").selectpicker();
+        }
+        </script>
+
+        <small>
+          <span class="glyphicon glyphicon-info-sign" title="Remove this class of labels"></span>
+        </small>
+
+        <span>
+          <button class="btn btn-primary" type="button" onclick="removeBucket(this)">Remove bucket</button>
+        </span>
+        <script>
+        function removeBucket(elmnt) {
+          var lst = document.getElementById("bucket-row");
+          var cnt = lst.childElementCount;
+          if (cnt == 1) {
+            alert("Cannot remove bucket");
+          } else {
+            var inpt = confirm("Are you sure you want to remove the bucket?");
+            if (inpt == true) {
+              lst.removeChild(elmnt.parentElement.parentElement);
+            }
+          }
+        }
+        </script>
+      </div>
+    </div>
+    <br>
+    <input type="submit" class="btn btn-primary" value="Save">
+  </form>
+{{ end }}
