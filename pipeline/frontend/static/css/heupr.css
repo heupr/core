@@ -1,35 +1,40 @@
 .navbar {
-  margin-bottom: 0;
-  border-radius: 0;
-  padding: 15px;
   background-color: #DC143C;
   border-color: #DC143C;
+  border-radius: 0;
+  margin-bottom: 0;
+  padding: 15px;
 }
 
 a.navbar-brand {
   color: #FFFFFF;
+  font-family: sans-serif;
+  font-size: 25px;
   font-weight: bold;
   text-decoration: none;
-  font-size: 25px;
 }
 
 h1 {
+  font-family: sans-serif;
   font-weight: bold;
-  text-align: center;
   margin-top: 40px;
+  text-align: center;
 }
 
 h2 {
-  margin-top: 40px;
+  font-family: sans-serif;
   margin-bottom: 30px;
+  margin-top: 40px;
 }
 
 h3 {
-  text-align: center;
+  font-family: sans-serif;
   margin-top: 26px;
+  text-align: center;
 }
 
 h4 {
+  font-family: sans-serif;
   margin-top: 20px;
 }
 
@@ -41,29 +46,32 @@ li {
   padding: 25px;
 }
 
-.disclosure-container {
-  padding: 25px;
-  position: fixed;
-  bottom: 0px;
+a.directory-link {
+color: #DC143C;
+font-family: sans-serif;
+text-decoration: none;
+font-size: 20px;
+font-weight: bold;
+margin: 4px;
 }
 
-a.directory-link {
-  color: #DC143C;
-  font-weight: bold;
-  text-decoration: none;
-  font-size: 20px;
-  margin: 4px;
+.disclosure-container {
+  bottom: 0px;
+  padding: 25px;
+  position: fixed;
 }
 
 a.disclosure-link {
   color: #DC143C;
-  font-weight: normal;
   text-decoration: none;
+  font-family: sans-serif;
   font-size: 16px;
+  font-weight: normal;
   margin: 4px;
 }
 
 .feature-intro {
+  font-family: sans-serif;
   font-size: 20px;
   margin-top: 16px;
 }
@@ -74,14 +82,16 @@ a.disclosure-link {
 }
 
 .btn-lg {
+  background-color: #DC143C;
+  border-color: #DC143C;
+  font-family: sans-serif;
   font-size: 25px;
   font-weight: bold;
   padding: 20px;
-  background-color: #DC143C;
-  border-color: #DC143C;
 }
 
 .content {
+  font-family: sans-serif;
   font-size: 18px;
 }
 
@@ -94,8 +104,8 @@ a.disclosure-link {
 }
 
 .form-control {
-  width: 220px;
   margin-bottom: 2px;
+  width: 220px;
 }
 
 .btn {

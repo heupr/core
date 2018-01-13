@@ -1,0 +1,57 @@
+{{ define "panel" }}
+  <div class="directory-container">
+    <div>
+      <a class="directory-link" href="#">docs</a>
+    </div>
+    <div>
+      <a class="directory-link" href="#">console</a>
+    </div>
+    <div>
+      <a class="directory-link" href="#">twitter</a>
+    </div>
+  </div>
+  <div class="disclosure-container">
+    <div>
+      <a class="disclosure-link" href="#">terms of service</a>
+    </div>
+    <div>
+      <a class="disclosure-link" href="#">privacy policy</a>
+    </div>
+  </div>
+{{ end }}
+
+{{ define "body" }}
+  <h1>Welcome to Heupr!</h1>
+  <h3>Let's get your GitHub issues under control</h3>
+
+  <div class="row">
+    <div class="col-sm-6 feature-intro">
+      Wipe out technical debt with Heupr's automated contributor assignment
+      to ensure every issue is reviewed and handled
+      <!-- gifs/pics showing usage -->
+    </div>
+    <div class="col-sm-6 feature-intro">
+      Categorize issues with Heupr's labeling feature so that you can
+      quickly see exactly what each task entails
+      <!-- gifs/pics showing usage -->
+    </div>
+  </div>
+  <div class="sign-up">
+    <button type="button" class="btn btn-primary btn-lg">SIGN UP NOW!</button>
+  </div>
+{{ end }}
+
+<script>
+  window.productHuntUpcoming = {
+    appId: 131,
+    position: 'bottomRight',
+  };
+
+  (function(doc, scr, src, a, b) {
+    a = doc.createElement(scr);
+    b = doc.getElementsByTagName(scr)[0];
+    a.async = true;
+    a.src = src;
+    b.parentNode.insertBefore(a, b);
+  })(document, 'script', 'https://assets.producthunt.com/assets/upwigloader.js');
+</script>
