@@ -3,6 +3,7 @@ package frontend
 import (
 	"context"
 	"encoding/gob"
+	"fmt"
 	"html/template"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/github"
+	"github.com/satori/go.uuid"
 	"github.com/gorilla/schema"
 	"github.com/gorilla/sessions"
 	"go.uber.org/zap"
@@ -35,20 +37,40 @@ func slackMsg(msg string) {
 var (
 	oauthConfig = &oauth2.Config{
 		// NOTE: These will need to be added for production.
-		ClientID:     "",
-		ClientSecret: "",
-		Scopes:       []string{""},
+		//TODO: Try to configure RedirectURL without using Ngrok
+		RedirectURL:  "http://15e632c7.ngrok.io/console", //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
+		ClientID:     "Iv1.83cc17f7f984aeec", //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
+		ClientSecret: "c9c5f71edcf1a85121ae86bae5295413dff46fad", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
+		//Scopes:       []string{""},
 		Endpoint:     ghoa.Endpoint,
 	}
+	//TODO: Remove oauthSate
 	oauthState = "tenebrous-plagueis-sidious-maul-tyrannus-vader"
 	store      = sessions.NewCookieStore([]byte("yoda-dooku-jinn-kenobi-skywalker-tano"))
+	oauthTokenSessionKey    = "oauth_token"
 )
 
 const sessionName = "heupr-session"
 
 func login(w http.ResponseWriter, r *http.Request) {
-	url := oauthConfig.AuthCodeURL(oauthState, oauth2.AccessTypeOnline)
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	UUID, err := uuid.NewV4()
+	if err != nil {
+		http.Error(w, "authorization error", http.StatusUnauthorized)
+		return
+	}
+	sessionID := UUID.String()
+	oauthFlowSession, err := store.New(r, sessionID)
+	if err != nil {
+		http.Error(w, "authorization error", http.StatusUnauthorized)
+		return
+	}
+
+	//TODO: Experiment With This Setting.
+	oauthFlowSession.Options.MaxAge = 1 * 60 // 1 minute
+
+	//use session ID for state params, protects against CSRF
+	redirectURL := oauthConfig.AuthCodeURL(sessionID)
+	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
 
 var newClient = func(code string) (*github.Client, error) {
@@ -67,8 +89,10 @@ type label struct {
 
 type storage struct {
 	Name    string // FullName for the given repo.
+	Labels  []string
 	Buckets map[string][]label
 }
+
 
 func updateStorage(s *storage, labels []string) {
 	for bcktName, bcktLabels := range s.Buckets {
@@ -231,6 +255,46 @@ func generateWalkFunc(file *string, repoID string) func(string, os.FileInfo, err
 }
 
 func console(w http.ResponseWriter, r *http.Request) {
+	//TODO: Finish Fixing Console.
+	if r.Method == "GET" {
+		oauthFlowSession, err := store.Get(r, r.FormValue("state"))
+		fmt.Println("oauthFlow session : ")
+		if err != nil {
+			fmt.Println("invalid state: ", oauthFlowSession)
+			http.Redirect(w, r, "/", http.StatusForbidden)
+			return
+		}
+		s := storage{
+			Name:   "repository-test",
+			Labels: []string{"A", "B", "C", "D", "E"},
+			Buckets: map[string][]label{
+				"typebug":  []label{label{Name: "A", Selected: true}},
+				"second": []label{label{Name: "B", Selected: true}, label{Name: "C", Selected: true}},
+				"third":  []label{label{Name: "D", Selected: true}, label{Name: "E", Selected: true}},
+			},
+		}
+		t, err := template.ParseFiles("../templates/base.html","../templates/console.html")
+		if err != nil {
+			slackErr("Settings console page", err)
+			fmt.Println(err)
+			http.Error(w, "error loading console", http.StatusInternalServerError)
+			return
+		}
+		err = t.Execute(w, s)
+		if err != nil {
+			slackErr("Settings console page", err)
+			fmt.Println(err)
+			http.Error(w, "error loading console", http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Println("Console Get -Good")
+	} else {
+		fmt.Println("Console Post -Good")
+	}
+}
+
+func console2(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "bad request method", http.StatusBadRequest)
 		return
