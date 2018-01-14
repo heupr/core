@@ -253,7 +253,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 	session.Save(r, w)
 
 	file := ""
-	err = filepath.Walk(".", generateWalkFunc(&file, repoID))
+	err = filepath.Walk("./", generateWalkFunc(&file, repoID))
 	if err != nil {
 		http.Error(w, "error retrieving user settings", http.StatusInternalServerError)
 		return
@@ -336,17 +336,13 @@ func complete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := template.ParseFiles("templates/complete.html")
+	t, err := template.ParseFiles("templates/complete.html")
 	if err != nil {
 		slackErr("Error generating setup complete page", err)
 		http.Error(w, "/", http.StatusInternalServerError)
 		return
 	}
-	if err := tmpl.Execute(w, ""); err != nil {
-		slackErr("Error rendering complete page", err)
-		http.Error(w, "error rendering complete page", http.StatusInternalServerError)
-		return
-	}
+	t.Execute(w, "")
 	utils.AppLog.Info("Completed user signed up")
 	slackMsg("Completed user signed up")
 }
