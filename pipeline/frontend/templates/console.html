@@ -49,6 +49,16 @@
               <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
             {{ end }}
           </select>
+          <select class="selectpicker labels" name="type-improvement" data-live-search="true" title="Select label...">
+            {{ range $label := .Buckets.typeimprovement }}
+              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
+            {{ end }}
+          </select>
+          <select class="selectpicker labels" name="type-feature" data-live-search="true" title="Select label...">
+            {{ range $label := .Buckets.typefeature }}
+              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
+            {{ end }}
+          </select>
         </div>
       </div>
     </div>

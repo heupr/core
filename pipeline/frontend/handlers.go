@@ -269,8 +269,8 @@ func console(w http.ResponseWriter, r *http.Request) {
 			Labels: []string{"A", "B", "C", "D", "E"},
 			Buckets: map[string][]label{
 				"typebug":  []label{label{Name: "A", Selected: true}},
-				"second": []label{label{Name: "B", Selected: true}, label{Name: "C", Selected: true}},
-				"third":  []label{label{Name: "D", Selected: true}, label{Name: "E", Selected: true}},
+				"typeimprovement": []label{label{Name: "B", Selected: true}, label{Name: "C", Selected: true}},
+				"typefeature":  []label{label{Name: "D", Selected: true}, label{Name: "E", Selected: true}},
 			},
 		}
 		t, err := template.ParseFiles("../templates/base.html","../templates/console.html")
