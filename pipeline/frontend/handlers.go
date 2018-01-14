@@ -223,9 +223,8 @@ func repos(w http.ResponseWriter, r *http.Request) {
 
 func generateWalkFunc(file *string, repoID string) func(string, os.FileInfo, error) error {
 	return func(path string, info os.FileInfo, err error) error {
-		name := strings.TrimSuffix(path, filepath.Ext(path))
-		if filepath.Ext(path) == ".gob" && name == repoID {
-			*file = path
+		if info.Name() == repoID+".gob" {
+			*file = info.Name()
 		}
 		return nil
 	}
@@ -254,7 +253,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 	session.Save(r, w)
 
 	file := ""
-	err = filepath.Walk("./", generateWalkFunc(&file, repoID))
+	err = filepath.Walk(".", generateWalkFunc(&file, repoID))
 	if err != nil {
 		http.Error(w, "error retrieving user settings", http.StatusInternalServerError)
 		return
@@ -312,7 +311,7 @@ func complete(w http.ResponseWriter, r *http.Request) {
 	session.Save(r, w)
 
 	file := ""
-	err = filepath.Walk("./", generateWalkFunc(&file, repoID.(string)))
+	err = filepath.Walk(".", generateWalkFunc(&file, repoID.(string)))
 	if err != nil {
 		http.Error(w, "error retrieving user settings", http.StatusInternalServerError)
 		return

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-github/github"
@@ -128,6 +129,23 @@ func Test_repos(t *testing.T) {
 	}
 }
 
+func Test_generateWalkFunc(t *testing.T) {
+	assert := assert.New(t)
+
+	file := "-66.gob"
+	found := ""
+	_, err := os.Create(file)
+	if err != nil {
+		t.Errorf("create file error", err)
+	}
+	defer os.Remove(file)
+
+	wkFn := generateWalkFunc(&found, "-66")
+	filepath.Walk(".", wkFn)
+
+	assert.Equal(file, found, "generate walk function files not matching")
+}
+
 func Test_console(t *testing.T) {
 	assert := assert.New(t)
 	handler := http.HandlerFunc(console)
@@ -164,10 +182,10 @@ func Test_console(t *testing.T) {
 
 	for i := range tests {
 		f, err := os.Create(tests[i].file)
-		defer os.Remove(tests[i].file)
 		if err != nil {
 			t.Error("failure creating test gob file")
 		}
+		defer os.Remove(tests[i].file)
 		s := storage{
 			Name: "contingency/chancellor",
 		}
@@ -186,10 +204,7 @@ func Test_console(t *testing.T) {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
 
-		assert.Equal(
-			tests[i].result, rec.Code,
-			fmt.Sprint(tests[i].name),
-		)
+		assert.Equal(tests[i].result, rec.Code, fmt.Sprint(tests[i].name))
 	}
 }
 
