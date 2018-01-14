@@ -23,6 +23,7 @@ type Server struct {
 func routes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", render("../templates/home.html"))
+	mux.HandleFunc("/login", login)
 	mux.HandleFunc("/repos", repos)
 	mux.HandleFunc("/console", console)
 	mux.HandleFunc("/complete", complete)

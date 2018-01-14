@@ -45,21 +45,7 @@
       <div class="col-sm-4 bucket">
         <div>
           <select class="selectpicker labels" name="type-bug" data-live-search="true" title="Select label...">
-            {{ range $label := .Buckets["type-bug"] }}
-              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
-            {{ end }}
-          </select>
-        </div>
-        <div>
-          <select class="selectpicker labels" name="type-improvement" data-live-search="true" title="Select label...">
-            {{ range $label := .Buckets["type-improvement"] }}
-              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
-            {{ end }}
-          </select>
-        </div>
-        <div>
-          <select class="selectpicker labels" name="type-feature" data-live-search="true" title="Select label...">
-            {{ range $label := .Buckets["type-feature "] }}
+            {{ range $label := .Buckets.typebug }}
               <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
             {{ end }}
           </select>
