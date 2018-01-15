@@ -91,7 +91,6 @@ type label struct {
 
 type storage struct {
 	Name    string // FullName for the given repo.
-	Labels  []string
 	Buckets map[string][]label
 }
 
@@ -269,12 +268,36 @@ func console(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s := storage{
-			Name:   "repository-test",
-			Labels: []string{"A", "B", "C", "D", "E"},
+			Name: "repository-test",
 			Buckets: map[string][]label{
-				"typebug":         []label{label{Name: "A", Selected: true}},
-				"typeimprovement": []label{label{Name: "B", Selected: true}, label{Name: "C", Selected: true}},
-				"typefeature":     []label{label{Name: "D", Selected: true}, label{Name: "E", Selected: true}},
+				"default": []label{
+					label{Name: "A", Selected: true},
+					label{Name: "B", Selected: false},
+					label{Name: "C", Selected: false},
+					label{Name: "D", Selected: false},
+					label{Name: "E", Selected: false},
+				},
+				"typebug": []label{
+					label{Name: "A", Selected: false},
+					label{Name: "B", Selected: true},
+					label{Name: "C", Selected: false},
+					label{Name: "D", Selected: false},
+					label{Name: "E", Selected: false},
+				},
+				"typeimprovement": []label{
+					label{Name: "A", Selected: false},
+					label{Name: "B", Selected: false},
+					label{Name: "C", Selected: true},
+					label{Name: "D", Selected: false},
+					label{Name: "E", Selected: false},
+				},
+				"typefeature": []label{
+					label{Name: "A", Selected: false},
+					label{Name: "B", Selected: false},
+					label{Name: "C", Selected: false},
+					label{Name: "D", Selected: true},
+					label{Name: "E", Selected: true},
+				},
 			},
 		}
 

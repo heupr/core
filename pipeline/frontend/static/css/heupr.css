@@ -74,6 +74,8 @@ a.disclosure-link {
   font-family: sans-serif;
   font-size: 20px;
   margin-top: 16px;
+  padding-left: 30px;
+  padding-right: 30px;
 }
 
 .sign-up {

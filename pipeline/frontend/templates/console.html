@@ -34,8 +34,8 @@
       <div class="col-sm-4">
         <div>
           <select class="selectpicker labels" name="default-labels" data-live-search="true" multiple="true" title="Select label(s)...">
-            {{ range $label := .Labels }}
-              <option value="{{ $label }}">{{ $label }}</option>
+            {{ range $label := .Buckets.default }}
+              <option value="{{ $label.Name }}">{{ $label.Name }}</option>
             {{ end }}
           </select>
         </div>
