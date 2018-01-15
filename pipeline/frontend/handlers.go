@@ -12,9 +12,9 @@ import (
 	"strings"
 
 	"github.com/google/go-github/github"
-	"github.com/satori/go.uuid"
 	"github.com/gorilla/schema"
 	"github.com/gorilla/sessions"
+	"github.com/satori/go.uuid"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	ghoa "golang.org/x/oauth2/github"
@@ -38,27 +38,29 @@ var (
 	oauthConfig = &oauth2.Config{
 		// NOTE: These will need to be added for production.
 		//TODO: Try to configure RedirectURL without using Ngrok
-		RedirectURL:  "http://15e632c7.ngrok.io/console", //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
-		ClientID:     "Iv1.83cc17f7f984aeec", //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
+		RedirectURL:  "http://15e632c7.ngrok.io/console",         //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
+		ClientID:     "Iv1.83cc17f7f984aeec",                     //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
 		ClientSecret: "c9c5f71edcf1a85121ae86bae5295413dff46fad", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
 		//Scopes:       []string{""},
-		Endpoint:     ghoa.Endpoint,
+		Endpoint: ghoa.Endpoint,
 	}
 	//TODO: Remove oauthSate
-	oauthState = "tenebrous-plagueis-sidious-maul-tyrannus-vader"
-	store      = sessions.NewCookieStore([]byte("yoda-dooku-jinn-kenobi-skywalker-tano"))
-	oauthTokenSessionKey    = "oauth_token"
+	oauthState           = "tenebrous-plagueis-sidious-maul-tyrannus-vader"
+	store                = sessions.NewCookieStore([]byte("yoda-dooku-jinn-kenobi-skywalker-tano"))
+	oauthTokenSessionKey = "oauth_token"
+	// templatePath is for testing purposes only; a better solution is needed.
+	templatePath = "../"
 )
 
 const sessionName = "heupr-session"
 
 func login(w http.ResponseWriter, r *http.Request) {
-	UUID, err := uuid.NewV4()
+	newUUID, err := uuid.NewV4()
 	if err != nil {
 		http.Error(w, "authorization error", http.StatusUnauthorized)
 		return
 	}
-	sessionID := UUID.String()
+	sessionID := newUUID.String()
 	oauthFlowSession, err := store.New(r, sessionID)
 	if err != nil {
 		http.Error(w, "authorization error", http.StatusUnauthorized)
@@ -92,7 +94,6 @@ type storage struct {
 	Labels  []string
 	Buckets map[string][]label
 }
-
 
 func updateStorage(s *storage, labels []string) {
 	for bcktName, bcktLabels := range s.Buckets {
@@ -236,7 +237,10 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		Repos: repos,
 	}
 
-	t, err := template.ParseFiles("templates/repos.html")
+	t, err := template.ParseFiles(
+		// templatePath+"templates/base.html",
+		templatePath + "templates/repos.html",
+	)
 	if err != nil {
 		slackErr("Repos selection page", err)
 		http.Error(w, "error loading repo selections", http.StatusInternalServerError)
@@ -268,12 +272,16 @@ func console(w http.ResponseWriter, r *http.Request) {
 			Name:   "repository-test",
 			Labels: []string{"A", "B", "C", "D", "E"},
 			Buckets: map[string][]label{
-				"typebug":  []label{label{Name: "A", Selected: true}},
+				"typebug":         []label{label{Name: "A", Selected: true}},
 				"typeimprovement": []label{label{Name: "B", Selected: true}, label{Name: "C", Selected: true}},
-				"typefeature":  []label{label{Name: "D", Selected: true}, label{Name: "E", Selected: true}},
+				"typefeature":     []label{label{Name: "D", Selected: true}, label{Name: "E", Selected: true}},
 			},
 		}
-		t, err := template.ParseFiles("../templates/base.html","../templates/console.html")
+
+		t, err := template.ParseFiles(
+			templatePath+"templates/base.html",
+			templatePath+"templates/console.html",
+		)
 		if err != nil {
 			slackErr("Settings console page", err)
 			fmt.Println(err)
@@ -288,9 +296,9 @@ func console(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		fmt.Println("Console Get -Good")
+		fmt.Println("Console Get -Good") // TEMPORARY
 	} else {
-		fmt.Println("Console Post -Good")
+		fmt.Println("Console Post -Good") // TEMPORARY
 	}
 }
 
@@ -333,7 +341,10 @@ func console2(w http.ResponseWriter, r *http.Request) {
 	s := storage{}
 	decoder.Decode(&s)
 
-	t, err := template.ParseFiles("templates/console.html")
+	t, err := template.ParseFiles(
+		// templatePath+"templates/base.html",
+		templatePath + "templates/console.html",
+	)
 	if err != nil {
 		slackErr("Settings console page", err)
 		http.Error(w, "error loading console", http.StatusInternalServerError)
@@ -400,7 +411,10 @@ func complete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.ParseFiles("templates/complete.html")
+	t, err := template.ParseFiles(
+		// templatePath+"templates/base.html",
+		templatePath + "templates/complete.html",
+	)
 	if err != nil {
 		slackErr("Error generating setup complete page", err)
 		http.Error(w, "/", http.StatusInternalServerError)
