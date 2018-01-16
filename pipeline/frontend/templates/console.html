@@ -3,26 +3,7 @@
 {{ end }}
 
 {{ define "body" }}
-  <!-- NOTE: onsubmit has been removed to allow the page to direct to the next handler -->
   <form role="form" id="label-settings" action="#" method="POST">
-  <!-- NOTE: Removing for the labelmaker beta -->
-  <!-- <script>
-  function saveSettings() {
-    // NOTE: This is a crude check to ensure unique bucket names are used.
-    var names = [];
-    $(".col-sm-4.bucket").each(function() {
-      names.push($(this).find(".form-control").val())
-    });
-    names.sort();
-    var filtered = names.filter( function(v, i, a) {
-      return !i || v !== a[i-1];
-    });
-    if (names.length != filtered.length) {
-      alert("Please enter unique bucket descriptions");
-      return;
-    }
-  }
-  </script> -->
     <h2>Label options</h2>
     <hr>
     <h4>
@@ -35,93 +16,42 @@
         <div>
           <select class="selectpicker labels" name="default-labels" data-live-search="true" multiple="true" title="Select label(s)...">
             {{ range $label := .Buckets.default }}
-              <option value="{{ $label.Name }}">{{ $label.Name }}</option>
+              <option value="{{ $label.Name }}" {{ if $label.Selected }}selected{{ end }}>{{ $label.Name }}</option>
             {{ end }}
           </select>
         </div>
       </div>
     </div>
-    <div class="row" id="bucket-row">
+    <h4>
+      <small>
+        <span class="glyphicon glyphicon-info-sign" title="Label each new issue by type"></span>
+      </small> Classification labels
+    </h4>
+    <div class="row" id="bucket-type">
       <div class="col-sm-4 bucket">
         <div>
           <select class="selectpicker labels" name="type-bug" data-live-search="true" title="Select label...">
             {{ range $label := .Buckets.typebug }}
-              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
+              <option value="{{ $label.Name }}" {{ if $label.Selected }}selected{{ end }}>{{ $label.Name }}</option>
             {{ end }}
           </select>
+        </div>
+        <div>
           <select class="selectpicker labels" name="type-improvement" data-live-search="true" title="Select label...">
             {{ range $label := .Buckets.typeimprovement }}
-              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
+              <option value="{{ $label.Name }}" {{ if $label.Selected }}selected{{ end }}>{{ $label.Name }}</option>
             {{ end }}
           </select>
+        </div>
+        <div>
           <select class="selectpicker labels" name="type-feature" data-live-search="true" title="Select label...">
             {{ range $label := .Buckets.typefeature }}
-              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
+              <option value="{{ $label.Name }}" {{ if $label.Selected }}selected{{ end }}>{{ $label.Name }}</option>
             {{ end }}
           </select>
         </div>
       </div>
     </div>
-    <!-- NOTE: Removing for the labelmaker beta -->
-    <!-- <h4>
-      <small>
-        <span class="glyphicon glyphicon-info-sign" title="Labels chosen by Heupr for newly raised issues"></span>
-      </small> Dynamic label(s)
-    </h4>
-    <div class="row" id="bucket-row">
-      <div class="col-sm-4 bucket">
-        <div>
-          <input class="form-control" type="text" name="description" placeholder="Bucket description">
-        </div>
-
-        <div>
-          <select class="selectpicker labels" name="dynamic-labels" data-live-search="true" multiple="true" title="Select label(s)...">
-            {{ range $label := .Labels }}
-            <option value="{{ $label }}">{{ $label }}</option>
-            {{ end }}
-          </select>
-        </div>
-
-        <small>
-          <span class="glyphicon glyphicon-info-sign" title="Add another class of labels"></span>
-        </small>
-
-        <span>
-          <button class="btn btn-primary" type="button" onclick="addBucket()">Add bucket</button>
-        </span>
-        <script>
-        function addBucket() {
-          var cln = $(".bucket:first").clone();
-          cln.appendTo("#bucket-row");
-          cln.find(".form-control").val("");
-          cln.find(".bootstrap-select").replaceWith(function() { return $("select", this); });
-          cln.find("select").selectpicker();
-        }
-        </script>
-
-        <small>
-          <span class="glyphicon glyphicon-info-sign" title="Remove this class of labels"></span>
-        </small>
-
-        <span>
-          <button class="btn btn-primary" type="button" onclick="removeBucket(this)">Remove bucket</button>
-        </span>
-        <script>
-        function removeBucket(elmnt) {
-          var lst = document.getElementById("bucket-row");
-          var cnt = lst.childElementCount;
-          if (cnt == 1) {
-            alert("Cannot remove bucket");
-          } else {
-            var inpt = confirm("Are you sure you want to remove the bucket?");
-            if (inpt == true) {
-              lst.removeChild(elmnt.parentElement.parentElement);
-            }
-          }
-        }
-        </script>
-      </div>
-    </div> -->
     <br>
     <input type="submit" class="btn btn-primary" value="Save">
   </form>

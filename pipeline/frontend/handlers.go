@@ -38,9 +38,9 @@ var (
 	oauthConfig = &oauth2.Config{
 		// NOTE: These will need to be added for production.
 		//TODO: Try to configure RedirectURL without using Ngrok
-		RedirectURL:  "http://15e632c7.ngrok.io/console",         //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
-		ClientID:     "Iv1.83cc17f7f984aeec",                     //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
-		ClientSecret: "c9c5f71edcf1a85121ae86bae5295413dff46fad", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
+		RedirectURL:  "http://127.0.0.1:8080/console",            //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
+		ClientID:     "Iv1.022bff727680de07",                     //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
+		ClientSecret: "1ffe642ab564209f768923348bd1a3257c10cee2", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
 		//Scopes:       []string{""},
 		Endpoint: ghoa.Endpoint,
 	}
@@ -275,7 +275,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 					label{Name: "B", Selected: false},
 					label{Name: "C", Selected: false},
 					label{Name: "D", Selected: false},
-					label{Name: "E", Selected: false},
+					label{Name: "E", Selected: true},
 				},
 				"typebug": []label{
 					label{Name: "A", Selected: false},
@@ -296,7 +296,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 					label{Name: "B", Selected: false},
 					label{Name: "C", Selected: false},
 					label{Name: "D", Selected: true},
-					label{Name: "E", Selected: true},
+					label{Name: "E", Selected: false},
 				},
 			},
 		}
@@ -311,6 +311,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "error loading console", http.StatusInternalServerError)
 			return
 		}
+        fmt.Println("STORAGE", s) // TEMPORARY
 		err = t.Execute(w, s)
 		if err != nil {
 			slackErr("Settings console page", err)
@@ -318,7 +319,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "error loading console", http.StatusInternalServerError)
 			return
 		}
-
+        fmt.Println("ERROR", err) // TEMPORARY
 		fmt.Println("Console Get -Good") // TEMPORARY
 	} else {
 		fmt.Println("Console Post -Good") // TEMPORARY
@@ -365,8 +366,8 @@ func console2(w http.ResponseWriter, r *http.Request) {
 	decoder.Decode(&s)
 
 	t, err := template.ParseFiles(
-		// templatePath+"templates/base.html",
-		templatePath + "templates/console.html",
+		templatePath+"templates/base.html",
+		templatePath+"templates/console.html",
 	)
 	if err != nil {
 		slackErr("Settings console page", err)
