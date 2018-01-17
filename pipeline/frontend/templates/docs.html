@@ -5,7 +5,7 @@
 {{ define "body" }}
   <h2>Docs</h2>
   <hr>
-  <div class="content">
+  <div class="content faq">
     <p>
       Q: How do I install Heupr on my repo?
     </p>
@@ -15,7 +15,7 @@
       user authentication pages.
     </p>
   </div>
-  <div class="content">
+  <div class="content faq">
     <p>
       Q: Why do I need to sign in to GitHub?
     </p>
@@ -25,17 +25,27 @@
       of security.
     </p>
   </div>
-  <div class="content">
+  <div class="content faq">
     <p>
+      Q: What are "default" and "classification" labels?
+    </p>
+    <p>
+      A: Great question! "Default" labels are ones you want applied to
+      <i>every</i> incoming issue while "classification" are the ones you want
+      Heupr to use to identify <i>bug</i>/<i>improvement</i>/<i>feature</i>
+      issues.
+    </p>
+    <!-- NOTE: Removing for the beta. -->
+    <!-- <p>
       Q: What are "default" and "dynamic" labels?
     </p>
     <p>
       A: Great question! "Default" labels are ones you want applied to
       <i>every</i> incoming issue whereas "dynamic" are the ones Heupr
       chooses from and selects the one with the <i>best fit</i>.
-    </p>
+    </p> -->
   </div>
-  <div class="content">
+  <div class="content faq">
     <p>
       Q: Where do I see Heupr's activity?
     </p>
@@ -45,16 +55,26 @@
       incoming issues.
     </p>
   </div>
-  <div class="content">
+  <div class="content faq">
     <p>
       Q: Can I change Heupr's choices?
     </p>
     <p>
-      A: You sure can! Make whatever changes you need directly through
-      GitHub like normal.
+      A: You sure can! Make whatever changes you need <i>directly through
+      GitHub</i> like normal.
     </p>
   </div>
-  <div class="content">
+  <div class="content faq">
+    <p>
+      Q: Why I don't see assignments and/or labels on a new issue?
+    </p>
+    <p>
+      A: Heupr may have hit a GitHub rate limit - if you don't see an update
+      by then, try refreshing the issue page. If that doesn't work, give us a
+      shout and we'll look right into it!
+    </p>
+  </div>
+  <div class="content faq">
     <p>
       Q: What data do you use for training?
     </p>
@@ -65,7 +85,7 @@
       <i>public</i> data.
     </p>
   </div>
-  <div class="content">
+  <div class="content faq">
     <p>
       Q: Do you support private and enterprise repos?
     </p>
@@ -73,25 +93,35 @@
       A: Not yet, but we plan on offering that soon!
     </p>
   </div>
-  <div class="content">
+  <div class="content faq">
     <p>
       Q: Where can I get in touch with you?
     </p>
     <p>
-      A: Hit us up at heuprHQ@gmail.com for general inquiries and
+      A: Hit us up at <b>heuprHQ@gmail.com</b> for general inquiries and
       feedback on our app. Also, if you're interested in demo user
       assignments or label selections for your repo, let us know!
     </p>
   </div>
-  <div class="content">
+  <div class="content faq">
+    <p>
+      Q: Where does the name "Heupr" come from?
+    </p>
+    <p>
+      A: It's a portmanteau of the words "heuristic" and "projects"
+      (together pronounced "HUE-per") and is a reminder of our goal to help
+      people <i><b>make smart projects</b></i>!
+    </p>
+  </div>
+  <div class="content faq">
     <p>
       Q: Where can I follow Heupr's progress?
     </p>
     <p>
-      Follow us at <a href="https://twitter.com/heuprHQ">Twitter</a> for
+      Follow us at <b><a href="https://twitter.com/heuprHQ">Twitter</a></b> for
       general project updates. Also, feel free to sign up at our
-      <a href="https://www.producthunt.com/upcoming/heupr">Product Hunt
-        Upcoming page</a> for feature launches and beta announcements.
+      <b><a href="https://www.producthunt.com/upcoming/heupr">Product Hunt
+        Upcoming page</a></b> for feature launches and beta announcements.
     </p>
   </div>
   <br>

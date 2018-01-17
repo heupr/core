@@ -47,12 +47,12 @@ li {
 }
 
 a.directory-link {
-color: #DC143C;
-font-family: sans-serif;
-text-decoration: none;
-font-size: 20px;
-font-weight: bold;
-margin: 4px;
+  color: #DC143C;
+  font-family: sans-serif;
+  text-decoration: none;
+  font-size: 20px;
+  font-weight: bold;
+  margin: 4px;
 }
 
 .disclosure-container {
@@ -95,6 +95,10 @@ a.disclosure-link {
 .content {
   font-family: sans-serif;
   font-size: 18px;
+}
+
+.faq {
+  margin-bottom: 30px;
 }
 
 .glyphicon-info-sign {
