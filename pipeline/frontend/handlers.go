@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/google/go-github/github"
-	"github.com/gorilla/schema"
 	"github.com/gorilla/sessions"
 	"github.com/satori/go.uuid"
 	"go.uber.org/zap"
@@ -311,7 +310,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "error loading console", http.StatusInternalServerError)
 			return
 		}
-        fmt.Println("STORAGE", s) // TEMPORARY
+		fmt.Println("STORAGE", s) // TEMPORARY
 		err = t.Execute(w, s)
 		if err != nil {
 			slackErr("Settings console page", err)
@@ -319,7 +318,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "error loading console", http.StatusInternalServerError)
 			return
 		}
-        fmt.Println("ERROR", err) // TEMPORARY
+		fmt.Println("ERROR", err)        // TEMPORARY
 		fmt.Println("Console Get -Good") // TEMPORARY
 	} else {
 		fmt.Println("Console Post -Good") // TEMPORARY
@@ -448,12 +447,3 @@ func complete(w http.ResponseWriter, r *http.Request) {
 	utils.AppLog.Info("Completed user signed up")
 	slackMsg("Completed user signed up")
 }
-
-// NOTE: Depreciate this code.
-var decoder = schema.NewDecoder()
-
-// NOTE: Depreciate this code.
-var mainHandler = http.StripPrefix(
-	"/",
-	http.FileServer(http.Dir("../website/")),
-)
