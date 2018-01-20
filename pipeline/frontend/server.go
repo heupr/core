@@ -2,12 +2,14 @@ package frontend
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/gorilla/csrf"
 	"go.uber.org/zap"
 
 	"core/utils"
@@ -26,6 +28,7 @@ func routes() *http.ServeMux {
 	mux.HandleFunc("/login", login)
 	mux.HandleFunc("/repos", repos)
 	mux.HandleFunc("/console", console)
+	mux.HandleFunc("/console2", console2)
 	mux.HandleFunc("/complete", complete)
 	mux.HandleFunc("/docs", render("../templates/docs.html"))
 	mux.HandleFunc("/privacy", render("../templates/privacy.html"))
@@ -69,9 +72,15 @@ func (s *Server) LaunchServer(secure, unsecure, cert, key string) {
 	} else {
 		// Primary server with HTTP for testing only. Ngrok doesn't play well
 		// with HTTPS.
+		CSRF := csrf.Protect(
+			[]byte("32-byte-long-auth-key"),
+			csrf.Secure(false),
+			csrf.ErrorHandler(http.HandlerFunc(csrfErrorHandler)),
+		)
+		CSRF = CSRF
 		s.Primary = http.Server{
 			Addr:    unsecure,
-			Handler: routes(),
+			Handler: CSRF(routes()),
 		}
 		go func() {
 			if err := s.Primary.ListenAndServe(); err != nil {
@@ -83,6 +92,12 @@ func (s *Server) LaunchServer(secure, unsecure, cert, key string) {
 			}
 		}()
 	}
+}
+
+func csrfErrorHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r)
+	fmt.Println("error in Csrf: %v", csrf.FailureReason(r))
+	return
 }
 
 // Start provides live/test LaunchServer with necessary startup information.

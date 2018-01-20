@@ -3,7 +3,27 @@
 {{ end }}
 
 {{ define "body" }}
-  <form role="form" id="label-settings" action="#" method="POST">
+  <!-- NOTE: onsubmit has been removed to allow the page to direct to the next handler -->
+  <form role="form" id="label-settings" action="/console2" method="POST">
+    {{ .csrfField }}
+  <!-- NOTE: Removing for the labelmaker beta -->
+  <!-- <script>
+  function saveSettings() {
+    // NOTE: This is a crude check to ensure unique bucket names are used.
+    var names = [];
+    $(".col-sm-4.bucket").each(function() {
+      names.push($(this).find(".form-control").val())
+    });
+    names.sort();
+    var filtered = names.filter( function(v, i, a) {
+      return !i || v !== a[i-1];
+    });
+    if (names.length != filtered.length) {
+      alert("Please enter unique bucket descriptions");
+      return;
+    }
+  }
+  </script> -->
     <h2>Label options</h2>
     <hr>
     <h4>
@@ -15,8 +35,8 @@
       <div class="col-sm-4">
         <div>
           <select class="selectpicker labels" name="default-labels" data-live-search="true" multiple="true" title="Select label(s)...">
-            {{ range $label := .Buckets.default }}
-              <option value="{{ $label.Name }}" {{ if $label.Selected }}selected{{ end }}>{{ $label.Name }}</option>
+            {{ range $label := .storage.Labels }}
+              <option value="{{ $label }}">{{ $label }}</option>
             {{ end }}
           </select>
         </div>
@@ -31,22 +51,22 @@
       <div class="col-sm-4 bucket">
         <div>
           <select class="selectpicker labels" name="type-bug" data-live-search="true" title="Select label...">
-            {{ range $label := .Buckets.typebug }}
-              <option value="{{ $label.Name }}" {{ if $label.Selected }}selected{{ end }}>{{ $label.Name }}</option>
+            {{ range $label := .storage.Buckets.typebug }}
+              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
             {{ end }}
           </select>
         </div>
         <div>
           <select class="selectpicker labels" name="type-improvement" data-live-search="true" title="Select label...">
-            {{ range $label := .Buckets.typeimprovement }}
-              <option value="{{ $label.Name }}" {{ if $label.Selected }}selected{{ end }}>{{ $label.Name }}</option>
+            {{ range $label := .storage.Buckets.typeimprovement }}
+              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
             {{ end }}
           </select>
         </div>
         <div>
           <select class="selectpicker labels" name="type-feature" data-live-search="true" title="Select label...">
-            {{ range $label := .Buckets.typefeature }}
-              <option value="{{ $label.Name }}" {{ if $label.Selected }}selected{{ end }}>{{ $label.Name }}</option>
+            {{ range $label := .storage.Buckets.typefeature }}
+              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
             {{ end }}
           </select>
         </div>

@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gorilla/csrf"
+	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
 	"github.com/gorilla/sessions"
 	"github.com/satori/go.uuid"
@@ -37,12 +39,13 @@ var (
 	oauthConfig = &oauth2.Config{
 		// NOTE: These will need to be added for production.
 		//TODO: Try to configure RedirectURL without using Ngrok
-		RedirectURL:  "http://127.0.0.1:8080/console",            //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
-		ClientID:     "Iv1.022bff727680de07",                     //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
-		ClientSecret: "1ffe642ab564209f768923348bd1a3257c10cee2", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
+		RedirectURL:  "http://127.0.0.1:8080/repos", //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
+		ClientID:     "Iv1.83cc17f7f984aeec", //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
+		ClientSecret: "c9c5f71edcf1a85121ae86bae5295413dff46fad", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
 		//Scopes:       []string{""},
 		Endpoint: ghoa.Endpoint,
 	}
+	appID			 = 6807 //This needs to match the "ID" in "Mike/JohnHeuprTest"
 	//TODO: Remove oauthSate
 	oauthState           = "tenebrous-plagueis-sidious-maul-tyrannus-vader"
 	store                = sessions.NewCookieStore([]byte("yoda-dooku-jinn-kenobi-skywalker-tano"))
@@ -74,12 +77,27 @@ func login(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
 
-var newClient = func(code string) (*github.Client, error) {
+var newUserToServerClient = func(code string) (*github.Client, error) {
 	token, err := oauthConfig.Exchange(oauth2.NoContext, code)
 	if err != nil {
 		return nil, err
 	}
 	client := github.NewClient(oauthConfig.Client(oauth2.NoContext, token))
+	return client, nil
+}
+
+var newServerToServerClient = func(appId, installationId int) (*github.Client, error) {
+	var key string
+	if PROD {
+		key = "heupr.2017-10-04.private-key.pem"
+	} else {
+		key = "mikeheuprtest.2017-11-16.private-key.pem"
+	}
+	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appId, installationId, key)
+	if err != nil {
+		return nil, err
+	}
+	client := github.NewClient(&http.Client{Transport: itr})
 	return client, nil
 }
 
@@ -89,7 +107,8 @@ type label struct {
 }
 
 type storage struct {
-	Name    string // FullName for the given repo.
+	Name    string	`schema:"Name"` // FullName for the given repo.
+	Labels  []string `schema:"Labels"`
 	Buckets map[string][]label
 }
 
@@ -109,22 +128,33 @@ func updateStorage(s *storage, labels []string) {
 	}
 }
 
+
+//TODO: Your datastructure needs to look EXACTLY like this.
+//data := map[string]interface{}{
+//		"storage":				s,
+//		"csrf":           csrfToken,
+//		csrf.TemplateTag: csrf.TemplateField(r),
+//}
+//err = t.ExecuteTemplate(w, "base.html", data)
+
+//TODO: Utilize  r.FormValue("gorilla.csrf.Token")) in Console session handler.(Mapped to Repo ID) 
+
 func repos(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "bad request method", http.StatusBadRequest)
 		return
 	}
-	if oauthState != r.FormValue("state") {
-		http.Error(w, "authorization error", http.StatusUnauthorized)
+	oauthFlowSession, err := store.Get(r, r.FormValue("state"))
+	fmt.Println("oauthFlow session : ")
+	if err != nil {
+		fmt.Println("invalid state: ", oauthFlowSession)
+		http.Redirect(w, r, "/", http.StatusForbidden)
 		return
 	}
 	code := r.FormValue("code")
-	client, err := newClient(code)
+	client, err := newUserToServerClient(code)
 	if err != nil {
-		utils.AppLog.Error(
-			"failure creating frontend client",
-			zap.Error(err),
-		)
+		utils.AppLog.Error("failure creating frontend client",zap.Error(err))
 		http.Error(w, "client failure", http.StatusInternalServerError)
 		return
 	}
@@ -137,11 +167,27 @@ func repos(w http.ResponseWriter, r *http.Request) {
 	}
 	session.Save(r, w)
 
-	opts := &github.ListOptions{PerPage: 100}
-	repos := make(map[int]string)
 	ctx := context.Background()
+	opts := &github.ListOptions{Page: 1, PerPage: 50}
+
+	installationID := 0
+	installations, _, err := listUserInstallations(ctx, client, opts)
+
+	for i := range installations {
+		if *installations[i].AppID == appID {
+			installationID = *installations[i].ID
+			break
+		}
+	}
+	if installationID == 0 {
+		utils.AppLog.Warn("Heupr installation not found")
+		http.Error(w, "error detecting Heupr installation", http.StatusInternalServerError)
+		return
+	}
+
+	repos := make(map[int]string)
 	for {
-		repo, resp, err := client.Apps.ListUserRepos(ctx, 5535, opts)
+		repo, resp, err := client.Apps.ListUserRepos(ctx, installationID, opts)
 		if err != nil {
 			utils.AppLog.Error("error collecting user repos", zap.Error(err))
 			http.Error(w, "error collecting user repos", http.StatusInternalServerError)
@@ -156,6 +202,13 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		} else {
 			opts.Page = resp.NextPage
 		}
+	}
+
+	client, err = newServerToServerClient(appID, installationID)
+	if err != nil {
+		utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
+		http.Error(w, "client failure", http.StatusInternalServerError)
+		return
 	}
 
 	opts = &github.ListOptions{PerPage: 100}
@@ -208,7 +261,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			file, err := os.Open(filename)
+			file, err := os.OpenFile(filename, os.O_WRONLY, 0644)
 			defer file.Close()
 			if err != nil {
 				http.Error(w, "error opening storage file", http.StatusInternalServerError)
@@ -235,16 +288,19 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		Repos: repos,
 	}
 
-	t, err := template.ParseFiles(
-		// templatePath+"templates/base.html",
-		templatePath + "templates/repos.html",
-	)
+	t, err := template.ParseFiles("../templates/base.html","../templates/repos.html")
 	if err != nil {
 		slackErr("Repos selection page", err)
 		http.Error(w, "error loading repo selections", http.StatusInternalServerError)
 		return
 	}
-	t.Execute(w, input)
+	//TODO: Your datastructure needs to look EXACTLY like this.
+	//data := map[string]interface{}{
+	//		"storage":				s,
+	//		"csrf":           csrfToken,
+	//		csrf.TemplateTag: csrf.TemplateField(r),
+	//}
+	t.Execute(w, input) //TODO: err = t.ExecuteTemplate(w, "base.html", data)
 }
 
 func generateWalkFunc(file *string, repoID string) func(string, os.FileInfo, error) error {
@@ -256,9 +312,15 @@ func generateWalkFunc(file *string, repoID string) func(string, os.FileInfo, err
 	}
 }
 
+
+//Console3 is the original Console
+//console and ----> console2 demonstrate the flow between two handlers using the CSRF library
+//TODO: Based on the code in console update the repo handler accordingly (Slightly Open Ended)
+//TODO: Based on the code in console2 update the console handler accordingly (Slightly Open Ended)
 func console(w http.ResponseWriter, r *http.Request) {
 	//TODO: Finish Fixing Console.
 	if r.Method == "GET" {
+		fmt.Println("console:", r.FormValue("state"))
 		oauthFlowSession, err := store.Get(r, r.FormValue("state"))
 		fmt.Println("oauthFlow session : ")
 		if err != nil {
@@ -299,19 +361,23 @@ func console(w http.ResponseWriter, r *http.Request) {
 				},
 			},
 		}
-
-		t, err := template.ParseFiles(
-			templatePath+"templates/base.html",
-			templatePath+"templates/console.html",
-		)
+		//t, err := template.ParseFiles("../templates/console.html")
+		t, err := template.ParseFiles("../templates/base.html","../templates/console.html")
 		if err != nil {
 			slackErr("Settings console page", err)
 			fmt.Println(err)
 			http.Error(w, "error loading console", http.StatusInternalServerError)
 			return
 		}
-		fmt.Println("STORAGE", s) // TEMPORARY
-		err = t.Execute(w, s)
+
+		csrfToken := csrf.Token(r)
+		fmt.Println(csrfToken)
+		data := map[string]interface{}{
+				"storage":				s,
+				"csrf":           csrfToken,
+        csrf.TemplateTag: csrf.TemplateField(r),
+		}
+		err = t.ExecuteTemplate(w, "base.html", data)
 		if err != nil {
 			slackErr("Settings console page", err)
 			fmt.Println(err)
@@ -326,6 +392,40 @@ func console(w http.ResponseWriter, r *http.Request) {
 }
 
 func console2(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	fmt.Println("console2:", r.FormValue("gorilla.csrf.Token"))
+	oauthFlowSession, err := store.Get(r, r.FormValue("state"))
+	if err != nil {
+		fmt.Println("invalid state: ", oauthFlowSession)
+		http.Redirect(w, r, "/", http.StatusForbidden)
+		return
+	}
+	s := storage{
+		Name:   "repository-test",
+		Labels: []string{"A", "B", "C", "D", "E"},
+		Buckets: map[string][]label{
+			"typebug":  []label{label{Name: "A", Selected: true}},
+			"typeimprovement": []label{label{Name: "B", Selected: true}, label{Name: "C", Selected: true}},
+			"typefeature":  []label{label{Name: "D", Selected: true}, label{Name: "E", Selected: true}},
+		},
+	}
+	t, err := template.ParseFiles("../templates/base.html","../templates/console2.html")
+	if err != nil {
+		slackErr("Settings console page", err)
+		fmt.Println(err)
+		http.Error(w, "error loading console", http.StatusInternalServerError)
+		return
+	}
+	err = t.Execute(w, s)
+	if err != nil {
+		slackErr("Settings console page", err)
+		fmt.Println(err)
+		http.Error(w, "error loading console", http.StatusInternalServerError)
+		return
+	}
+}
+
+func console3(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "bad request method", http.StatusBadRequest)
 		return
