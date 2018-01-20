@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gorilla/csrf"
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/sessions"
 	"github.com/satori/go.uuid"
 	"go.uber.org/zap"
@@ -39,13 +39,13 @@ var (
 	oauthConfig = &oauth2.Config{
 		// NOTE: These will need to be added for production.
 		//TODO: Try to configure RedirectURL without using Ngrok
-		RedirectURL:  "http://127.0.0.1:8080/repos", //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
-		ClientID:     "Iv1.83cc17f7f984aeec", //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
+		RedirectURL:  "http://127.0.0.1:8080/repos",              //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
+		ClientID:     "Iv1.83cc17f7f984aeec",                     //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
 		ClientSecret: "c9c5f71edcf1a85121ae86bae5295413dff46fad", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
 		//Scopes:       []string{""},
 		Endpoint: ghoa.Endpoint,
 	}
-	appID			 = 6807 //This needs to match the "ID" in "Mike/JohnHeuprTest"
+	appID = 6807 //This needs to match the "ID" in "Mike/JohnHeuprTest"
 	//TODO: Remove oauthSate
 	oauthState           = "tenebrous-plagueis-sidious-maul-tyrannus-vader"
 	store                = sessions.NewCookieStore([]byte("yoda-dooku-jinn-kenobi-skywalker-tano"))
@@ -107,7 +107,7 @@ type label struct {
 }
 
 type storage struct {
-	Name    string	`schema:"Name"` // FullName for the given repo.
+	Name    string   `schema:"Name"` // FullName for the given repo.
 	Labels  []string `schema:"Labels"`
 	Buckets map[string][]label
 }
@@ -128,7 +128,6 @@ func updateStorage(s *storage, labels []string) {
 	}
 }
 
-
 //TODO: Your datastructure needs to look EXACTLY like this.
 //data := map[string]interface{}{
 //		"storage":				s,
@@ -137,7 +136,7 @@ func updateStorage(s *storage, labels []string) {
 //}
 //err = t.ExecuteTemplate(w, "base.html", data)
 
-//TODO: Utilize  r.FormValue("gorilla.csrf.Token")) in Console session handler.(Mapped to Repo ID) 
+//TODO: Utilize  r.FormValue("gorilla.csrf.Token")) in Console session handler.(Mapped to Repo ID)
 
 func repos(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
@@ -154,7 +153,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	client, err := newUserToServerClient(code)
 	if err != nil {
-		utils.AppLog.Error("failure creating frontend client",zap.Error(err))
+		utils.AppLog.Error("failure creating frontend client", zap.Error(err))
 		http.Error(w, "client failure", http.StatusInternalServerError)
 		return
 	}
@@ -288,7 +287,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		Repos: repos,
 	}
 
-	t, err := template.ParseFiles("../templates/base.html","../templates/repos.html")
+	t, err := template.ParseFiles("../templates/base.html", "../templates/repos.html")
 	if err != nil {
 		slackErr("Repos selection page", err)
 		http.Error(w, "error loading repo selections", http.StatusInternalServerError)
@@ -311,7 +310,6 @@ func generateWalkFunc(file *string, repoID string) func(string, os.FileInfo, err
 		return nil
 	}
 }
-
 
 //Console3 is the original Console
 //console and ----> console2 demonstrate the flow between two handlers using the CSRF library
@@ -362,7 +360,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 		//t, err := template.ParseFiles("../templates/console.html")
-		t, err := template.ParseFiles("../templates/base.html","../templates/console.html")
+		t, err := template.ParseFiles("../templates/base.html", "../templates/console.html")
 		if err != nil {
 			slackErr("Settings console page", err)
 			fmt.Println(err)
@@ -373,9 +371,9 @@ func console(w http.ResponseWriter, r *http.Request) {
 		csrfToken := csrf.Token(r)
 		fmt.Println(csrfToken)
 		data := map[string]interface{}{
-				"storage":				s,
-				"csrf":           csrfToken,
-        csrf.TemplateTag: csrf.TemplateField(r),
+			"storage":        s,
+			"csrf":           csrfToken,
+			csrf.TemplateTag: csrf.TemplateField(r),
 		}
 		err = t.ExecuteTemplate(w, "base.html", data)
 		if err != nil {
@@ -404,12 +402,12 @@ func console2(w http.ResponseWriter, r *http.Request) {
 		Name:   "repository-test",
 		Labels: []string{"A", "B", "C", "D", "E"},
 		Buckets: map[string][]label{
-			"typebug":  []label{label{Name: "A", Selected: true}},
+			"typebug":         []label{label{Name: "A", Selected: true}},
 			"typeimprovement": []label{label{Name: "B", Selected: true}, label{Name: "C", Selected: true}},
-			"typefeature":  []label{label{Name: "D", Selected: true}, label{Name: "E", Selected: true}},
+			"typefeature":     []label{label{Name: "D", Selected: true}, label{Name: "E", Selected: true}},
 		},
 	}
-	t, err := template.ParseFiles("../templates/base.html","../templates/console2.html")
+	t, err := template.ParseFiles("../templates/base.html", "../templates/console2.html")
 	if err != nil {
 		slackErr("Settings console page", err)
 		fmt.Println(err)

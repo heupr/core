@@ -2,11 +2,11 @@ package frontend
 
 import (
 	"context"
-  "net/url"
-  "reflect"
+	"net/url"
+	"reflect"
 
 	"github.com/google/go-github/github"
-  "github.com/google/go-querystring/query"
+	"github.com/google/go-querystring/query"
 )
 
 const mediaTypeIntegrationPreview = "application/vnd.github.machine-man-preview+json"
@@ -31,11 +31,11 @@ func addOptions(s string, opt interface{}) (string, error) {
 	return u.String(), nil
 }
 
+// HeuprInstallation provides a workaround to GitHub API holes.
 type HeuprInstallation struct {
-  github.Installation
-  AppID  *int `json:"app_id,omitempty"`
+	github.Installation
+	AppID *int `json:"app_id,omitempty"`
 }
-
 
 func listUserInstallations(ctx context.Context, client *github.Client, opt *github.ListOptions) ([]*HeuprInstallation, *github.Response, error) {
 	u, err := addOptions("user/installations", opt)
