@@ -38,15 +38,16 @@ func slackMsg(msg string) {
 var (
 	oauthConfig = &oauth2.Config{
 		// NOTE: These will need to be added for production.
-		//TODO: Try to configure RedirectURL without using Ngrok
+		// TODO: Try to configure RedirectURL without using Ngrok
 		RedirectURL:  "http://127.0.0.1:8080/repos",              //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
 		ClientID:     "Iv1.83cc17f7f984aeec",                     //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
 		ClientSecret: "c9c5f71edcf1a85121ae86bae5295413dff46fad", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
-		//Scopes:       []string{""},
+		// Scopes:       []string{""},
 		Endpoint: ghoa.Endpoint,
 	}
-	appID = 6807 //This needs to match the "ID" in "Mike/JohnHeuprTest"
-	//TODO: Remove oauthSate
+	// NOTE: This needs to match the "ID" in "Mike/JohnHeuprTest".
+	appID = 6807
+	// TODO: Remove oauthSate variable.
 	oauthState           = "tenebrous-plagueis-sidious-maul-tyrannus-vader"
 	store                = sessions.NewCookieStore([]byte("yoda-dooku-jinn-kenobi-skywalker-tano"))
 	oauthTokenSessionKey = "oauth_token"
@@ -69,10 +70,10 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO: Experiment With This Setting.
+	//TODO: Experiment with this setting.
 	oauthFlowSession.Options.MaxAge = 1 * 60 // 1 minute
 
-	//use session ID for state params, protects against CSRF
+	// Use session ID for state params which protects against CSRF.
 	redirectURL := oauthConfig.AuthCodeURL(sessionID)
 	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
@@ -128,30 +129,34 @@ func updateStorage(s *storage, labels []string) {
 	}
 }
 
-//TODO: Your datastructure needs to look EXACTLY like this.
-//data := map[string]interface{}{
+// TODO: Your datastructure needs to look EXACTLY like this.
+// data := map[string]interface{}{
 //		"storage":				s,
 //		"csrf":           csrfToken,
 //		csrf.TemplateTag: csrf.TemplateField(r),
-//}
-//err = t.ExecuteTemplate(w, "base.html", data)
+// }
+// err = t.ExecuteTemplate(w, "base.html", data)
 
-//TODO: Utilize  r.FormValue("gorilla.csrf.Token")) in Console session handler.(Mapped to Repo ID)
+// TODO: Utilize  r.FormValue("gorilla.csrf.Token")) in Console session handler.(Mapped to Repo ID)
 
 func repos(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "bad request method", http.StatusBadRequest)
 		return
 	}
+
 	oauthFlowSession, err := store.Get(r, r.FormValue("state"))
 	fmt.Println("oauthFlow session : ")
+
 	if err != nil {
 		fmt.Println("invalid state: ", oauthFlowSession)
 		http.Redirect(w, r, "/", http.StatusForbidden)
 		return
 	}
+
 	code := r.FormValue("code")
 	client, err := newUserToServerClient(code)
+
 	if err != nil {
 		utils.AppLog.Error("failure creating frontend client", zap.Error(err))
 		http.Error(w, "client failure", http.StatusInternalServerError)
@@ -168,7 +173,6 @@ func repos(w http.ResponseWriter, r *http.Request) {
 
 	ctx := context.Background()
 	opts := &github.ListOptions{Page: 1, PerPage: 50}
-
 	installationID := 0
 	installations, _, err := listUserInstallations(ctx, client, opts)
 
@@ -179,8 +183,8 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if installationID == 0 {
-		utils.AppLog.Warn("Heupr installation not found")
-		http.Error(w, "error detecting Heupr installation", http.StatusInternalServerError)
+		utils.AppLog.Warn("heupr installation not found")
+		http.Error(w, "error detecting heupr installation", http.StatusInternalServerError)
 		return
 	}
 
@@ -204,6 +208,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client, err = newServerToServerClient(appID, installationID)
+
 	if err != nil {
 		utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
 		http.Error(w, "client failure", http.StatusInternalServerError)
@@ -234,7 +239,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for id, name := range repos {
-		filename := strconv.Itoa(id) + ".gob"
+		filename := "gob/" + strconv.Itoa(id) + ".gob"
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
 			file, err := os.Create(filename)
 			defer file.Close()
@@ -287,19 +292,24 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		Repos: repos,
 	}
 
-	t, err := template.ParseFiles("../templates/base.html", "../templates/repos.html")
+	t, err := template.ParseFiles(
+		templatePath+"templates/base.html",
+		templatePath+"templates/repos.html",
+	)
+
 	if err != nil {
 		slackErr("Repos selection page", err)
 		http.Error(w, "error loading repo selections", http.StatusInternalServerError)
 		return
 	}
-	//TODO: Your datastructure needs to look EXACTLY like this.
-	//data := map[string]interface{}{
+	// TODO: Your datastructure needs to look EXACTLY like this.
+	// data := map[string]interface{}{
 	//		"storage":				s,
 	//		"csrf":           csrfToken,
 	//		csrf.TemplateTag: csrf.TemplateField(r),
-	//}
-	t.Execute(w, input) //TODO: err = t.ExecuteTemplate(w, "base.html", data)
+	// }
+	// TODO: err = t.ExecuteTemplate(w, "base.html", data)
+	t.Execute(w, input)
 }
 
 func generateWalkFunc(file *string, repoID string) func(string, os.FileInfo, error) error {

@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	// "github.com/google/go-github/github"
+	"github.com/google/go-github/github"
 	"github.com/gorilla/sessions"
 	"github.com/stretchr/testify/assert"
 )
@@ -63,11 +63,10 @@ func Test_updateStorage(t *testing.T) {
 
 }
 
-/*
 func Test_repos(t *testing.T) {
 	// Dummy GitHub server to return values for ListUserInstallations.
 	mux := http.NewServeMux()
-	mux.HandleFunc("/user/installations/5535/repositories", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/user/installations/1234/repositories", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{"repositories":[{"id":-65,"full_name":"contingency/chancellor"},{"id":-66,"full_name":"contingency/jedi"}]}`)
 	})
 	mux.HandleFunc("/repos/contingency/chancellor/labels", func(w http.ResponseWriter, r *http.Request) {
@@ -76,11 +75,21 @@ func Test_repos(t *testing.T) {
 	mux.HandleFunc("/repos/contingency/jedi/labels", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `[{"name":"definitely-use"}]`)
 	})
+	mux.HandleFunc("/user/installations", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"installations":[{"id":1234,"app_id":6807}]}`)
+	})
 
 	server := httptest.NewServer(mux)
 	testURL, _ := url.Parse(server.URL + "/")
 
-	newClient = func(code string) (*github.Client, error) {
+	newUserToServerClient = func(code string) (*github.Client, error) {
+		c := github.NewClient(nil)
+		c.BaseURL = testURL
+		c.UploadURL = testURL
+		return c, nil
+	}
+
+	newServerToServerClient = func(appId, installationId int) (*github.Client, error) {
 		c := github.NewClient(nil)
 		c.BaseURL = testURL
 		c.UploadURL = testURL
@@ -97,10 +106,16 @@ func Test_repos(t *testing.T) {
 		result int
 	}{
 		{
+			"POST which gets rejected",
+			"POST",
+			map[string]string{"state": ""},
+			http.StatusBadRequest,
+		},
+		{
 			"GET without state",
 			"GET",
 			map[string]string{"state": ""},
-			http.StatusUnauthorized,
+			http.StatusForbidden,
 		},
 		{
 			"passing GET",
@@ -113,26 +128,24 @@ func Test_repos(t *testing.T) {
 	for i := range tests {
 		req.Method = tests[i].method
 		req.Form = url.Values{}
+
 		for k, v := range tests[i].forms {
 			req.Form.Set(k, v)
 		}
+
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
 
-		assert.Equal(
-			tests[i].result, rec.Code,
-			fmt.Sprint(tests[i].name),
-		)
+		assert.Equal(tests[i].result, rec.Code, fmt.Sprint(tests[i].name))
 		nums := []string{"-65", "-66"}
 		for i := range nums {
-			filename := nums[i] + ".gob"
+			filename := "gob/" + nums[i] + ".gob"
 			if _, err := os.Stat(filename); err == nil {
 				os.Remove(filename)
 			}
 		}
 	}
 }
-*/
 
 func Test_generateWalkFunc(t *testing.T) {
 	assert := assert.New(t)
