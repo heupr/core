@@ -108,9 +108,9 @@ type label struct {
 }
 
 type storage struct {
-	Name    string   `schema:"Name"` // FullName for the given repo.
-	Labels  []string `schema:"Labels"`
-	Buckets map[string][]label
+	FullName string   `schema:"FullName"` // FullName for the given repo.
+	Labels   []string `schema:"Labels"`
+	Buckets  map[string][]label
 }
 
 func updateStorage(s *storage, labels []string) {
@@ -250,8 +250,8 @@ func repos(w http.ResponseWriter, r *http.Request) {
 			}
 
 			s := storage{
-				Name:    name,
-				Buckets: make(map[string][]label),
+				FullName: name,
+				Buckets:  make(map[string][]label),
 			}
 
 			for _, l := range labels[id] {
@@ -337,7 +337,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s := storage{
-			Name: "repository-test",
+			FullName: "repository-test",
 			Buckets: map[string][]label{
 				"default": []label{
 					label{Name: "A", Selected: true},
@@ -409,8 +409,8 @@ func console2(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s := storage{
-		Name:   "repository-test",
-		Labels: []string{"A", "B", "C", "D", "E"},
+		FullName: "repository-test",
+		Labels:   []string{"A", "B", "C", "D", "E"},
 		Buckets: map[string][]label{
 			"typebug":         []label{label{Name: "A", Selected: true}},
 			"typeimprovement": []label{label{Name: "B", Selected: true}, label{Name: "C", Selected: true}},

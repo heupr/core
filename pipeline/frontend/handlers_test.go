@@ -29,7 +29,7 @@ func init() {
 
 func Test_updateStorage(t *testing.T) {
 	s := storage{
-		Name: "watto/junkshop",
+		FullName: "watto/junkshop",
 		Buckets: map[string][]label{
 			"cost": []label{
 				label{
@@ -207,7 +207,7 @@ func Test_console(t *testing.T) {
 		}
 		defer os.Remove(tests[i].file)
 		s := storage{
-			Name: "contingency/chancellor",
+			FullName: "contingency/chancellor",
 		}
 		encoder := gob.NewEncoder(f)
 		if err := encoder.Encode(s); err != nil {
@@ -231,7 +231,7 @@ func Test_console(t *testing.T) {
 func Test_updateSettings(t *testing.T) {
 	assert := assert.New(t)
 	s := storage{
-		Name: "watto/junkshop",
+		FullName: "watto/junkshop",
 		Buckets: map[string][]label{
 			"cost": []label{
 				label{
@@ -314,7 +314,7 @@ func Test_complete(t *testing.T) {
 			t.Error("failure creating test gob file")
 		}
 		s := storage{
-			Name: "contingency/chancellor",
+			FullName: "contingency/chancellor",
 		}
 		encoder := gob.NewEncoder(f)
 		if err := encoder.Encode(s); err != nil {
