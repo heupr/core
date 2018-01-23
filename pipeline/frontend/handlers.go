@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"bytes"
 	"context"
 	"encoding/gob"
 	"fmt"
@@ -108,7 +109,7 @@ type label struct {
 }
 
 type storage struct {
-	FullName string   `schema:"FullName"` // FullName for the given repo.
+	FullName string   `schema:"FullName"`
 	Labels   []string `schema:"Labels"`
 	Buckets  map[string][]label
 }
@@ -309,7 +310,12 @@ func repos(w http.ResponseWriter, r *http.Request) {
 	//		csrf.TemplateTag: csrf.TemplateField(r),
 	// }
 	// TODO: err = t.ExecuteTemplate(w, "base.html", data)
-	t.Execute(w, input)
+	buf := new(bytes.Buffer)
+	err = t.Execute(buf, input)
+	if err != nil {
+		http.Error(w, "template render error", http.StatusInternalServerError)
+	}
+	buf.WriteTo(w)
 }
 
 func generateWalkFunc(file *string, repoID string) func(string, os.FileInfo, error) error {
@@ -369,8 +375,10 @@ func console(w http.ResponseWriter, r *http.Request) {
 				},
 			},
 		}
-		//t, err := template.ParseFiles("../templates/console.html")
-		t, err := template.ParseFiles("../templates/base.html", "../templates/console.html")
+		t, err := template.ParseFiles(
+			templatePath+"templates/base.html",
+			templatePath+"templates/console.html",
+		)
 		if err != nil {
 			slackErr("Settings console page", err)
 			fmt.Println(err)
@@ -385,18 +393,18 @@ func console(w http.ResponseWriter, r *http.Request) {
 			"csrf":           csrfToken,
 			csrf.TemplateTag: csrf.TemplateField(r),
 		}
-		err = t.ExecuteTemplate(w, "base.html", data)
+		buf := new(bytes.Buffer)
+		err = t.ExecuteTemplate(buf, "base.html", data)
 		if err != nil {
 			slackErr("Settings console page", err)
 			fmt.Println(err)
 			http.Error(w, "error loading console", http.StatusInternalServerError)
 			return
 		}
-		fmt.Println("ERROR", err)        // TEMPORARY
 		fmt.Println("Console Get -Good") // TEMPORARY
-	} else {
-		fmt.Println("Console Post -Good") // TEMPORARY
+		buf.WriteTo(w)
 	}
+	fmt.Println("Console Post -Good") // TEMPORARY
 }
 
 func console2(w http.ResponseWriter, r *http.Request) {
@@ -543,15 +551,22 @@ func complete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t, err := template.ParseFiles(
-		// templatePath+"templates/base.html",
-		templatePath + "templates/complete.html",
+		templatePath+"templates/base.html",
+		templatePath+"templates/complete.html",
 	)
 	if err != nil {
-		slackErr("Error generating setup complete page", err)
-		http.Error(w, "/", http.StatusInternalServerError)
+		slackErr("Error parsing signup complete page", err)
+		http.Error(w, "error parsing signup complete page", http.StatusInternalServerError)
 		return
 	}
-	t.Execute(w, "")
+	buf := new(bytes.Buffer)
+	err = t.Execute(w, "")
+	if err != nil {
+		slackErr("Error rendering template", err)
+		http.Error(w, "error rendering template", http.StatusInternalServerError)
+		return
+	}
 	utils.AppLog.Info("Completed user signed up")
 	slackMsg("Completed user signed up")
+	buf.WriteTo(w)
 }

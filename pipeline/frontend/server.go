@@ -47,10 +47,7 @@ func (s *Server) LaunchServer(secure, unsecure, cert, key string) {
 		}
 		go func() {
 			if err := s.Primary.ListenAndServeTLS(cert, key); err != nil {
-				utils.AppLog.Error(
-					"primary server failed to start",
-					zap.Error(err),
-				)
+				utils.AppLog.Error("primary server failed to start", zap.Error(err))
 				panic(err)
 			}
 		}()
@@ -62,10 +59,7 @@ func (s *Server) LaunchServer(secure, unsecure, cert, key string) {
 		}
 		go func() {
 			if err := s.Redirect.ListenAndServe(); err != nil {
-				utils.AppLog.Error(
-					"redirect server failed to start",
-					zap.Error(err),
-				)
+				utils.AppLog.Error("redirect server failed to start", zap.Error(err))
 				panic(err)
 			}
 		}()
@@ -77,7 +71,6 @@ func (s *Server) LaunchServer(secure, unsecure, cert, key string) {
 			csrf.Secure(false),
 			csrf.ErrorHandler(http.HandlerFunc(csrfErrorHandler)),
 		)
-		CSRF = CSRF
 		s.Primary = http.Server{
 			Addr:    unsecure,
 			Handler: CSRF(routes()),
@@ -96,7 +89,7 @@ func (s *Server) LaunchServer(secure, unsecure, cert, key string) {
 
 func csrfErrorHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r)
-	fmt.Println("error in Csrf: %v", csrf.FailureReason(r))
+	fmt.Println("error in csrf: %v", csrf.FailureReason(r))
 	return
 }
 
