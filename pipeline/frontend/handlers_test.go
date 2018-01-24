@@ -1,13 +1,16 @@
 package frontend
 
 import (
+	"bytes"
 	"encoding/gob"
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/google/go-github/github"
@@ -306,6 +309,29 @@ func Test_complete(t *testing.T) {
 		},
 	}
 
+	tmpl, err := template.ParseFiles(
+		"templates/base.html",
+		"templates/complete.html",
+	)
+
+	buf := new(bytes.Buffer)
+	err = tmpl.Execute(buf, "")
+	if err != nil {
+		t.Error("failure executing complete template")
+	}
+
+	str := buf.String()
+
+	if ok := strings.Contains(str, "<title>Heupr</title>"); !ok {
+		t.Error("base template html missing value")
+	}
+	if ok := strings.Contains(str, `{{ template "body" . }}`); ok {
+		t.Error("error executing nested complete template")
+	}
+	if ok := strings.Contains(str, "<h2>Awesome! Setup is complete!</h2>"); !ok {
+		t.Error("complete html missing value")
+	}
+
 	for i := range tests {
 		f, err := os.Create(tests[i].file)
 		defer os.Remove(tests[i].file)
@@ -333,5 +359,6 @@ func Test_complete(t *testing.T) {
 		handler.ServeHTTP(rec, req)
 
 		assert.Equal(tests[i].result, rec.Code, tests[i].name)
+
 	}
 }
