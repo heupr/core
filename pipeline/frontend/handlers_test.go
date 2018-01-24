@@ -322,14 +322,8 @@ func Test_complete(t *testing.T) {
 
 	str := buf.String()
 
-	if ok := strings.Contains(str, "<title>Heupr</title>"); !ok {
-		t.Error("base template html missing value")
-	}
-	if ok := strings.Contains(str, `{{ template "body" . }}`); ok {
-		t.Error("error executing nested complete template")
-	}
-	if ok := strings.Contains(str, "<h2>Awesome! Setup is complete!</h2>"); !ok {
-		t.Error("complete html missing value")
+	if strings.Contains(str, "{{") || strings.Contains(str, "}}") {
+		t.Error("failure loading template data")
 	}
 
 	for i := range tests {
