@@ -66,6 +66,53 @@ func Test_updateStorage(t *testing.T) {
 
 }
 
+// NOTE: This may be refactored into the full Test_repos function.
+func Test_reposHTML(t *testing.T) {
+	tmpl, err := template.ParseFiles(
+		"templates/base.html",
+		"templates/repos.html",
+	)
+
+	tests := []struct {
+		Repos   map[int]string
+		check   string
+		result  bool
+		message string
+	}{
+		{
+			make(map[int]string),
+			"<option ",
+			false,
+			"expected no <option> to be populated",
+		},
+		{
+			map[int]string{1: ""},
+			`<option value="1"></option>`,
+			true,
+			"expected no value to populate in option",
+		},
+		{
+			map[int]string{2: "fode", 3: "beed"},
+			`<option value="2">fode</option>`,
+			true,
+			"expected proper value/text for option",
+		},
+	}
+
+	for i := range tests {
+		buf := new(bytes.Buffer)
+		err = tmpl.Execute(buf, tests[i])
+		if err != nil {
+			t.Error(err)
+		}
+		str := buf.String()
+
+		if strings.Contains(str, tests[i].check) != tests[i].result {
+			t.Error("repos template error:", tests[i].message)
+		}
+	}
+}
+
 func Test_repos(t *testing.T) {
 	// Dummy GitHub server to return values for ListUserInstallations.
 	mux := http.NewServeMux()
@@ -314,6 +361,7 @@ func Test_complete(t *testing.T) {
 		"templates/complete.html",
 	)
 
+	// NOTE: This should be pulled out into a separate test function.
 	buf := new(bytes.Buffer)
 	err = tmpl.Execute(buf, "")
 	if err != nil {
