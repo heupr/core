@@ -13,6 +13,6 @@ func main() {
 		utils.SlackLog.Fatal("Process crash: ", recover(), bytes.NewBuffer(debug.Stack()).String())
 	}()
 
-	frontendServer := frontend.Server{}
-	frontendServer.Start()
+	server := frontend.NewServer()
+	server.Start()
 }
