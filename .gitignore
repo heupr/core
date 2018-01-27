@@ -1,2 +1,6 @@
 # The data/ directory will only be created locally
 data/
+
+# Test cert/key files should be locally generated/stored for frontend work
+cert.pem
+key.pem
