@@ -21,7 +21,6 @@ func routes() *http.ServeMux {
 	mux.HandleFunc("/login", login)
 	mux.HandleFunc("/repos", repos)
 	mux.HandleFunc("/console", console)
-	mux.HandleFunc("/console2", console2)
 	mux.HandleFunc("/complete", complete)
 	mux.HandleFunc("/docs", render("../templates/docs.html"))
 	mux.HandleFunc("/privacy", render("../templates/privacy.html"))

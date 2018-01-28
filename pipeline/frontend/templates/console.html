@@ -4,7 +4,7 @@
 
 {{ define "body" }}
   <!-- NOTE: onsubmit has been removed to allow the page to direct to the next handler -->
-  <form role="form" id="label-settings" action="/console2" method="POST">
+  <form role="form" id="label-settings" action="/complete" method="POST">
     {{ .csrfField }}
   <!-- NOTE: Removing for the labelmaker beta -->
   <!-- <script>
@@ -35,8 +35,8 @@
       <div class="col-sm-4">
         <div>
           <select class="selectpicker labels" name="default-labels" data-live-search="true" multiple="true" title="Select label(s)...">
-            {{ range $label := .storage.Labels }}
-              <option value="{{ $label }}">{{ $label }}</option>
+            {{ range $label := .storage.Buckets.typedefault }}
+              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
             {{ end }}
           </select>
         </div>

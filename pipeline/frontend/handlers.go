@@ -8,7 +8,6 @@ import (
 	"html/template"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -46,10 +45,7 @@ var (
 		// Scopes:       []string{""},
 		Endpoint: ghoa.Endpoint,
 	}
-	// NOTE: This needs to match the "ID" in "Mike/JohnHeuprTest".
-	appID = 6807
-	// TODO: Remove oauthSate variable.
-	oauthState           = "tenebrous-plagueis-sidious-maul-tyrannus-vader"
+	appID			 = 6807 //This needs to match the "ID" in "Mike/JohnHeuprTest"
 	store                = sessions.NewCookieStore([]byte("yoda-dooku-jinn-kenobi-skywalker-tano"))
 	oauthTokenSessionKey = "oauth_token"
 	// templatePath is for testing purposes only; a better solution is needed.
@@ -114,6 +110,9 @@ type storage struct {
 	Buckets  map[string][]label
 }
 
+
+//TODO: Confirm this is needed for adding labels.
+//TODO: False makes it into the Post Request.
 func updateStorage(s *storage, labels []string) {
 	for bcktName, bcktLabels := range s.Buckets {
 		updated := []label{}
@@ -129,16 +128,6 @@ func updateStorage(s *storage, labels []string) {
 		s.Buckets[bcktName] = updated
 	}
 }
-
-// TODO: Your datastructure needs to look EXACTLY like this.
-// data := map[string]interface{}{
-//		"storage":				s,
-//		"csrf":           csrfToken,
-//		csrf.TemplateTag: csrf.TemplateField(r),
-// }
-// err = t.ExecuteTemplate(w, "base.html", data)
-
-// TODO: Utilize  r.FormValue("gorilla.csrf.Token")) in Console session handler.(Mapped to Repo ID)
 
 func repos(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
@@ -256,7 +245,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 			}
 
 			for _, l := range labels[id] {
-				s.Buckets[""] = append(s.Buckets[""], label{Name: l})
+				s.Buckets["typedefault"] = append(s.Buckets["typedefault"], label{Name: l})
 			}
 
 			encoder := gob.NewEncoder(file)
@@ -266,7 +255,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			file, err := os.OpenFile(filename, os.O_WRONLY, 0644)
+			file, err := os.Open(filename)//os.OpenFile(filename, os.O_WRONLY, 0644)
 			defer file.Close()
 			if err != nil {
 				http.Error(w, "error opening storage file", http.StatusInternalServerError)
@@ -274,14 +263,19 @@ func repos(w http.ResponseWriter, r *http.Request) {
 			}
 			decoder := gob.NewDecoder(file)
 			s := storage{}
-			decoder.Decode(&s)
+			err = decoder.Decode(&s)
+			if err != nil {
+				fmt.Println(err)
+			}
+			fmt.Println("Storage2", s)
 
 			updateStorage(&s, labels[id])
-
-			encoder := gob.NewEncoder(file)
+			file2, err := os.OpenFile(filename, os.O_WRONLY, 0644)
+			defer file2.Close()
+			encoder := gob.NewEncoder(file2)
 			if err := encoder.Encode(s); err != nil {
 				utils.AppLog.Error("error re-encoding info to file", zap.Error(err))
-				http.Error(w, "error storing user indo", http.StatusInternalServerError)
+				http.Error(w, "error storing user info", http.StatusInternalServerError)
 				return
 			}
 		}
@@ -303,19 +297,18 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error loading repo selections", http.StatusInternalServerError)
 		return
 	}
-	// TODO: Your datastructure needs to look EXACTLY like this.
-	// data := map[string]interface{}{
-	//		"storage":				s,
-	//		"csrf":           csrfToken,
-	//		csrf.TemplateTag: csrf.TemplateField(r),
-	// }
-	// TODO: err = t.ExecuteTemplate(w, "base.html", data)
-	buf := new(bytes.Buffer)
-	err = t.Execute(buf, input)
-	if err != nil {
-		http.Error(w, "template render error", http.StatusInternalServerError)
+
+	data := map[string]interface{}{
+			"storage":				input,
+			"csrf":           csrf.Token(r),
+			csrf.TemplateTag: csrf.TemplateField(r),
 	}
-	buf.WriteTo(w)
+	err = t.ExecuteTemplate(w, "base.html", data)
+	if err != nil {
+		slackErr("Repos selection page", err)
+		http.Error(w, "error loading repo selections", http.StatusInternalServerError)
+		return
+	}
 }
 
 func generateWalkFunc(file *string, repoID string) func(string, os.FileInfo, error) error {
@@ -327,121 +320,7 @@ func generateWalkFunc(file *string, repoID string) func(string, os.FileInfo, err
 	}
 }
 
-//Console3 is the original Console
-//console and ----> console2 demonstrate the flow between two handlers using the CSRF library
-//TODO: Based on the code in console update the repo handler accordingly (Slightly Open Ended)
-//TODO: Based on the code in console2 update the console handler accordingly (Slightly Open Ended)
 func console(w http.ResponseWriter, r *http.Request) {
-	//TODO: Finish Fixing Console.
-	if r.Method == "GET" {
-		fmt.Println("console:", r.FormValue("state"))
-		oauthFlowSession, err := store.Get(r, r.FormValue("state"))
-		fmt.Println("oauthFlow session : ")
-		if err != nil {
-			fmt.Println("invalid state: ", oauthFlowSession)
-			http.Redirect(w, r, "/", http.StatusForbidden)
-			return
-		}
-		s := storage{
-			FullName: "repository-test",
-			Buckets: map[string][]label{
-				"default": []label{
-					label{Name: "A", Selected: true},
-					label{Name: "B", Selected: false},
-					label{Name: "C", Selected: false},
-					label{Name: "D", Selected: false},
-					label{Name: "E", Selected: true},
-				},
-				"typebug": []label{
-					label{Name: "A", Selected: false},
-					label{Name: "B", Selected: true},
-					label{Name: "C", Selected: false},
-					label{Name: "D", Selected: false},
-					label{Name: "E", Selected: false},
-				},
-				"typeimprovement": []label{
-					label{Name: "A", Selected: false},
-					label{Name: "B", Selected: false},
-					label{Name: "C", Selected: true},
-					label{Name: "D", Selected: false},
-					label{Name: "E", Selected: false},
-				},
-				"typefeature": []label{
-					label{Name: "A", Selected: false},
-					label{Name: "B", Selected: false},
-					label{Name: "C", Selected: false},
-					label{Name: "D", Selected: true},
-					label{Name: "E", Selected: false},
-				},
-			},
-		}
-		t, err := template.ParseFiles(
-			templatePath+"templates/base.html",
-			templatePath+"templates/console.html",
-		)
-		if err != nil {
-			slackErr("Settings console page", err)
-			fmt.Println(err)
-			http.Error(w, "error loading console", http.StatusInternalServerError)
-			return
-		}
-
-		csrfToken := csrf.Token(r)
-		fmt.Println(csrfToken)
-		data := map[string]interface{}{
-			"storage":        s,
-			"csrf":           csrfToken,
-			csrf.TemplateTag: csrf.TemplateField(r),
-		}
-		buf := new(bytes.Buffer)
-		err = t.ExecuteTemplate(buf, "base.html", data)
-		if err != nil {
-			slackErr("Settings console page", err)
-			fmt.Println(err)
-			http.Error(w, "error loading console", http.StatusInternalServerError)
-			return
-		}
-		fmt.Println("Console Get -Good") // TEMPORARY
-		buf.WriteTo(w)
-	}
-	fmt.Println("Console Post -Good") // TEMPORARY
-}
-
-func console2(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	fmt.Println("console2:", r.FormValue("gorilla.csrf.Token"))
-	oauthFlowSession, err := store.Get(r, r.FormValue("state"))
-	if err != nil {
-		fmt.Println("invalid state: ", oauthFlowSession)
-		http.Redirect(w, r, "/", http.StatusForbidden)
-		return
-	}
-	s := storage{
-		FullName: "repository-test",
-		Labels:   []string{"A", "B", "C", "D", "E"},
-		Buckets: map[string][]label{
-			"typebug":         []label{label{Name: "A", Selected: true}},
-			"typeimprovement": []label{label{Name: "B", Selected: true}, label{Name: "C", Selected: true}},
-			"typefeature":     []label{label{Name: "D", Selected: true}, label{Name: "E", Selected: true}},
-		},
-	}
-	t, err := template.ParseFiles("../templates/base.html", "../templates/console2.html")
-	if err != nil {
-		slackErr("Settings console page", err)
-		fmt.Println(err)
-		http.Error(w, "error loading console", http.StatusInternalServerError)
-		return
-	}
-	err = t.Execute(w, s)
-	if err != nil {
-		slackErr("Settings console page", err)
-		fmt.Println(err)
-		http.Error(w, "error loading console", http.StatusInternalServerError)
-		return
-	}
-}
-
-func console3(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "bad request method", http.StatusBadRequest)
 		return
@@ -463,9 +342,10 @@ func console3(w http.ResponseWriter, r *http.Request) {
 	session.Values["repoID"] = repoID
 	session.Save(r, w)
 
-	file := ""
-	err = filepath.Walk("./", generateWalkFunc(&file, repoID))
+	file := repoID + ".gob"
+	_, err = os.Stat(file)
 	if err != nil {
+		utils.AppLog.Error("error retrieving user settings", zap.Error(err))
 		http.Error(w, "error retrieving user settings", http.StatusInternalServerError)
 		return
 	}
@@ -478,18 +358,36 @@ func console3(w http.ResponseWriter, r *http.Request) {
 	defer f.Close()
 	decoder := gob.NewDecoder(f)
 	s := storage{}
-	decoder.Decode(&s)
+	err = decoder.Decode(&s)
+	if err != nil {
+		utils.AppLog.Error("error decoding user settings", zap.Error(err))
+		http.Error(w, "error decoding user settings", http.StatusInternalServerError)
+		return
+	}
 
-	t, err := template.ParseFiles(
-		templatePath+"templates/base.html",
-		templatePath+"templates/console.html",
-	)
+	fmt.Println("Storage", s)
+
+	t, err := template.ParseFiles("../templates/base.html","../templates/console.html")
+	if err != nil {
+		slackErr("Settings console page", err)
+		fmt.Println(err)
+		http.Error(w, "error loading console", http.StatusInternalServerError)
+		return
+	}
+
+	csrfToken := csrf.Token(r)
+	fmt.Println(csrfToken)
+	data := map[string]interface{}{
+			"storage":				s,
+			"csrf":           csrfToken,
+			csrf.TemplateTag: csrf.TemplateField(r),
+	}
+	err = t.ExecuteTemplate(w, "base.html", data)
 	if err != nil {
 		slackErr("Settings console page", err)
 		http.Error(w, "error loading console", http.StatusInternalServerError)
 		return
 	}
-	t.Execute(w, s)
 }
 
 func updateSettings(s *storage, form map[string][]string) {
@@ -524,14 +422,15 @@ func complete(w http.ResponseWriter, r *http.Request) {
 	delete(session.Values, "repoID")
 	session.Save(r, w)
 
-	file := ""
-	err = filepath.Walk(".", generateWalkFunc(&file, repoID.(string)))
+	file := repoID.(string) + ".gob"
+	_, err = os.Stat(file)
 	if err != nil {
+		utils.AppLog.Error("error retrieving user settings", zap.Error(err))
 		http.Error(w, "error retrieving user settings", http.StatusInternalServerError)
 		return
 	}
 
-	f, err := os.OpenFile(file, os.O_WRONLY, 0644)
+	f, err := os.Open(file)
 	if err != nil {
 		http.Error(w, "error opening user settings", http.StatusInternalServerError)
 		return
@@ -539,14 +438,20 @@ func complete(w http.ResponseWriter, r *http.Request) {
 	defer f.Close()
 	decoder := gob.NewDecoder(f)
 	s := storage{}
-	decoder.Decode(&s)
+	err = decoder.Decode(&s)
+	if err != nil {
+		http.Error(w, "error decoding user settings", http.StatusInternalServerError)
+		return
+	}
 
 	updateSettings(&s, r.Form)
 
-	encoder := gob.NewEncoder(f)
+	file2, err := os.OpenFile(file, os.O_WRONLY, 0644)
+	defer file2.Close()
+	encoder := gob.NewEncoder(file2)
 	if err := encoder.Encode(s); err != nil {
-		utils.AppLog.Error("error re-encoding settings to file", zap.Error(err))
-		http.Error(w, "error storing user settings", http.StatusInternalServerError)
+		utils.AppLog.Error("error re-encoding info to file", zap.Error(err))
+		http.Error(w, "error storing user info", http.StatusInternalServerError)
 		return
 	}
 
