@@ -39,12 +39,13 @@ var (
 	oauthConfig = &oauth2.Config{
 		// NOTE: These will need to be added for production.
 		// TODO: Try to configure RedirectURL without using Ngrok
-		ClientID:     "Iv1.83cc17f7f984aeec",                     //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
-		ClientSecret: "c9c5f71edcf1a85121ae86bae5295413dff46fad", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
+		RedirectURL:  "https://127.0.0.1:8081/repos",              //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
+		ClientID:     "Iv1.2dcad54aa18d661d",                     //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
+		ClientSecret: "2f757c564b4a7c1cbee8c965ccaf926d4b9ddb22", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
 		// Scopes:       []string{""},
 		Endpoint: ghoa.Endpoint,
 	}
-	appID                = 6807 //This needs to match the "ID" in "Mike/JohnHeuprTest"
+	appID                = 6844 //This needs to match the "ID" in "Mike/JohnHeuprTest"
 	store                = sessions.NewCookieStore([]byte("yoda-dooku-jinn-kenobi-skywalker-tano"))
 	oauthTokenSessionKey = "oauth_token"
 	// templatePath is for testing purposes only; a better solution is needed.
@@ -83,14 +84,14 @@ var newUserToServerClient = func(code string) (*github.Client, error) {
 	return client, nil
 }
 
-var newServerToServerClient = func(appId, installationId int) (*github.Client, error) {
+var newServerToServerClient = func(appID int, installationID int64) (*github.Client, error) {
 	var key string
 	if PROD {
 		key = "heupr.2017-10-04.private-key.pem"
 	} else {
-		key = "mikeheuprtest.2017-11-16.private-key.pem"
+		key = "forstmeier-heupr.2018-01-28.private-key.pem"
 	}
-	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appId, installationId, key)
+	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appID, int(installationID), key)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +162,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 
 	ctx := context.Background()
 	opts := &github.ListOptions{Page: 1, PerPage: 50}
-	installationID := 0
+	installationID := int64(0)
 	installations, _, err := listUserInstallations(ctx, client, opts)
 
 	for i := range installations {
@@ -176,7 +177,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repos := make(map[int]string)
+	repos := make(map[int64]string)
 	for {
 		repo, resp, err := client.Apps.ListUserRepos(ctx, installationID, opts)
 		if err != nil {
@@ -204,7 +205,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	opts = &github.ListOptions{PerPage: 100}
-	labels := make(map[int][]string)
+	labels := make(map[int64][]string)
 	for key, value := range repos {
 		name := strings.Split(value, "/")
 		for {
@@ -227,7 +228,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for id, name := range repos {
-		filename := "gob/" + strconv.Itoa(id) + ".gob"
+		filename := "gob/" + strconv.FormatInt(id, 10) + ".gob"
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
 			file, err := os.Create(filename)
 			defer file.Close()
@@ -280,7 +281,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	input := struct {
-		Repos map[int]string
+		Repos map[int64]string
 	}{
 		Repos: repos,
 	}
