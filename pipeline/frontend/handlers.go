@@ -39,7 +39,6 @@ var (
 	oauthConfig = &oauth2.Config{
 		// NOTE: These will need to be added for production.
 		// TODO: Try to configure RedirectURL without using Ngrok
-		RedirectURL:  "http://127.0.0.1:8080/repos",              //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
 		ClientID:     "Iv1.83cc17f7f984aeec",                     //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
 		ClientSecret: "c9c5f71edcf1a85121ae86bae5295413dff46fad", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
 		// Scopes:       []string{""},
@@ -310,15 +309,6 @@ func repos(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func generateWalkFunc(file *string, repoID string) func(string, os.FileInfo, error) error {
-	return func(path string, info os.FileInfo, err error) error {
-		if info.Name() == repoID+".gob" {
-			*file = info.Name()
-		}
-		return nil
-	}
-}
-
 func console(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "bad request method", http.StatusBadRequest)
@@ -341,7 +331,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 	session.Values["repoID"] = repoID
 	session.Save(r, w)
 
-	file := repoID + ".gob"
+	file := "gob/" + repoID + ".gob"
 	_, err = os.Stat(file)
 	if err != nil {
 		utils.AppLog.Error("error retrieving user settings", zap.Error(err))
@@ -421,7 +411,7 @@ func complete(w http.ResponseWriter, r *http.Request) {
 	delete(session.Values, "repoID")
 	session.Save(r, w)
 
-	file := repoID.(string) + ".gob"
+	file := "gob/" + repoID.(string) + ".gob"
 	_, err = os.Stat(file)
 	if err != nil {
 		utils.AppLog.Error("error retrieving user settings", zap.Error(err))
