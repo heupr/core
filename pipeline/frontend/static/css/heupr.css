@@ -84,8 +84,8 @@ a.disclosure-link {
 }
 
 .btn-lg {
-  background-color: #DC143C;
-  border-color: #DC143C;
+  /* background-color: #DC143C;
+  border-color: #DC143C; */
   font-family: sans-serif;
   font-size: 25px;
   font-weight: bold;
