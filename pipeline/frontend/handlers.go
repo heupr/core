@@ -45,7 +45,7 @@ var (
 		// Scopes:       []string{""},
 		Endpoint: ghoa.Endpoint,
 	}
-	appID			 = 6807 //This needs to match the "ID" in "Mike/JohnHeuprTest"
+	appID                = 6807 //This needs to match the "ID" in "Mike/JohnHeuprTest"
 	store                = sessions.NewCookieStore([]byte("yoda-dooku-jinn-kenobi-skywalker-tano"))
 	oauthTokenSessionKey = "oauth_token"
 	// templatePath is for testing purposes only; a better solution is needed.
@@ -109,7 +109,6 @@ type storage struct {
 	Labels   []string `schema:"Labels"`
 	Buckets  map[string][]label
 }
-
 
 //TODO: Confirm this is needed for adding labels.
 //TODO: False makes it into the Post Request.
@@ -255,7 +254,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			file, err := os.Open(filename)//os.OpenFile(filename, os.O_WRONLY, 0644)
+			file, err := os.Open(filename) //os.OpenFile(filename, os.O_WRONLY, 0644)
 			defer file.Close()
 			if err != nil {
 				http.Error(w, "error opening storage file", http.StatusInternalServerError)
@@ -299,9 +298,9 @@ func repos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]interface{}{
-			"storage":				input,
-			"csrf":           csrf.Token(r),
-			csrf.TemplateTag: csrf.TemplateField(r),
+		"storage":        input,
+		"csrf":           csrf.Token(r),
+		csrf.TemplateTag: csrf.TemplateField(r),
 	}
 	err = t.ExecuteTemplate(w, "base.html", data)
 	if err != nil {
@@ -367,7 +366,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Storage", s)
 
-	t, err := template.ParseFiles("../templates/base.html","../templates/console.html")
+	t, err := template.ParseFiles("../templates/base.html", "../templates/console.html")
 	if err != nil {
 		slackErr("Settings console page", err)
 		fmt.Println(err)
@@ -378,9 +377,9 @@ func console(w http.ResponseWriter, r *http.Request) {
 	csrfToken := csrf.Token(r)
 	fmt.Println(csrfToken)
 	data := map[string]interface{}{
-			"storage":				s,
-			"csrf":           csrfToken,
-			csrf.TemplateTag: csrf.TemplateField(r),
+		"storage":        s,
+		"csrf":           csrfToken,
+		csrf.TemplateTag: csrf.TemplateField(r),
 	}
 	err = t.ExecuteTemplate(w, "base.html", data)
 	if err != nil {
