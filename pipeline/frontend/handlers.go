@@ -35,21 +35,30 @@ func slackMsg(msg string) {
 	}
 }
 
-var (
-	oauthConfig = &oauth2.Config{
-		// NOTE: These will need to be added for production.
-		// TODO: Try to configure RedirectURL without using Ngrok
-		RedirectURL:  "https://127.0.0.1:8081/repos",              //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
-		ClientID:     "Iv1.2dcad54aa18d661d",                     //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
-		ClientSecret: "2f757c564b4a7c1cbee8c965ccaf926d4b9ddb22", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
-		// Scopes:       []string{""},
-		Endpoint: ghoa.Endpoint,
+func init() {
+	if PROD {
+		oauthConfig.RedirectURL = "https://heupr.io/repos"
+		domain = "https://heupr.io"
+	} else {
+		appID = 6807 //This needs to match the "ID" in "Mike/JohnHeuprTest"
+		oauthConfig = &oauth2.Config{
+			RedirectURL:  "https://127.0.0.1:8081/repos",              //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
+			ClientID:     "Iv1.83cc17f7f984aeec",                     //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
+			ClientSecret: "c9c5f71edcf1a85121ae86bae5295413dff46fad", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
+			Endpoint: ghoa.Endpoint,
+		}
+		domain = "https://127.0.0.1:8081"
 	}
-	appID                = 6844 //This needs to match the "ID" in "Mike/JohnHeuprTest"
+}
+
+var (
+	appID int
+	oauthConfig *oauth2.Config
 	store                = sessions.NewCookieStore([]byte("yoda-dooku-jinn-kenobi-skywalker-tano"))
 	oauthTokenSessionKey = "oauth_token"
 	// templatePath is for testing purposes only; a better solution is needed.
 	templatePath = "../"
+	domain string
 )
 
 const sessionName = "heupr-session"
@@ -230,6 +239,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 	for id, name := range repos {
 		filename := "gob/" + strconv.FormatInt(id, 10) + ".gob"
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
+			fmt.Println("Stat")
 			file, err := os.Create(filename)
 			defer file.Close()
 			if err != nil {
@@ -301,6 +311,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		"storage":        input,
 		"csrf":           csrf.Token(r),
 		csrf.TemplateTag: csrf.TemplateField(r),
+		"domain":					domain,
 	}
 	err = t.ExecuteTemplate(w, "base.html", data)
 	if err != nil {
@@ -366,11 +377,11 @@ func console(w http.ResponseWriter, r *http.Request) {
 	}
 
 	csrfToken := csrf.Token(r)
-	fmt.Println(csrfToken)
 	data := map[string]interface{}{
 		"storage":        s,
 		"csrf":           csrfToken,
 		csrf.TemplateTag: csrf.TemplateField(r),
+		"domain":					domain,
 	}
 	err = t.ExecuteTemplate(w, "base.html", data)
 	if err != nil {

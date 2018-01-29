@@ -34,7 +34,7 @@
     <div class="row" id="bucket-default">
       <div class="col-sm-4">
         <div>
-          <select class="selectpicker labels" name="default-labels" data-live-search="true" multiple="true" title="Select label(s)...">
+          <select class="selectpicker show-tick" name="default-labels" data-live-search="true" multiple="true" title="Select label(s)...">
             {{ range $label := .storage.Buckets.typedefault }}
               <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
             {{ end }}
