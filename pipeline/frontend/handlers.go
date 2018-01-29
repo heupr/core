@@ -42,23 +42,23 @@ func init() {
 	} else {
 		appID = 6807 //This needs to match the "ID" in "Mike/JohnHeuprTest"
 		oauthConfig = &oauth2.Config{
-			RedirectURL:  "https://127.0.0.1:8081/repos",              //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
+			RedirectURL:  "https://127.0.0.1:8081/repos",             //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
 			ClientID:     "Iv1.83cc17f7f984aeec",                     //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
 			ClientSecret: "c9c5f71edcf1a85121ae86bae5295413dff46fad", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
-			Endpoint: ghoa.Endpoint,
+			Endpoint:     ghoa.Endpoint,
 		}
 		domain = "https://127.0.0.1:8081"
 	}
 }
 
 var (
-	appID int
-	oauthConfig *oauth2.Config
+	appID                int
+	oauthConfig          *oauth2.Config
 	store                = sessions.NewCookieStore([]byte("yoda-dooku-jinn-kenobi-skywalker-tano"))
 	oauthTokenSessionKey = "oauth_token"
 	// templatePath is for testing purposes only; a better solution is needed.
 	templatePath = "../"
-	domain string
+	domain       string
 )
 
 const sessionName = "heupr-session"
@@ -311,7 +311,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		"storage":        input,
 		"csrf":           csrf.Token(r),
 		csrf.TemplateTag: csrf.TemplateField(r),
-		"domain":					domain,
+		"domain":         domain,
 	}
 	err = t.ExecuteTemplate(w, "base.html", data)
 	if err != nil {
@@ -381,7 +381,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 		"storage":        s,
 		"csrf":           csrfToken,
 		csrf.TemplateTag: csrf.TemplateField(r),
-		"domain":					domain,
+		"domain":         domain,
 	}
 	err = t.ExecuteTemplate(w, "base.html", data)
 	if err != nil {
