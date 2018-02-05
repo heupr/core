@@ -24,6 +24,24 @@
     }
   }
   </script> -->
+  <script>
+  $(function() {
+    $('.selectpicker.show-tick').on('loaded.bs.select', function() {
+      var list = $(this).find("option")
+      var items = [];
+      for (i = 0; i < list.length; i++) {
+          if (list[i].innerHTML.includes("✔")) {
+            items.push(list[i].value)
+            str = list[i].value
+            list[i].innerHTML = str.replace("✔", "")
+          }
+      }
+      $(this).selectpicker('val', items);
+      $(".selectpicker.show-tick").selectpicker("refresh")
+      $(".selectpicker.show-tick").selectpicker("render")
+    });
+  });
+  </script>
     <h2>Label options</h2>
     <hr>
     <h4>
@@ -34,9 +52,9 @@
     <div class="row" id="bucket-default">
       <div class="col-sm-4">
         <div>
-          <select class="selectpicker show-tick" name="default-labels" data-live-search="true" multiple="true" title="Select label(s)...">
+          <select class="selectpicker show-tick" name="typedefault" data-live-search="true" multiple="true" title="Select label(s)...">
             {{ range $label := .storage.Buckets.typedefault }}
-              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
+              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}&#10004;{{ end }}</option>
             {{ end }}
           </select>
         </div>
@@ -50,23 +68,23 @@
     <div class="row" id="bucket-type">
       <div class="col-sm-4 bucket">
         <div>
-          <select class="selectpicker labels" name="type-bug" data-live-search="true" title="Select label...">
+          <select class="selectpicker show-tick" name="typebug" data-live-search="true" multiple data-max-options="1" title="Select bug label...">
             {{ range $label := .storage.Buckets.typebug }}
-              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
+              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}&#10004;{{ end }}</option>
             {{ end }}
           </select>
         </div>
         <div>
-          <select class="selectpicker labels" name="type-improvement" data-live-search="true" title="Select label...">
-            {{ range $label := .storage.Buckets.typeimprovement }}
-              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
-            {{ end }}
-          </select>
-        </div>
-        <div>
-          <select class="selectpicker labels" name="type-feature" data-live-search="true" title="Select label...">
+          <select class="selectpicker show-tick" name="typefeature" data-live-search="true" multiple data-max-options="1" title="Select feature label...">
             {{ range $label := .storage.Buckets.typefeature }}
-              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}selected{{ end }}</option>
+              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}&#10004;{{ end }}</option>
+            {{ end }}
+          </select>
+        </div>
+        <div>
+          <select class="selectpicker show-tick" name="typeimprovement" data-live-search="true" multiple data-max-options="1" title="Select improvement label...">
+            {{ range $label := .storage.Buckets.typeimprovement }}
+              <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}&#10004;{{ end }}</option>
             {{ end }}
           </select>
         </div>

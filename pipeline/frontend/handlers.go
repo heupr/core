@@ -1,10 +1,8 @@
 package frontend
 
 import (
-	"bytes"
 	"context"
 	"encoding/gob"
-	"fmt"
 	"html/template"
 	"net/http"
 	"os"
@@ -98,7 +96,7 @@ var newServerToServerClient = func(appID int, installationID int64) (*github.Cli
 	if PROD {
 		key = "heupr.2017-10-04.private-key.pem"
 	} else {
-		key = "forstmeier-heupr.2018-01-28.private-key.pem"
+		key = "mikeheuprtest.2017-11-16.private-key.pem"
 	}
 	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appID, int(installationID), key)
 	if err != nil {
@@ -143,11 +141,9 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	oauthFlowSession, err := store.Get(r, r.FormValue("state"))
-	fmt.Println("oauthFlow session : ")
-
+	_, err := store.Get(r, r.FormValue("state"))
 	if err != nil {
-		fmt.Println("invalid state: ", oauthFlowSession)
+		utils.AppLog.Error("invalid state", zap.Error(err))
 		http.Redirect(w, r, "/", http.StatusForbidden)
 		return
 	}
@@ -239,7 +235,6 @@ func repos(w http.ResponseWriter, r *http.Request) {
 	for id, name := range repos {
 		filename := "gob/" + strconv.FormatInt(id, 10) + ".gob"
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
-			fmt.Println("Stat")
 			file, err := os.Create(filename)
 			defer file.Close()
 			if err != nil {
@@ -255,6 +250,9 @@ func repos(w http.ResponseWriter, r *http.Request) {
 
 			for _, l := range labels[id] {
 				s.Buckets["typedefault"] = append(s.Buckets["typedefault"], label{Name: l})
+				s.Buckets["typebug"] = append(s.Buckets["typebug"], label{Name: l})
+				s.Buckets["typeimprovement"] = append(s.Buckets["typeimprovement"], label{Name: l})
+				s.Buckets["typefeature"] = append(s.Buckets["typefeature"], label{Name: l})
 			}
 
 			encoder := gob.NewEncoder(file)
@@ -264,7 +262,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			file, err := os.Open(filename) //os.OpenFile(filename, os.O_WRONLY, 0644)
+			file, err := os.Open(filename)
 			defer file.Close()
 			if err != nil {
 				http.Error(w, "error opening storage file", http.StatusInternalServerError)
@@ -274,10 +272,10 @@ func repos(w http.ResponseWriter, r *http.Request) {
 			s := storage{}
 			err = decoder.Decode(&s)
 			if err != nil {
-				fmt.Println(err)
+				utils.AppLog.Error("eerror opening storage file", zap.Error(err))
+				http.Error(w, "error opening storage file", http.StatusInternalServerError)
+				return
 			}
-			fmt.Println("Storage2", s)
-
 			updateStorage(&s, labels[id])
 			file2, err := os.OpenFile(filename, os.O_WRONLY, 0644)
 			defer file2.Close()
@@ -366,12 +364,10 @@ func console(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Storage", s)
-
 	t, err := template.ParseFiles("../templates/base.html", "../templates/console.html")
 	if err != nil {
 		slackErr("Settings console page", err)
-		fmt.Println(err)
+		utils.AppLog.Error("settings console page", zap.Error(err))
 		http.Error(w, "error loading console", http.StatusInternalServerError)
 		return
 	}
@@ -392,14 +388,18 @@ func console(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateSettings(s *storage, form map[string][]string) {
-	for name, bucket := range s.Buckets {
+	//Set everything to False
+	for _, bucket := range s.Buckets {
 		for i := range bucket {
-			for j := range form[name] {
-				if bucket[i].Name == form[name][j] {
+			bucket[i].Selected = false
+		}
+	}
+	//Mark selections to true
+	for key, bucket := range s.Buckets {
+		for i := range bucket {
+			for _, selection := range form[key] {
+				if bucket[i].Name == selection {
 					bucket[i].Selected = true
-					break
-				} else {
-					bucket[i].Selected = false
 				}
 			}
 		}
@@ -455,7 +455,8 @@ func complete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error storing user info", http.StatusInternalServerError)
 		return
 	}
-
+	ingestorFile := utils.Config.IngestorGobs + "/" + repoID.(string) + ".gob"
+	CopyFile(ingestorFile, file, 0664)
 	t, err := template.ParseFiles(
 		templatePath+"templates/base.html",
 		templatePath+"templates/complete.html",
@@ -465,8 +466,14 @@ func complete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error parsing signup complete page", http.StatusInternalServerError)
 		return
 	}
-	buf := new(bytes.Buffer)
-	err = t.Execute(w, "")
+
+	csrfToken := csrf.Token(r)
+	data := map[string]interface{}{
+		"csrf":           csrfToken,
+		csrf.TemplateTag: csrf.TemplateField(r),
+		"domain":         domain,
+	}
+	err = t.ExecuteTemplate(w, "base.html", data)
 	if err != nil {
 		slackErr("Error rendering template", err)
 		http.Error(w, "error rendering template", http.StatusInternalServerError)
@@ -474,5 +481,4 @@ func complete(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.AppLog.Info("Completed user signed up")
 	slackMsg("Completed user signed up")
-	buf.WriteTo(w)
 }

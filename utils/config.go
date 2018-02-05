@@ -17,7 +17,7 @@ type configuration struct {
 	AppLogPath                 string
 	ModelLogPath               string
 	DataCachesPath             string
-	BoltDBPath                 string
+	IngestorGobs               string
 	ActivationServerAddress    string
 	ActivationServiceEndpoint  string
 	IngestorServerAddress      string
@@ -46,7 +46,7 @@ func init() {
 		Config.AppLogPath = replaceEnvVariable(fmtTimestamp(Config.AppLogPath))
 		Config.ModelLogPath = replaceEnvVariable(fmtTimestamp(Config.ModelLogPath))
 		Config.DataCachesPath = replaceEnvVariable(fmtTimestamp(Config.DataCachesPath))
-		Config.BoltDBPath = replaceEnvVariable(Config.BoltDBPath)
+		Config.IngestorGobs = replaceEnvVariable(Config.IngestorGobs)
 
 		viper.WatchConfig()
 		viper.OnConfigChange(func(e fsnotify.Event) {
