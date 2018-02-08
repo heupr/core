@@ -68,6 +68,10 @@ func (w *Worker) Start() {
 				utils.AppLog.Info("TriageOpenIssues() - Begin ", zap.Int("RepoID", repodata.RepoID))
 				repo.TriageOpenIssues()
 				utils.AppLog.Info("TriageOpenIssues() - Complete ", zap.Int("RepoID", repodata.RepoID))
+
+				utils.AppLog.Info("ApplyLabelsOnOpenIssues() - Begin ", zap.Int("RepoID", repodata.RepoID))
+				repo.ApplyLabelsOnOpenIssues()
+				utils.AppLog.Info("ApplyLabelsOnOpenIssues() - Complete ", zap.Int("RepoID", repodata.RepoID))
 				repo.Unlock()
 				continue
 			case <-w.Quit:

@@ -39,9 +39,6 @@ type ArchRepo struct {
 	AssigneeAllocations      map[string]int
 	EligibleAssignees        map[string]int
 	Settings                 HeuprConfigSettings
-	TriagedLabelEnabledCheck bool          //TEMPORARY FIX
-	TriagedLabel             *github.Label //TEMPORARY FIX
-	TriagedLabelEnabled      bool
 }
 
 func (bs *BackendServer) NewArchRepo(repoID int, settings HeuprConfigSettings) {
@@ -75,7 +72,30 @@ func (bs *BackendServer) NewClient(repoId, appId, installationId int) {
 	bs.Repos.Actives[repoId].Client = client
 }
 
+func (a *ArchRepo) ApplyLabelsOnOpenIssues() {
+	openIssues := a.Hive.Blender.GetAllOpenIssues()
+	utils.AppLog.Info("ApplyLabelsOnOpenIssues()", zap.Int("Total", len(openIssues)))
+	if len(openIssues) == 0 {
+		return
+	}
+	var name string
+	if openIssues[0].Issue.Repository.FullName != nil {
+		name = *openIssues[0].Issue.Repository.FullName
+	} else {
+		name = *openIssues[0].Issue.Repository.Name
+	}
+	r := strings.Split(name, "/")
+
+	for i := 0; i < len(openIssues); i++ {
+		if openIssues[i].Issue.CreatedAt.After(a.Settings.StartTime) {
+		}
+	}
+}
+
 func (a *ArchRepo) TriageOpenIssues() {
+	if !a.Settings.EnableIssueAssignments {
+		return
+	}
 	if !a.Hive.Blender.AllModelsBootstrapped() {
 		utils.AppLog.Error("!AllModelsBootstrapped()")
 		return
@@ -93,40 +113,6 @@ func (a *ArchRepo) TriageOpenIssues() {
 	}
 	r := strings.Split(name, "/")
 
-	//TEMPORARY FIX
-	var label *github.Label
-	if a.TriagedLabelEnabledCheck == false {
-		a.TriagedLabelEnabledCheck = true
-
-		limits, _, _ := a.Client.RateLimits(context.Background())
-		if limits != nil {
-			limit := limits.Core.Limit
-			remaining := limits.Core.Remaining
-			utils.AppLog.Info("RateLimits()", zap.Int("Limit", limit), zap.Int("Remaining", remaining))
-		}
-		utils.AppLog.Info("GetLabel()", zap.String("RepoName", r[0]+"/"+r[1]))
-		lbl, _, err := a.Client.Issues.GetLabel(context.Background(), r[0], r[1], "triaged")
-		if err != nil {
-			utils.AppLog.Error("could not get triaged label", zap.String("RepoName", r[0]+"/"+r[1]), zap.Error(err))
-			if _, ok := err.(*github.RateLimitError); ok {
-				time.Sleep(1 * time.Minute)
-				limits, _, _ = a.Client.RateLimits(context.Background())
-				if limits != nil {
-					limit := limits.Core.Limit
-					remaining := limits.Core.Remaining
-					utils.AppLog.Info("RateLimits()", zap.Int("Limit", limit), zap.Int("Remaining", remaining))
-				}
-				lbl, _, err = a.Client.Issues.GetLabel(context.Background(), r[0], r[1], "triaged")
-				if err == nil {
-					utils.AppLog.Info("GetLabel() Label Retry Success", zap.String("RepoName", r[0]+"/"+r[1]))
-				}
-			}
-		}
-		a.TriagedLabel = lbl
-	}
-	label = a.TriagedLabel
-
-	rateCheck := false
 	for i := 0; i < len(openIssues); i++ {
 		if openIssues[i].Issue.CreatedAt.After(a.Settings.StartTime) {
 			labelValid := true
@@ -140,24 +126,12 @@ func (a *ArchRepo) TriageOpenIssues() {
 			if !labelValid {
 				continue
 			}
-			if !rateCheck {
-				limits, _, _ := a.Client.RateLimits(context.Background())
-				if limits != nil {
-					limit := limits.Core.Limit
-					remaining := limits.Core.Remaining
-					utils.AppLog.Info("RateLimits()", zap.Int("Limit", limit), zap.Int("Remaining", remaining))
-				}
-				rateCheck = true
-			}
 			*openIssues[i].Issue.Triaged = true
 			assignees := a.Hive.Blender.Predict(openIssues[i])
 			number := *openIssues[i].Issue.Number
 			fallbackAssignee := ""
 			assigned := false
 			for i := 0; i < len(assignees); i++ {
-				if name == "yarnpkg/yarn" && assignees[i] == "cpojer" {
-					continue
-				}
 				assignee := assignees[i]
 				if _, ok := a.Settings.IgnoreUsers[assignee]; ok {
 					continue
@@ -198,15 +172,6 @@ func (a *ArchRepo) TriageOpenIssues() {
 								continue
 							}
 
-							if label != nil {
-								if *label.Name == "triaged" {
-									utils.AppLog.Info("AddLabelsToIssue()", zap.Int("IssueNumber", number))
-									_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), r[0], r[1], number, []string{*label.Name})
-									if err != nil {
-										utils.AppLog.Error("AddLabelsToIssue failed for primary assignee", zap.Error(err))
-									}
-								}
-							}
 							assigned = true
 							assignmentsCount++
 							a.AssigneeAllocations[assignee] = assignmentsCount
@@ -217,7 +182,7 @@ func (a *ArchRepo) TriageOpenIssues() {
 			}
 			if !assigned {
 				if fallbackAssignee == "" {
-					utils.AppLog.Error("AddAssignees Failed. Fallback assignee not found.", zap.String("URL", *openIssues[i].Issue.URL), zap.Int("IssueID", *openIssues[i].Issue.ID))
+					utils.AppLog.Error("AddAssignees Failed. Fallback assignee not found.", zap.String("URL", *openIssues[i].Issue.URL), zap.Int64("IssueID", *openIssues[i].Issue.ID))
 					break
 				}
 				_, _, err := a.Client.Issues.AddAssignees(context.Background(), r[0], r[1], number, []string{fallbackAssignee})
@@ -225,18 +190,9 @@ func (a *ArchRepo) TriageOpenIssues() {
 					utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
 					break
 				}
-				if label != nil {
-					if *label.Name == "triaged" {
-						utils.AppLog.Info("AddLabelsToIssue()", zap.Int("IssueNumber", number))
-						_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), r[0], r[1], number, []string{*label.Name})
-						if err != nil {
-							utils.AppLog.Error("AddLabelsToIssue failed for fallback assignee", zap.Error(err))
-						}
-					}
-				}
 				assigned = true
 				a.AssigneeAllocations[fallbackAssignee]++
-				utils.AppLog.Info("AddAssignees Success. Fallback assignee found.", zap.String("URL", *openIssues[i].Issue.URL), zap.Int("IssueID", *openIssues[i].Issue.ID))
+				utils.AppLog.Info("AddAssignees Success. Fallback assignee found.", zap.String("URL", *openIssues[i].Issue.URL), zap.Int64("IssueID", *openIssues[i].Issue.ID))
 			}
 		}
 	}
@@ -258,6 +214,17 @@ func (b *Blender) GetOpenIssues() []conflation.ExpandedIssue {
 			if issues[i].Issue.Assignee == nil && issues[i].Issue.Assignees == nil { //MVP
 				openIssues = append(openIssues, issues[i])
 			}
+		}
+	}
+	return openIssues
+}
+
+func (b *Blender) GetAllOpenIssues() []conflation.ExpandedIssue {
+	openIssues := []conflation.ExpandedIssue{}
+	issues := b.Conflator.Context.Issues
+	for i := 0; i < len(issues); i++ {
+		if issues[i].PullRequest.Number == nil && issues[i].Issue.ClosedAt == nil && !*issues[i].Issue.Labeled && *issues[i].Issue.User.Login != "heupr" {
+				openIssues = append(openIssues, issues[i])
 		}
 	}
 	return openIssues

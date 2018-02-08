@@ -27,7 +27,8 @@ func (c *Conflator) SetPullRequests(pulls []*github.PullRequest) {
 func (c *Conflator) SetIssueRequests(issues []*github.Issue) {
 	for i := 0; i < len(issues); i++ {
 		isTriaged := issues[i].Assignees != nil || issues[i].Assignee != nil
-		c.Context.Issues = append(c.Context.Issues, ExpandedIssue{Issue: CRIssue{*issues[i], []int{}, []CRPullRequest{}, &isTriaged}, IsTrained: false})
+		isLabeled := false
+		c.Context.Issues = append(c.Context.Issues, ExpandedIssue{Issue: CRIssue{*issues[i], []int{}, []CRPullRequest{}, &isTriaged, &isLabeled}, IsTrained: false})
 	}
 }
 

@@ -23,12 +23,14 @@ type RepoData struct {
 }
 
 type HeuprConfigSettings struct {
-	Integration  Integration
-	IgnoreUsers  map[string]bool
-	StartTime    time.Time
-	IgnoreLabels map[string]bool
-	Email        string
-	Twitter      string
+	Integration  						Integration
+	EnableIssueAssignments 	bool
+	EnableLabeler						bool
+	IgnoreUsers  						map[string]bool
+	StartTime    						time.Time
+	IgnoreLabels 						map[string]bool
+	Email        						string
+	Twitter      						string
 }
 
 func (m *MemSQL) Read() (map[int]*RepoData, error) {

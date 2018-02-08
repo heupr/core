@@ -159,6 +159,6 @@ func (n *NBModel) LogClassWords() {
 	n.classifier.LogClassWords()
 }
 
-func (n *NBModel) GenerateProbabilityTable(issueID int, content string, assignees []string, status string) {
+func (n *NBModel) GenerateProbabilityTable(issueID int64, content string, assignees []string, status string) {
 	n.classifier.GenerateProbabilityTable(issueID, content, assignees, status)
 }

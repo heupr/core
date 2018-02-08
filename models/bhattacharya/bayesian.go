@@ -486,7 +486,7 @@ func (c *NBClassifier) LogClassWords() {
 	}
 }
 
-func (c *NBClassifier) GenerateProbabilityTable(issueID int, content string, assignees []string, status string) {
+func (c *NBClassifier) GenerateProbabilityTable(issueID int64, content string, assignees []string, status string) {
 	// set up empty matrix
 	words := strings.Split(content, " ")
 	results := make([][]string, (len(words) + 1))
