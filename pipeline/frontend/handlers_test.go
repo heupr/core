@@ -200,6 +200,8 @@ func Test_repos(t *testing.T) {
 		},
 	}
 
+	gobPath = "cmd/gob/"
+
 	for i := range tests {
 		req.Method = tests[i].method
 		req.Form = url.Values{}
@@ -214,7 +216,7 @@ func Test_repos(t *testing.T) {
 		assert.Equal(tests[i].result, rec.Code, fmt.Sprint(tests[i].name))
 		nums := []string{"-65", "-66"}
 		for i := range nums {
-			filename := "gob/" + nums[i] + ".gob"
+			filename := "cmd/gob/" + nums[i] + ".gob"
 			if _, err := os.Stat(filename); err == nil {
 				os.Remove(filename)
 			}
@@ -238,7 +240,7 @@ func Test_console(t *testing.T) {
 			"GET",
 			"rejectGET",
 			make(map[string]string),
-			http.StatusForbidden,
+			http.StatusBadRequest,
 		},
 		// NOTE: Temporarily commented out due to hard-coded temporary values
 		// in the production code.
@@ -259,17 +261,17 @@ func Test_console(t *testing.T) {
 	}
 
 	for i := range tests {
-		f, err := os.Create(tests[i].file)
+		f, err := os.Create("cmd/gob/" + tests[i].file)
 		if err != nil {
-			t.Error("failure creating test gob file")
+			t.Error(err)
 		}
-		defer os.Remove(tests[i].file)
+		defer os.Remove("cmd/gob/" + tests[i].file)
 		s := storage{
 			FullName: "contingency/chancellor",
 		}
 		encoder := gob.NewEncoder(f)
 		if err := encoder.Encode(s); err != nil {
-			t.Error("failed encoding gob file")
+			t.Error(err)
 		}
 
 		req.Method = tests[i].method
@@ -371,30 +373,31 @@ func Test_complete(t *testing.T) {
 
 	// NOTE: This should be pulled out into a separate test function.
 	buf := new(bytes.Buffer)
-	err = tmpl.Execute(buf, "")
+	data := map[string]interface{}{"domain": "test-domain"}
+	err = tmpl.Execute(buf, data)
 	if err != nil {
-		t.Error("failure executing complete template")
+		t.Error(err)
 	}
 
 	str := buf.String()
 
 	if strings.Contains(str, "{{") || strings.Contains(str, "}}") {
-		t.Error("failure loading template data")
+		t.Error(err)
 	}
 
 	for i := range tests {
-		f, err := os.Create(tests[i].file)
-		defer os.Remove(tests[i].file)
-
+		f, err := os.Create("cmd/gob/" + tests[i].file)
 		if err != nil {
-			t.Error("failure creating test gob file")
+			t.Error(err)
 		}
+		defer os.Remove("cmd/gob/" + tests[i].file)
+
 		s := storage{
 			FullName: "contingency/chancellor",
 		}
 		encoder := gob.NewEncoder(f)
 		if err := encoder.Encode(s); err != nil {
-			t.Error("failed encoding gob file")
+			t.Error(err)
 		}
 
 		req.Method = tests[i].method
@@ -402,7 +405,7 @@ func Test_complete(t *testing.T) {
 
 		session, err := store.Get(req, sessionName)
 		if err != nil {
-			t.Error("failure creating test session")
+			t.Error(err)
 		}
 		session.Values["repoID"] = tests[i].repoID
 

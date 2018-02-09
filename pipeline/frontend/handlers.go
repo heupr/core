@@ -1,7 +1,6 @@
 package frontend
 
 import (
-	// "bytes"
 	"context"
 	"encoding/gob"
 	"html/template"
@@ -57,6 +56,7 @@ var (
 	oauthTokenSessionKey = "oauth_token"
 	// templatePath is for testing purposes only; a better solution is needed.
 	templatePath = "../"
+	gobPath      = "gob/"
 	domain       string
 )
 
@@ -234,7 +234,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for id, name := range repos {
-		filename := "gob/" + strconv.FormatInt(id, 10) + ".gob"
+		filename := gobPath + strconv.FormatInt(id, 10) + ".gob"
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
 			file, err := os.Create(filename)
 			defer file.Close()
@@ -313,7 +313,6 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		"domain":         domain,
 	}
 	err = t.ExecuteTemplate(w, "base.html", data)
-	// buf := new(bytes.Buffer)
 	if err != nil {
 		slackErr("Repos selection page", err)
 		http.Error(w, "error loading repo selections", http.StatusInternalServerError)
@@ -343,7 +342,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 	session.Values["repoID"] = repoID
 	session.Save(r, w)
 
-	file := "gob/" + repoID + ".gob"
+	file := gobPath + repoID + ".gob"
 	_, err = os.Stat(file)
 	if err != nil {
 		utils.AppLog.Error("error retrieving user settings", zap.Error(err))
@@ -366,7 +365,10 @@ func console(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.ParseFiles("../templates/base.html", "../templates/console.html")
+	t, err := template.ParseFiles(
+		templatePath+"templates/base.html",
+		templatePath+"templates/console.html",
+	)
 	if err != nil {
 		slackErr("Settings console page", err)
 		utils.AppLog.Error("settings console page", zap.Error(err))
@@ -425,7 +427,7 @@ func complete(w http.ResponseWriter, r *http.Request) {
 	delete(session.Values, "repoID")
 	session.Save(r, w)
 
-	file := "gob/" + repoID.(string) + ".gob"
+	file := gobPath + repoID.(string) + ".gob"
 	_, err = os.Stat(file)
 	if err != nil {
 		utils.AppLog.Error("error retrieving user settings", zap.Error(err))
