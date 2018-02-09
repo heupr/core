@@ -15,6 +15,6 @@ func main() {
 
 	backendServer := backend.Server{}
 	backendServer.Repos = new(backend.ActiveRepos)
-	backendServer.Repos.Actives = make(map[int]*backend.ArchRepo)
+	backendServer.Repos.Actives = make(map[int64]*backend.ArchRepo)
 	backendServer.Start()
 }
