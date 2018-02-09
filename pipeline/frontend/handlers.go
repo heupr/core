@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"bytes"
 	"context"
 	"encoding/gob"
 	"html/template"
@@ -312,12 +313,14 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		csrf.TemplateTag: csrf.TemplateField(r),
 		"domain":         domain,
 	}
-	err = t.ExecuteTemplate(w, "base.html", data)
+	buf := new(bytes.Buffer)
+	err = t.ExecuteTemplate(buf, "base.html", data)
 	if err != nil {
 		slackErr("Repos selection page", err)
 		http.Error(w, "error loading repo selections", http.StatusInternalServerError)
 		return
 	}
+	buf.WriteTo(w)
 }
 
 func console(w http.ResponseWriter, r *http.Request) {
@@ -383,12 +386,14 @@ func console(w http.ResponseWriter, r *http.Request) {
 		csrf.TemplateTag: csrf.TemplateField(r),
 		"domain":         domain,
 	}
-	err = t.ExecuteTemplate(w, "base.html", data)
+	buf := new(bytes.Buffer)
+	err = t.ExecuteTemplate(buf, "base.html", data)
 	if err != nil {
 		slackErr("Settings console page", err)
 		http.Error(w, "error loading console", http.StatusInternalServerError)
 		return
 	}
+	buf.WriteTo(w)
 }
 
 func updateSettings(s *storage, form map[string][]string) {
@@ -477,12 +482,15 @@ func complete(w http.ResponseWriter, r *http.Request) {
 		csrf.TemplateTag: csrf.TemplateField(r),
 		"domain":         domain,
 	}
-	err = t.ExecuteTemplate(w, "base.html", data)
+	buf := new(bytes.Buffer)
+	err = t.ExecuteTemplate(buf, "base.html", data)
 	if err != nil {
 		slackErr("Error rendering template", err)
 		http.Error(w, "error rendering template", http.StatusInternalServerError)
 		return
 	}
+	utils.AppLog.Info("Preparing to write out complete handler")
+	buf.WriteTo(w)
 	utils.AppLog.Info("Completed user signed up")
 	slackMsg("Completed user signed up")
 }
