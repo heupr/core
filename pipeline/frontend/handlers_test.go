@@ -9,7 +9,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -73,26 +72,52 @@ func Test_reposHTML(t *testing.T) {
 		"templates/repos.html",
 	)
 
+	repos := []struct {
+		Repos map[int64]string
+	}{
+		{
+			Repos: make(map[int64]string),
+		},
+		{
+			Repos: map[int64]string{1: ""},
+		},
+		{
+			Repos: map[int64]string{
+				2: "fode",
+				3: "beed",
+			},
+		},
+	}
+
 	tests := []struct {
-		Repos   map[int]string
+		data    map[string]interface{}
 		check   string
 		result  bool
 		message string
 	}{
 		{
-			make(map[int]string),
+			map[string]interface{}{
+				"storage": repos[0],
+				"domain":  "test-domain",
+			},
 			"<option ",
 			false,
 			"expected no <option> to be populated",
 		},
 		{
-			map[int]string{1: ""},
+			map[string]interface{}{
+				"storage": repos[1],
+				"domain":  "test-domain",
+			},
 			`<option value="1"></option>`,
 			true,
 			"expected no value to populate in option",
 		},
 		{
-			map[int]string{2: "fode", 3: "beed"},
+			map[string]interface{}{
+				"storage": repos[2],
+				"domain":  "test-domain",
+			},
 			`<option value="2">fode</option>`,
 			true,
 			"expected proper value/text for option",
@@ -101,7 +126,7 @@ func Test_reposHTML(t *testing.T) {
 
 	for i := range tests {
 		buf := new(bytes.Buffer)
-		err = tmpl.Execute(buf, tests[i])
+		err = tmpl.Execute(buf, tests[i].data)
 		if err != nil {
 			t.Error(err)
 		}
@@ -139,7 +164,7 @@ func Test_repos(t *testing.T) {
 		return c, nil
 	}
 
-	newServerToServerClient = func(appId, installationId int) (*github.Client, error) {
+	newServerToServerClient = func(appId int, installationId int64) (*github.Client, error) {
 		c := github.NewClient(nil)
 		c.BaseURL = testURL
 		c.UploadURL = testURL
@@ -170,7 +195,7 @@ func Test_repos(t *testing.T) {
 		{
 			"passing GET",
 			"GET",
-			map[string]string{"state": oauthState},
+			map[string]string{"state": "something"},
 			http.StatusOK,
 		},
 	}
@@ -195,23 +220,6 @@ func Test_repos(t *testing.T) {
 			}
 		}
 	}
-}
-
-func Test_generateWalkFunc(t *testing.T) {
-	assert := assert.New(t)
-
-	file := "-66.gob"
-	found := ""
-	_, err := os.Create(file)
-	if err != nil {
-		t.Errorf("create file error", err)
-	}
-	defer os.Remove(file)
-
-	wkFn := generateWalkFunc(&found, "-66")
-	filepath.Walk(".", wkFn)
-
-	assert.Equal(file, found, "generate walk function files not matching")
 }
 
 func Test_console(t *testing.T) {

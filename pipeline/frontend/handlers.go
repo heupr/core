@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	// "bytes"
 	"context"
 	"encoding/gob"
 	"html/template"
@@ -312,6 +313,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		"domain":         domain,
 	}
 	err = t.ExecuteTemplate(w, "base.html", data)
+	// buf := new(bytes.Buffer)
 	if err != nil {
 		slackErr("Repos selection page", err)
 		http.Error(w, "error loading repo selections", http.StatusInternalServerError)
