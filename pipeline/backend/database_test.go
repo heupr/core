@@ -33,7 +33,7 @@ func (tc testConn) Begin() (driver.Tx, error) {
 	return nil, nil
 }
 
-func (c *testConn) Query(query string, args []driver.Value) (driver.Rows, error) {
+func (tc *testConn) Query(query string, args []driver.Value) (driver.Rows, error) {
 	tr := testRows{}
 	return tr, nil
 }

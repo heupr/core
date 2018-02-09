@@ -13,7 +13,7 @@ func main() {
 		utils.SlackLog.Fatal("Process crash: ", recover(), bytes.NewBuffer(debug.Stack()).String())
 	}()
 
-	backendServer := backend.BackendServer{}
+	backendServer := backend.Server{}
 	backendServer.Repos = new(backend.ActiveRepos)
 	backendServer.Repos.Actives = make(map[int]*backend.ArchRepo)
 	backendServer.Start()

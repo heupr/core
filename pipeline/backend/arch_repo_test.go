@@ -7,7 +7,7 @@ import (
 const repoID = 66
 
 var testBS = &BackendServer{
-	Repos: &ActiveRepos{Actives: make(map[int]*ArchRepo)},
+	Repos: &ActiveRepos{Actives: make(map[int64]*ArchRepo)},
 }
 
 func TestNewArchRepo(t *testing.T) {

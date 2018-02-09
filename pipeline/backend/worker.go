@@ -31,7 +31,7 @@ func (w *Worker) Start() {
 			select {
 			case repodata := <-w.Work:
 				if w.Repos.Actives[repodata.RepoID] == nil {
-					utils.AppLog.Error("repo not initialized before worker start", zap.Int("RepoID", repodata.RepoID))
+					utils.AppLog.Error("repo not initialized before worker start", zap.Int64("RepoID", repodata.RepoID))
 					continue
 				}
 
@@ -43,35 +43,35 @@ func (w *Worker) Start() {
 				if len(repodata.Open) != 0 {
 					repo.Hive.Blender.Conflator.SetIssueRequests(repodata.Open)
 					issues := repo.Hive.Blender.Conflator.Context.Issues
-					utils.AppLog.Info("Events", zap.Int("Open", len(repodata.Open)), zap.Int("Total", len(issues)), zap.Int("RepoID", repodata.RepoID))
+					utils.AppLog.Info("Events", zap.Int("Open", len(repodata.Open)), zap.Int("Total", len(issues)), zap.Int64("RepoID", repodata.RepoID))
 				}
 				if len(repodata.Closed) != 0 {
 					repo.Hive.Blender.Conflator.SetIssueRequests(repodata.Closed)
 					issues := repo.Hive.Blender.Conflator.Context.Issues
-					utils.AppLog.Info("Events", zap.Int("Closed", len(repodata.Closed)), zap.Int("Total", len(issues)), zap.Int("RepoID", repodata.RepoID))
+					utils.AppLog.Info("Events", zap.Int("Closed", len(repodata.Closed)), zap.Int("Total", len(issues)), zap.Int64("RepoID", repodata.RepoID))
 				}
 				if len(repodata.Pulls) != 0 {
 					repo.Hive.Blender.Conflator.SetPullRequests(repodata.Pulls)
 					issues := repo.Hive.Blender.Conflator.Context.Issues
-					utils.AppLog.Info("Events", zap.Int("Pulls", len(repodata.Pulls)), zap.Int("Total", len(issues)), zap.Int("RepoID", repodata.RepoID))
+					utils.AppLog.Info("Events", zap.Int("Pulls", len(repodata.Pulls)), zap.Int("Total", len(issues)), zap.Int64("RepoID", repodata.RepoID))
 				}
-				utils.AppLog.Info("Conflator.Conflate() ", zap.Int("RepoID", repodata.RepoID))
+				utils.AppLog.Info("Conflator.Conflate() ", zap.Int64("RepoID", repodata.RepoID))
 				repo.Hive.Blender.Conflator.Conflate()
 
-				utils.AppLog.Info("Blender.TrainModels() ", zap.Int("RepoID", repodata.RepoID))
+				utils.AppLog.Info("Blender.TrainModels() ", zap.Int64("RepoID", repodata.RepoID))
 				repo.Hive.Blender.TrainModels()
 
 				repo.AssigneeAllocations = repodata.AssigneeAllocations
 				repo.EligibleAssignees = repodata.EligibleAssignees
 				repo.Settings = repodata.Settings
 
-				utils.AppLog.Info("TriageOpenIssues() - Begin ", zap.Int("RepoID", repodata.RepoID))
+				utils.AppLog.Info("TriageOpenIssues() - Begin ", zap.Int64("RepoID", repodata.RepoID))
 				repo.TriageOpenIssues()
-				utils.AppLog.Info("TriageOpenIssues() - Complete ", zap.Int("RepoID", repodata.RepoID))
+				utils.AppLog.Info("TriageOpenIssues() - Complete ", zap.Int64("RepoID", repodata.RepoID))
 
-				utils.AppLog.Info("ApplyLabelsOnOpenIssues() - Begin ", zap.Int("RepoID", repodata.RepoID))
+				utils.AppLog.Info("ApplyLabelsOnOpenIssues() - Begin ", zap.Int64("RepoID", repodata.RepoID))
 				repo.ApplyLabelsOnOpenIssues()
-				utils.AppLog.Info("ApplyLabelsOnOpenIssues() - Complete ", zap.Int("RepoID", repodata.RepoID))
+				utils.AppLog.Info("ApplyLabelsOnOpenIssues() - Complete ", zap.Int64("RepoID", repodata.RepoID))
 				repo.Unlock()
 				continue
 			case <-w.Quit:

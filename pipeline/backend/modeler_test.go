@@ -3,10 +3,10 @@ package backend
 import "testing"
 
 func TestNewModel(t *testing.T) {
-	repoID := 7
+	repoID := int64(7)
 	testBS := new(BackendServer)
 	testBS.Repos = new(ActiveRepos)
-	testBS.Repos.Actives = make(map[int]*ArchRepo)
+	testBS.Repos.Actives = make(map[int64]*ArchRepo)
 	testBS.Repos.Actives[repoID] = new(ArchRepo)
 	testBS.Repos.Actives[repoID].Hive = new(ArchHive)
 	testBS.Repos.Actives[repoID].Hive.Blender = new(Blender)

@@ -33,15 +33,15 @@ type ArchHive struct {
 
 type ArchRepo struct {
 	sync.Mutex
-	Hive                     *ArchHive
-	Client                   *github.Client
-	Limit                    time.Time
-	AssigneeAllocations      map[string]int
-	EligibleAssignees        map[string]int
-	Settings                 HeuprConfigSettings
+	Hive                *ArchHive
+	Client              *github.Client
+	Limit               time.Time
+	AssigneeAllocations map[string]int
+	EligibleAssignees   map[string]int
+	Settings            HeuprConfigSettings
 }
 
-func (bs *BackendServer) NewArchRepo(repoID int, settings HeuprConfigSettings) {
+func (bs *BackendServer) NewArchRepo(repoID int64, settings HeuprConfigSettings) {
 	bs.Repos.Lock()
 	defer bs.Repos.Unlock()
 
@@ -52,7 +52,7 @@ func (bs *BackendServer) NewArchRepo(repoID int, settings HeuprConfigSettings) {
 	bs.Repos.Actives[repoID].Settings = settings
 }
 
-func (bs *BackendServer) NewClient(repoId, appId, installationId int) {
+func (bs *BackendServer) NewClient(repoID int64, appID, installationID int) {
 	bs.Repos.Lock()
 	defer bs.Repos.Unlock()
 
@@ -62,14 +62,14 @@ func (bs *BackendServer) NewClient(repoId, appId, installationId int) {
 	} else {
 		key = "forstmeier-heupr.2017-11-18.private-key.pem"
 	}
-	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appId, installationId, key)
+	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appID, installationID, key)
 	if err != nil {
 		utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
 		return
 	}
 	client := github.NewClient(&http.Client{Transport: itr})
 
-	bs.Repos.Actives[repoId].Client = client
+	bs.Repos.Actives[repoID].Client = client
 }
 
 func (a *ArchRepo) ApplyLabelsOnOpenIssues() {
@@ -88,6 +88,7 @@ func (a *ArchRepo) ApplyLabelsOnOpenIssues() {
 
 	for i := 0; i < len(openIssues); i++ {
 		if openIssues[i].Issue.CreatedAt.After(a.Settings.StartTime) {
+			// stuff needs to happen here
 		}
 	}
 }
@@ -224,7 +225,7 @@ func (b *Blender) GetAllOpenIssues() []conflation.ExpandedIssue {
 	issues := b.Conflator.Context.Issues
 	for i := 0; i < len(issues); i++ {
 		if issues[i].PullRequest.Number == nil && issues[i].Issue.ClosedAt == nil && !*issues[i].Issue.Labeled && *issues[i].Issue.User.Login != "heupr" {
-				openIssues = append(openIssues, issues[i])
+			openIssues = append(openIssues, issues[i])
 		}
 	}
 	return openIssues

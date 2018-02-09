@@ -12,14 +12,21 @@ import (
 )
 
 func Test_activateHandler(t *testing.T) {
-	id := 1
+	id := github.Int64(1)
 	owner := "bomarr-order"
 	repo := "bt-16-perimeter-droid"
 	activationParams := struct {
 		Repo  github.Repository `json:"repo"`
 		Token *oauth2.Token     `json:"token"`
 	}{
-		github.Repository{ID: github.Int(id), Owner: &github.User{Login: github.String(owner)}, Name: github.String(repo), FullName: github.String(owner + "/" + repo)},
+		github.Repository{
+			ID: id,
+			Owner: &github.User{
+				Login: github.String(owner),
+			},
+			Name:     github.String(repo),
+			FullName: github.String(owner + "/" + repo),
+		},
 		&oauth2.Token{},
 	}
 
@@ -35,8 +42,8 @@ func Test_activateHandler(t *testing.T) {
 	req.Header.Set("content-type", "application/json")
 
 	backendServer := BackendServer{}
-	backendServer.Repos = &ActiveRepos{Actives: make(map[int]*ArchRepo)}
-	backendServer.Repos.Actives[id] = &ArchRepo{}
+	backendServer.Repos = &ActiveRepos{Actives: make(map[int64]*ArchRepo)}
+	backendServer.Repos.Actives[*id] = &ArchRepo{}
 	handler := http.HandlerFunc(backendServer.activateHandler)
 	handler.ServeHTTP(rec, req)
 	if received := rec.Code; received != http.StatusOK {

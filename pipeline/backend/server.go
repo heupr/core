@@ -14,16 +14,17 @@ import (
 
 type ActiveRepos struct {
 	sync.RWMutex
-	Actives map[int]*ArchRepo
+	Actives map[int64]*ArchRepo
 }
 
-type BackendServer struct {
+type Server struct {
 	Server   http.Server
 	Database MemSQL
 	Repos    *ActiveRepos
 }
 
-// Workaround Github API limitation. This is required to wrap HeuprInstallation
+// HeuprInstallationEvent is a workaround a Github API limitation. This is
+// required to wrap HeuprInstallation.
 type HeuprInstallationEvent struct {
 	// The action that was performed. Can be either "created" or "deleted".
 	Action            *string            `json:"action,omitempty"`
@@ -32,7 +33,8 @@ type HeuprInstallationEvent struct {
 	Repositories      []HeuprRepository  `json:"repositories,omitempty"`
 }
 
-// Workaround Github API limitation. go-github is missing repositories field
+// HeuprInstallation is a workaround a Github API limitation. The go-github
+// library is missing the repositories field.
 type HeuprInstallation struct {
 	ID              *int         `json:"id,omitempty"`
 	Account         *github.User `json:"account,omitempty"`
@@ -43,12 +45,12 @@ type HeuprInstallation struct {
 }
 
 type HeuprRepository struct {
-	ID       *int    `json:"id,omitempty"`
+	ID       *int64  `json:"id,omitempty"`
 	Name     *string `json:"name,omitempty"`
 	FullName *string `json:"full_name,omitempty"`
 }
 
-func (bs *BackendServer) activateHandler(w http.ResponseWriter, r *http.Request) {
+func (bs *Server) activateHandler(w http.ResponseWriter, r *http.Request) {
 	var activationParams struct {
 		InstallationEvent HeuprInstallationEvent `json:"installation_event,omitempty"`
 		Limit             time.Time              `json:"limit,omitempty"`
@@ -68,7 +70,7 @@ func (bs *BackendServer) activateHandler(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func (bs *BackendServer) Start() {
+func (bs *Server) Start() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/activate-ingestor-backend", bs.activateHandler)
 	bs.Server = http.Server{
@@ -78,7 +80,7 @@ func (bs *BackendServer) Start() {
 	bs.OpenSQL()
 	defer bs.CloseSQL()
 
-	bs.Repos = &ActiveRepos{Actives: make(map[int]*ArchRepo)}
+	bs.Repos = &ActiveRepos{Actives: make(map[int64]*ArchRepo)}
 
 	integrations, err := bs.Database.ReadIntegrations()
 	if err != nil {
@@ -86,17 +88,17 @@ func (bs *BackendServer) Start() {
 	}
 
 	for _, integration := range integrations {
-		if _, ok := bs.Repos.Actives[integration.RepoId]; !ok {
-			settings, err := bs.Database.ReadHeuprConfigSettingsByRepoId(integration.RepoId)
+		if _, ok := bs.Repos.Actives[integration.RepoID]; !ok {
+			settings, err := bs.Database.ReadHeuprConfigSettingsByRepoID(integration.RepoID)
 			if err != nil {
 				panic(err)
 			}
 			if settings.StartTime.IsZero() {
 				settings.StartTime = time.Now()
 			}
-			bs.NewArchRepo(integration.RepoId, settings)
-			bs.NewClient(integration.RepoId, integration.AppId, integration.InstallationId)
-			bs.NewModel(integration.RepoId)
+			bs.NewArchRepo(integration.RepoID, settings)
+			bs.NewClient(integration.RepoID, integration.AppID, integration.InstallationID)
+			bs.NewModel(integration.RepoID)
 		}
 	}
 
@@ -106,16 +108,16 @@ func (bs *BackendServer) Start() {
 	bs.Server.ListenAndServe()
 }
 
-func (bs *BackendServer) OpenSQL() {
+func (bs *Server) OpenSQL() {
 	bs.Database.Open()
 }
 
-func (bs *BackendServer) CloseSQL() {
+func (bs *Server) CloseSQL() {
 	bs.Database.Close()
 }
 
-// Periodically conducts pulldowns from the MemSQL database for processing.
-func (bs *BackendServer) Timer(ender chan bool) {
+// Timer conducts periodic pulldowns from the MemSQL database for processing.
+func (bs *Server) Timer(ender chan bool) {
 	ticker := time.NewTicker(time.Second * 5)
 
 	bs.Dispatcher(10)

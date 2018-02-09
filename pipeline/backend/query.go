@@ -13,7 +13,7 @@ import (
 var maxID = 0
 
 type RepoData struct {
-	RepoID              int
+	RepoID              int64
 	Open                []*github.Issue
 	Closed              []*github.Issue
 	Pulls               []*github.PullRequest
@@ -23,17 +23,17 @@ type RepoData struct {
 }
 
 type HeuprConfigSettings struct {
-	Integration  						Integration
-	EnableIssueAssignments 	bool
-	EnableLabeler						bool
-	IgnoreUsers  						map[string]bool
-	StartTime    						time.Time
-	IgnoreLabels 						map[string]bool
-	Email        						string
-	Twitter      						string
+	Integration            Integration
+	EnableIssueAssignments bool
+	EnableLabeler          bool
+	IgnoreUsers            map[string]bool
+	StartTime              time.Time
+	IgnoreLabels           map[string]bool
+	Email                  string
+	Twitter                string
 }
 
-func (m *MemSQL) Read() (map[int]*RepoData, error) {
+func (m *MemSQL) Read() (map[int64]*RepoData, error) {
 	// Current state of the Issue object (equivalent to any GitHub Event)
 	ISSUE_QUERY := `
     SELECT g.id, g.repo_id, g.is_pull, g.payload
@@ -53,10 +53,10 @@ func (m *MemSQL) Read() (map[int]*RepoData, error) {
 	}
 	defer results.Close()
 
-	repodata := make(map[int]*RepoData)
+	repodata := make(map[int64]*RepoData)
 	for results.Next() {
 		id := new(int)
-		repo_id := new(int)
+		repo_id := new(int64)
 		is_pull := new(bool)
 		var payload []byte
 		if err := results.Scan(id, repo_id, is_pull, &payload); err != nil {
@@ -68,7 +68,7 @@ func (m *MemSQL) Read() (map[int]*RepoData, error) {
 		}
 		if _, ok := repodata[*repo_id]; !ok {
 			repodata[*repo_id] = new(RepoData)
-			repodata[*repo_id].RepoID = *repo_id
+			repodata[*repo_id].RepoID = int64(*repo_id)
 			repodata[*repo_id].Open = []*github.Issue{}
 			repodata[*repo_id].Closed = []*github.Issue{}
 			repodata[*repo_id].Pulls = []*github.PullRequest{}
@@ -98,10 +98,10 @@ func (m *MemSQL) Read() (map[int]*RepoData, error) {
 	}
 	keys := reflect.ValueOf(repodata).MapKeys()
 	interfaceKeys := make([]interface{}, len(keys))
-	intKeys := make([]int, len(keys))
+	intKeys := make([]int64, len(keys))
 	for i := 0; i < len(keys); i++ {
 		interfaceKeys[i] = keys[i].Interface()
-		intKeys[i] = int(keys[i].Int())
+		intKeys[i] = int64(keys[i].Int())
 	}
 	allocations, err := m.ReadAssigneeAllocations(interfaceKeys)
 	if err != nil {
@@ -136,21 +136,21 @@ func (m *MemSQL) Read() (map[int]*RepoData, error) {
 	return repodata, nil
 }
 
-func (m *MemSQL) ReadHeuprConfigSettingsByRepoId(repoId int) (HeuprConfigSettings, error) {
-	settingsMap, err := m.ReadHeuprConfigSettings([]interface{}{repoId})
-	if _, ok := settingsMap[repoId]; !ok {
+func (m *MemSQL) ReadHeuprConfigSettingsByRepoID(repoID int64) (HeuprConfigSettings, error) {
+	settingsMap, err := m.ReadHeuprConfigSettings([]interface{}{repoID})
+	if _, ok := settingsMap[repoID]; !ok {
 		settings := HeuprConfigSettings{StartTime: time.Now(), IgnoreLabels: make(map[string]bool), IgnoreUsers: make(map[string]bool)}
-		settingsMap[repoId] = settings
+		settingsMap[repoID] = settings
 	}
-	return settingsMap[repoId], err
+	return settingsMap[repoID], err
 }
 
-func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int]HeuprConfigSettings, error) {
+func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprConfigSettings, error) {
 	if len(repos) == 0 {
 		return nil, nil
 	}
 
-	settings := make(map[int]HeuprConfigSettings)
+	settings := make(map[int64]HeuprConfigSettings)
 
 	INTEGRATION_SETTINGS_QUERY := `
 	SELECT g.repo_id, g.start_time, g.email, g.twitter
@@ -170,7 +170,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int]HeuprConf
 
 	for results.Next() {
 		config := HeuprConfigSettings{IgnoreLabels: make(map[string]bool), IgnoreUsers: make(map[string]bool)}
-		repo_id := new(int)
+		repo_id := new(int64)
 		if err := results.Scan(repo_id, &config.StartTime, &config.Email, &config.Twitter); err != nil {
 			return nil, err
 		}
@@ -197,7 +197,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int]HeuprConf
 	defer results.Close()
 
 	for results.Next() {
-		repo_id := new(int)
+		repo_id := new(int64)
 		user := new(string)
 		if err := results.Scan(repo_id, user); err != nil {
 			return nil, err
@@ -224,7 +224,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int]HeuprConf
 	defer results.Close()
 
 	for results.Next() {
-		repo_id := new(int)
+		repo_id := new(int64)
 		label := new(string)
 		if err := results.Scan(repo_id, label); err != nil {
 			return nil, err
@@ -235,7 +235,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int]HeuprConf
 	return settings, nil
 }
 
-func (m *MemSQL) ReadAssigneeAllocations(repos []interface{}) (map[int]map[string]int, error) {
+func (m *MemSQL) ReadAssigneeAllocations(repos []interface{}) (map[int64]map[string]int, error) {
 	if len(repos) == 0 {
 		return nil, nil
 	}
@@ -265,9 +265,9 @@ func (m *MemSQL) ReadAssigneeAllocations(repos []interface{}) (map[int]map[strin
 	}
 	defer results.Close()
 
-	allocations := make(map[int]map[string]int)
+	allocations := make(map[int64]map[string]int)
 	for results.Next() {
-		repo_id := new(int)
+		repo_id := new(int64)
 		assignee := new(string)
 		count := new(int)
 		if err := results.Scan(repo_id, assignee, count); err != nil {
@@ -282,7 +282,7 @@ func (m *MemSQL) ReadAssigneeAllocations(repos []interface{}) (map[int]map[strin
 	return allocations, nil
 }
 
-func (m *MemSQL) ReadEligibleAssignees(repos []interface{}) (map[int]map[string]int, error) {
+func (m *MemSQL) ReadEligibleAssignees(repos []interface{}) (map[int64]map[string]int, error) {
 	//TODO: Include Merged PullRequest Users.
 	//TODO: Include users with a status of contributor in the repo
 	//TODO: Add a whitelist
@@ -320,9 +320,9 @@ func (m *MemSQL) ReadEligibleAssignees(repos []interface{}) (map[int]map[string]
 	}
 	defer results.Close()
 
-	recentAssignees := make(map[int]map[string]int)
+	recentAssignees := make(map[int64]map[string]int)
 	for results.Next() {
-		repo_id := new(int)
+		repo_id := new(int64)
 		assignee := new(string)
 		if err := results.Scan(repo_id, assignee); err != nil {
 			return nil, err

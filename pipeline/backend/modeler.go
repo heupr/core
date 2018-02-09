@@ -6,7 +6,7 @@ import (
 	"core/pipeline/gateway/conflation"
 )
 
-func (bs *BackendServer) NewModel(repoID int) error {
+func (bs *BackendServer) NewModel(repoID int64) error {
 	bs.Repos.Lock()
 	defer bs.Repos.Unlock()
 	context := &conflation.Context{}

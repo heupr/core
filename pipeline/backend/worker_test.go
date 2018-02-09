@@ -11,7 +11,7 @@ import (
 )
 
 func TestWorker(t *testing.T) {
-	repoID := 23
+	repoID := int64(23)
 
 	client := github.NewClient(nil)
 	url, _ := url.Parse("http://localhost:8000/")
@@ -20,7 +20,7 @@ func TestWorker(t *testing.T) {
 
 	bs := new(BackendServer)
 	bs.Repos = new(ActiveRepos)
-	bs.Repos.Actives = make(map[int]*ArchRepo)
+	bs.Repos.Actives = make(map[int64]*ArchRepo)
 
 	bs.Repos.Actives[repoID] = &ArchRepo{
 		Client: client,
@@ -40,7 +40,7 @@ func TestWorker(t *testing.T) {
 	created := time.Now()
 	i := []*github.Issue{
 		&github.Issue{
-			ID:     github.Int(2187),
+			ID:     github.Int64(2187),
 			Number: github.Int(1),
 			User: &github.User{
 				Login: github.String("luke"),
@@ -60,7 +60,7 @@ func TestWorker(t *testing.T) {
 		RepoID: repoID,
 		Open: []*github.Issue{
 			&github.Issue{
-				ID:     github.Int(2188),
+				ID:     github.Int64(2188),
 				Number: github.Int(2),
 				User: &github.User{
 					Login: github.String("luke"),

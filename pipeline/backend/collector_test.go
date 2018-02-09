@@ -5,7 +5,7 @@ import (
 )
 
 func Testcollector(t *testing.T) {
-	repodataMap := map[int]*RepoData{
+	repodataMap := map[int64]*RepoData{
 		1: &RepoData{
 			RepoID: 66,
 			EligibleAssignees: map[string]int{
