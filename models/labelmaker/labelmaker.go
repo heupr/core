@@ -11,19 +11,19 @@ import (
 )
 
 const (
-        Unknown = iota
-        Bug
-        Feature
-        Improvement
+	Unknown = iota
+	Bug
+	Feature
+	Improvement
 )
 
 // DOC: LBClassifier is the struct implemented as the model algorithm.
 type LBModel struct {
-	Classifier 				*LBClassifier
-	labels     				[]string
-	FeatureLabel			*string
-	BugLabel					*string
-	ImprovementLabel	*string
+	Classifier       *LBClassifier
+	labels           []string
+	FeatureLabel     *string
+	BugLabel         *string
+	ImprovementLabel *string
 }
 
 func (c *LBModel) IsBootstrapped() bool {
@@ -59,19 +59,19 @@ func (c *LBModel) BugOrFeature(input conflation.ExpandedIssue) (*string, error) 
 		return nil, err
 	}
 	switch result {
-		case Bug:
-			return c.BugLabel, nil
-    case Feature:
-      return c.FeatureLabel, nil
-    case Improvement:
-      return c.ImprovementLabel, nil
-  }
+	case Bug:
+		return c.BugLabel, nil
+	case Feature:
+		return c.FeatureLabel, nil
+	case Improvement:
+		return c.ImprovementLabel, nil
+	}
 	return nil, nil
 }
 
 type LBClassifier struct {
 	Client  *language.Client
-	Gateway	CachedNlpGateway
+	Gateway CachedNlpGateway
 	Ctx     context.Context
 	classes []LBLabel
 }
@@ -79,7 +79,7 @@ type LBClassifier struct {
 type LBLabel struct {
 	Text           string
 	NormalizedText string
-  LinkedWords    []string
+	LinkedWords    []string
 }
 
 func (c *LBClassifier) Learn(labels []string) {
@@ -92,14 +92,14 @@ func (c *LBClassifier) Learn(labels []string) {
 }
 
 func (c *LBClassifier) BugOrFeature(input conflation.ExpandedIssue) (int, error) {
-	label, err :=  c.BugOrFeatureTitle(*input.Issue.Title, *input.Issue.Body)
+	label, err := c.BugOrFeatureTitle(*input.Issue.Title, *input.Issue.Body)
 	if err != nil {
 		return Unknown, err
 	}
 	/*
-	if label == nil {
-		label, err =  c.BugOrFeatureBody(*input.Issue.Body)
-	}*/
+		if label == nil {
+			label, err =  c.BugOrFeatureBody(*input.Issue.Body)
+		}*/
 	return label, err
 }
 
@@ -166,7 +166,6 @@ func (c *LBClassifier) RelaxedBugOrFeatureBody(input string) (int, error) {
 	return Unknown, nil
 }
 
-
 func (c *LBClassifier) Predict(input string, retry bool) ([]string, error) {
 	var results []string
 	entities, err := c.Client.AnalyzeEntities(c.Ctx, &languagepb.AnalyzeEntitiesRequest{
@@ -192,17 +191,17 @@ func (c *LBClassifier) Predict(input string, retry bool) ([]string, error) {
 		for j := 0; j < len(c.classes); j++ {
 			//Single Letter Entities Create False Positives and are Skipped.
 			if len(normalizedEntities[i].NormalizedText) == 1 {
-				continue;
+				continue
 			}
 			if strings.Contains(c.classes[j].NormalizedText, normalizedEntities[i].NormalizedText) {
 				//fmt.Println("[", c.classes[j].NormalizedText, "]", "==", "[", normalizedEntities[i].NormalizedText, "]") //TODO: Replace with logging
 				duplicate := false
 				for k := 0; k < len(results); k++ {
-					if (results[k] == c.classes[j].Text) {
+					if results[k] == c.classes[j].Text {
 						duplicate = true
 					}
 				}
-				if (!duplicate) {
+				if !duplicate {
 					results = append(results, c.classes[j].Text)
 					// if Title gives us nothing we take the best (top 4 Salience) we can get from Body
 					if retry && len(results) > 4 {
@@ -211,13 +210,13 @@ func (c *LBClassifier) Predict(input string, retry bool) ([]string, error) {
 				}
 			} // end if
 		} // end for
-	}	// end for
+	} // end for
 	return results, nil
 }
 
 func (c *LBClassifier) normalizeLabels(input string) []LBLabel {
 	//TODO Fix Linked Words Logic. (Currently panics). Not necessary for MVP.
-  syntax, _ := c.Client.AnalyzeSyntax(c.Ctx, &languagepb.AnalyzeSyntaxRequest{
+	syntax, _ := c.Client.AnalyzeSyntax(c.Ctx, &languagepb.AnalyzeSyntaxRequest{
 		Document: &languagepb.Document{
 			Source: &languagepb.Document_Content{
 				Content: input,
@@ -227,9 +226,9 @@ func (c *LBClassifier) normalizeLabels(input string) []LBLabel {
 		EncodingType: languagepb.EncodingType_UTF8,
 	})
 
-  if len(syntax.Tokens) == 0 {
-    return nil
-  }
+	if len(syntax.Tokens) == 0 {
+		return nil
+	}
 
 	results := []LBLabel{}
 	for i := 0; i < len(syntax.Sentences); i++ {
@@ -244,40 +243,38 @@ func (c *LBClassifier) normalizeLabels(input string) []LBLabel {
 			rootWord := syntax.Tokens[i].Text.Content
 			//fmt.Println(rootWord)
 			results[j].NormalizedText = rootWord
-		}// else if syntax.Tokens[i].PartOfSpeech.Tag == languagepb.PartOfSpeech_NOUN || syntax.Tokens[i].PartOfSpeech.Tag == languagepb.PartOfSpeech_ADJ {
+		} // else if syntax.Tokens[i].PartOfSpeech.Tag == languagepb.PartOfSpeech_NOUN || syntax.Tokens[i].PartOfSpeech.Tag == languagepb.PartOfSpeech_ADJ {
 		//	results[j].LinkedWords = append(results[j].LinkedWords, syntax.Tokens[i].Text.Content)
-    //}
+		//}
 	}
-  return results
+	return results
 }
-
 
 func (c *LBClassifier) isVerb(input string) bool {
 	syntax, _ := c.Gateway.AnalyzeSyntax(input)
 	if len(syntax.Tokens) == 0 {
-    return false
-  }
+		return false
+	}
 	return syntax.Tokens[0].PartOfSpeech.Tag == languagepb.PartOfSpeech_VERB
 }
-
 
 func (c *LBClassifier) normalizeLabel(input string) *LBLabel {
 	syntax, _ := c.Gateway.AnalyzeSyntax(input)
 
-  if len(syntax.Tokens) == 0 {
-    return nil
-  }
-
-  linkedWords := []string{}
-  var rootWord string
-  for i := 0; i < len(syntax.Tokens); i++ {
-		if syntax.Tokens[i].DependencyEdge.Label == languagepb.DependencyEdge_ROOT {
-      rootWord = syntax.Tokens[i].Text.Content
-		} else if syntax.Tokens[i].PartOfSpeech.Tag == languagepb.PartOfSpeech_NOUN || syntax.Tokens[i].PartOfSpeech.Tag == languagepb.PartOfSpeech_ADJ {
-      linkedWords = append(linkedWords, syntax.Tokens[i].Text.Content)
-    }
+	if len(syntax.Tokens) == 0 {
+		return nil
 	}
-  return &LBLabel{Text: input, NormalizedText: rootWord, LinkedWords: linkedWords}
+
+	linkedWords := []string{}
+	var rootWord string
+	for i := 0; i < len(syntax.Tokens); i++ {
+		if syntax.Tokens[i].DependencyEdge.Label == languagepb.DependencyEdge_ROOT {
+			rootWord = syntax.Tokens[i].Text.Content
+		} else if syntax.Tokens[i].PartOfSpeech.Tag == languagepb.PartOfSpeech_NOUN || syntax.Tokens[i].PartOfSpeech.Tag == languagepb.PartOfSpeech_ADJ {
+			linkedWords = append(linkedWords, syntax.Tokens[i].Text.Content)
+		}
+	}
+	return &LBLabel{Text: input, NormalizedText: rootWord, LinkedWords: linkedWords}
 }
 
 //IMO I think an "Improvement" is an artificial construct. Whereas Bug/Feature are innate.
@@ -286,46 +283,46 @@ func (c *LBClassifier) normalizeLabel(input string) *LBLabel {
 //Perhaps hidden beneath these specifics lies some innate generalitiy.
 //TODO: Generalize as much as possible. Automatically Verify boundaries for each repo that signs up.
 func (c *LBClassifier) IsImprovement(input string) bool {
-	if (strings.HasPrefix(input, "Improve")) {
+	if strings.HasPrefix(input, "Improve") {
 		return true
 	}
 
-	if (strings.Contains(input, "dependency")) {
-		if (strings.HasPrefix(input, "Replace") || strings.HasPrefix(input, "Upgrade") || strings.HasPrefix(input, "Remove")) {
+	if strings.Contains(input, "dependency") {
+		if strings.HasPrefix(input, "Replace") || strings.HasPrefix(input, "Upgrade") || strings.HasPrefix(input, "Remove") {
 			return true
 		}
 	}
 
-	if (strings.Contains(input, "memory usage")) {
-		if (strings.Contains(input, "Reduce") || strings.Contains(input, "reduce") || strings.Contains(input, "High") || strings.Contains(input, "high")) {
+	if strings.Contains(input, "memory usage") {
+		if strings.Contains(input, "Reduce") || strings.Contains(input, "reduce") || strings.Contains(input, "High") || strings.Contains(input, "high") {
 			return true
 		}
 	}
 
-	if (strings.Contains(input, "exception message")) {
+	if strings.Contains(input, "exception message") {
 		return true
 	}
 
-	if (strings.Contains(input, "Performance improvement") || strings.Contains(input, "performance improvement")) {
+	if strings.Contains(input, "Performance improvement") || strings.Contains(input, "performance improvement") {
 		return true
 	}
 
-	if (strings.Contains(input, "Poor performance") || strings.Contains(input, "poor performance")) {
+	if strings.Contains(input, "Poor performance") || strings.Contains(input, "poor performance") {
 		return true
 	}
 
-	if (strings.HasPrefix(input, "Optimize") || strings.HasPrefix(input, "optimize") || strings.HasPrefix(input, "Optimization") || strings.HasPrefix(input, "optimization")) {
+	if strings.HasPrefix(input, "Optimize") || strings.HasPrefix(input, "optimize") || strings.HasPrefix(input, "Optimization") || strings.HasPrefix(input, "optimization") {
 		return true
 	}
 
-	if (strings.HasPrefix(input, "Log")) {
+	if strings.HasPrefix(input, "Log") {
 		return true
 	}
 
 	/*
-	if (strings.HasPrefix(input, "Limit")) {
-		return true
-	}*/
+		if (strings.HasPrefix(input, "Limit")) {
+			return true
+		}*/
 
 	return false
 }
