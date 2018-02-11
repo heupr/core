@@ -34,6 +34,7 @@ type ArchHive struct {
 type ArchRepo struct {
 	sync.Mutex
 	Hive                *ArchHive
+	//TODO: As an MVP Quick win you can slap the LabelMaker Model here. The Blender albeit underutilized is primarily good for bagging and or boosting. https://en.wikipedia.org/wiki/Bootstrap_aggregating
 	Client              *github.Client
 	Limit               time.Time
 	AssigneeAllocations map[string]int
@@ -88,7 +89,21 @@ func (a *ArchRepo) ApplyLabelsOnOpenIssues() {
 
 	for i := 0; i < len(openIssues); i++ {
 		if openIssues[i].Issue.CreatedAt.After(a.Settings.StartTime) {
-			// stuff needs to happen here
+			// TODO: Finish this...
+
+			//Here is a contrived sample program example that might help
+			/*
+			featureLabel := "feature-request"
+			bugLabel := "bug"
+			lbModel := labelmaker.LBModel{Classifier: &labelmaker.LBClassifier{Ctx: ctx, Client: client, Gateway: NlpGateway}, FeatureLabel: &featureLabel, BugLabel: &bugLabel, ImprovementLabel: &improvementLabel}
+			for i := 0; i < len(issues); i++ {
+		    prediction, _ := lbModel.BugOrFeature(conf.ExpandedIssue{Issue: conf.CRIssue{*issues[i], []int{}, []conf.CRPullRequest{}, github.Bool(false), github.Bool(false)}})
+		    if prediction != nil {
+		      fmt.Println(*issues[i].Title)
+		      fmt.Println(*prediction)
+		    }
+		  } */
+
 		}
 	}
 }
