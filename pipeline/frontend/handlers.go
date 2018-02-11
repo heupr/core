@@ -314,7 +314,7 @@ func repos(w http.ResponseWriter, r *http.Request) {
 		"domain":         domain,
 	}
 	buf := new(bytes.Buffer)
-	err = t.ExecuteTemplate(buf, "base.html", data)
+	err = t.Execute(buf, data)
 	if err != nil {
 		slackErr("Repos selection page", err)
 		http.Error(w, "error loading repo selections", http.StatusInternalServerError)
@@ -387,7 +387,7 @@ func console(w http.ResponseWriter, r *http.Request) {
 		"domain":         domain,
 	}
 	buf := new(bytes.Buffer)
-	err = t.ExecuteTemplate(buf, "base.html", data)
+	err = t.Execute(buf, data)
 	if err != nil {
 		slackErr("Settings console page", err)
 		http.Error(w, "error loading console", http.StatusInternalServerError)
@@ -483,7 +483,7 @@ func complete(w http.ResponseWriter, r *http.Request) {
 		"domain":         domain,
 	}
 	buf := new(bytes.Buffer)
-	err = t.ExecuteTemplate(buf, "base.html", data)
+	err = t.Execute(buf, data)
 	if err != nil {
 		slackErr("Error rendering template", err)
 		http.Error(w, "error rendering template", http.StatusInternalServerError)
