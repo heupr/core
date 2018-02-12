@@ -18,15 +18,12 @@ var baseHTML = "../templates/base.html"
 
 func render(filepath string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles([]string{
-			baseHTML,
-			filepath,
-		}...)
+		t, err := template.ParseFiles(baseHTML, filepath)
 		if err != nil {
 			slackErr("Error parsing "+filepath, err)
 			http.Error(w, "error parsing static page", http.StatusInternalServerError)
 			return
 		}
-		err = tmpl.Execute(w, "")
+		err = t.Execute(w, nil)
 	})
 }
