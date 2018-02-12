@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"core/models"
+	"core/models/labelmaker"
 	"core/pipeline/gateway/conflation"
 )
 
@@ -22,10 +23,13 @@ type ArchModel struct {
 }
 
 type Blender struct {
+	// NOTE: It might make more sense to make this a map[string]*ArchModel
+	// so that we can identify models based on a string name rather than
+	// a slice index. Just a thought.
 	Models    []*ArchModel
 	Conflator *conflation.Conflator
-	// MVP: Moving the Conflator from ArchModel
-	// to Blender. We might just need to circle back to this.
+	// MVP: Moving the Conflator from ArchModel to Blender. We might just
+	// need to circle back to this.
 }
 type ArchHive struct {
 	Blender *Blender
@@ -34,7 +38,7 @@ type ArchHive struct {
 type ArchRepo struct {
 	sync.Mutex
 	Hive                *ArchHive
-	//TODO: As an MVP Quick win you can slap the LabelMaker Model here. The Blender albeit underutilized is primarily good for bagging and or boosting. https://en.wikipedia.org/wiki/Bootstrap_aggregating
+	Labelmaker          *labelmaker.LBModel
 	Client              *github.Client
 	Limit               time.Time
 	AssigneeAllocations map[string]int
@@ -42,20 +46,20 @@ type ArchRepo struct {
 	Settings            HeuprConfigSettings
 }
 
-func (bs *BackendServer) NewArchRepo(repoID int64, settings HeuprConfigSettings) {
-	bs.Repos.Lock()
-	defer bs.Repos.Unlock()
+func (s *Server) NewArchRepo(repoID int64, settings HeuprConfigSettings) {
+	s.Repos.Lock()
+	defer s.Repos.Unlock()
 
-	bs.Repos.Actives[repoID] = new(ArchRepo)
-	bs.Repos.Actives[repoID].Hive = new(ArchHive)
-	bs.Repos.Actives[repoID].Hive.Blender = new(Blender)
+	s.Repos.Actives[repoID] = new(ArchRepo)
+	s.Repos.Actives[repoID].Hive = new(ArchHive)
+	s.Repos.Actives[repoID].Hive.Blender = new(Blender)
 
-	bs.Repos.Actives[repoID].Settings = settings
+	s.Repos.Actives[repoID].Settings = settings
 }
 
-func (bs *BackendServer) NewClient(repoID int64, appID, installationID int) {
-	bs.Repos.Lock()
-	defer bs.Repos.Unlock()
+func (s *Server) NewClient(repoID int64, appID, installationID int) {
+	s.Repos.Lock()
+	defer s.Repos.Unlock()
 
 	var key string
 	if PROD {
@@ -70,7 +74,7 @@ func (bs *BackendServer) NewClient(repoID int64, appID, installationID int) {
 	}
 	client := github.NewClient(&http.Client{Transport: itr})
 
-	bs.Repos.Actives[repoID].Client = client
+	s.Repos.Actives[repoID].Client = client
 }
 
 func (a *ArchRepo) ApplyLabelsOnOpenIssues() {
@@ -79,31 +83,22 @@ func (a *ArchRepo) ApplyLabelsOnOpenIssues() {
 	if len(openIssues) == 0 {
 		return
 	}
-	var name string
+	name := ""
 	if openIssues[0].Issue.Repository.FullName != nil {
 		name = *openIssues[0].Issue.Repository.FullName
 	} else {
 		name = *openIssues[0].Issue.Repository.Name
 	}
-	r := strings.Split(name, "/")
+	repo := strings.Split(name, "/")
+	number := *openIssues[0].Issue.Number
 
 	for i := 0; i < len(openIssues); i++ {
 		if openIssues[i].Issue.CreatedAt.After(a.Settings.StartTime) {
-			// TODO: Finish this...
-
-			//Here is a contrived sample program example that might help
-			/*
-			featureLabel := "feature-request"
-			bugLabel := "bug"
-			lbModel := labelmaker.LBModel{Classifier: &labelmaker.LBClassifier{Ctx: ctx, Client: client, Gateway: NlpGateway}, FeatureLabel: &featureLabel, BugLabel: &bugLabel, ImprovementLabel: &improvementLabel}
-			for i := 0; i < len(issues); i++ {
-		    prediction, _ := lbModel.BugOrFeature(conf.ExpandedIssue{Issue: conf.CRIssue{*issues[i], []int{}, []conf.CRPullRequest{}, github.Bool(false), github.Bool(false)}})
-		    if prediction != nil {
-		      fmt.Println(*issues[i].Title)
-		      fmt.Println(*prediction)
-		    }
-		  } */
-
+			label, err := a.Labelmaker.BugOrFeature(openIssues[i])
+			if err != nil && label == nil {
+				// TODO: Something here for the error
+			}
+			a.Client.Issues.AddLabelsToIssue(context.Background(), repo[0], repo[1], number, []string{*label})
 		}
 	}
 }

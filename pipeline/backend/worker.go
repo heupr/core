@@ -14,12 +14,12 @@ type Worker struct {
 	Quit  chan bool
 }
 
-func (bs *BackendServer) NewWorker(workerID int, queue chan chan *RepoData) Worker {
+func (s *Server) NewWorker(workerID int, queue chan chan *RepoData) Worker {
 	return Worker{
 		ID:    workerID,
 		Work:  make(chan *RepoData),
 		Queue: queue,
-		Repos: bs.Repos,
+		Repos: s.Repos,
 		Quit:  make(chan bool),
 	}
 }

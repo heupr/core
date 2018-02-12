@@ -18,7 +18,7 @@ func TestWorker(t *testing.T) {
 	client.BaseURL = url
 	client.UploadURL = url
 
-	bs := new(BackendServer)
+	bs := new(Server)
 	bs.Repos = new(ActiveRepos)
 	bs.Repos.Actives = make(map[int64]*ArchRepo)
 

@@ -4,7 +4,7 @@ import "testing"
 
 func TestNewModel(t *testing.T) {
 	repoID := int64(7)
-	testBS := new(BackendServer)
+	testBS := new(Server)
 	testBS.Repos = new(ActiveRepos)
 	testBS.Repos.Actives = make(map[int64]*ArchRepo)
 	testBS.Repos.Actives[repoID] = new(ArchRepo)

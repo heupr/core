@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"core/utils"
 	"encoding/json"
-	"github.com/google/go-github/github"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/google/go-github/github"
 )
 
 var maxID = 0
@@ -139,7 +140,11 @@ func (m *MemSQL) Read() (map[int64]*RepoData, error) {
 func (m *MemSQL) ReadHeuprConfigSettingsByRepoID(repoID int64) (HeuprConfigSettings, error) {
 	settingsMap, err := m.ReadHeuprConfigSettings([]interface{}{repoID})
 	if _, ok := settingsMap[repoID]; !ok {
-		settings := HeuprConfigSettings{StartTime: time.Now(), IgnoreLabels: make(map[string]bool), IgnoreUsers: make(map[string]bool)}
+		settings := HeuprConfigSettings{
+			StartTime:    time.Now(),
+			IgnoreLabels: make(map[string]bool),
+			IgnoreUsers:  make(map[string]bool),
+		}
 		settingsMap[repoID] = settings
 	}
 	return settingsMap[repoID], err
@@ -169,7 +174,10 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 	defer results.Close()
 
 	for results.Next() {
-		config := HeuprConfigSettings{IgnoreLabels: make(map[string]bool), IgnoreUsers: make(map[string]bool)}
+		config := HeuprConfigSettings{
+			IgnoreLabels: make(map[string]bool),
+			IgnoreUsers:  make(map[string]bool),
+		}
 		repo_id := new(int64)
 		if err := results.Scan(repo_id, &config.StartTime, &config.Email, &config.Twitter); err != nil {
 			return nil, err

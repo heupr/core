@@ -2,10 +2,10 @@ package backend
 
 var Workers chan chan *RepoData
 
-func (bs *BackendServer) Dispatcher(count int) {
+func (s *Server) Dispatcher(count int) {
 	Workers = make(chan chan *RepoData, count)
 	for i := 0; i < count; i++ {
-		worker := bs.NewWorker(i+1, Workers)
+		worker := s.NewWorker(i+1, Workers)
 		worker.Start()
 	}
 

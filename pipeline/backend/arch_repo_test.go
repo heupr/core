@@ -6,7 +6,7 @@ import (
 
 const repoID = 66
 
-var testBS = &BackendServer{
+var testBS = &Server{
 	Repos: &ActiveRepos{Actives: make(map[int64]*ArchRepo)},
 }
 

@@ -41,7 +41,7 @@ func Test_activateHandler(t *testing.T) {
 	}
 	req.Header.Set("content-type", "application/json")
 
-	backendServer := BackendServer{}
+	backendServer := Server{}
 	backendServer.Repos = &ActiveRepos{Actives: make(map[int64]*ArchRepo)}
 	backendServer.Repos.Actives[*id] = &ArchRepo{}
 	handler := http.HandlerFunc(backendServer.activateHandler)

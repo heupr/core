@@ -3,11 +3,11 @@ package labelmaker
 import (
 	"strings"
 
-	"core/pipeline/gateway/conflation"
-
 	language "cloud.google.com/go/language/apiv1"
 	"golang.org/x/net/context"
 	languagepb "google.golang.org/genproto/googleapis/cloud/language/v1"
+
+    "core/pipeline/gateway/conflation"
 )
 
 const (
@@ -17,8 +17,8 @@ const (
 	Improvement
 )
 
-// DOC: LBClassifier is the struct implemented as the model algorithm.
 type LBModel struct {
+	// LBClassifier is the struct implemented as the model algorithm.
 	Classifier       *LBClassifier
 	labels           []string
 	FeatureLabel     *string
@@ -30,9 +30,9 @@ func (c *LBModel) IsBootstrapped() bool {
 	return c.Classifier != nil
 }
 
-//Fast Path Straight into the "learn logic"
+// Learn is a "fast path straight into the "learn logic".
 func (c *LBModel) Learn(labels []string) {
-	//(Learning Logic)
+	// Learning logic is accessed here.
 	c.Classifier.Learn(labels)
 }
 
