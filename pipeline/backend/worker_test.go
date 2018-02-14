@@ -1,17 +1,26 @@
 package backend
 
 import (
+	"context"
 	"net/url"
 	"testing"
 	"time"
 
+	language "cloud.google.com/go/language/apiv1"
 	"github.com/google/go-github/github"
 
+	"core/models/labelmaker"
 	"core/pipeline/gateway/conflation"
 )
 
 func TestWorker(t *testing.T) {
 	repoID := int64(23)
+
+	ctx := context.Background()
+	lngClient, err := language.NewClient(ctx)
+	if err != nil {
+		t.Error("error creating language client", err)
+	}
 
 	client := github.NewClient(nil)
 	url, _ := url.Parse("http://localhost:8000/")
@@ -21,6 +30,9 @@ func TestWorker(t *testing.T) {
 	bs := new(Server)
 	bs.Repos = new(ActiveRepos)
 	bs.Repos.Actives = make(map[int64]*ArchRepo)
+
+	created := time.Now()
+	started := created.AddDate(0, 0, -1)
 
 	bs.Repos.Actives[repoID] = &ArchRepo{
 		Client: client,
@@ -34,14 +46,29 @@ func TestWorker(t *testing.T) {
 				},
 			},
 		},
+		Labelmaker: &labelmaker.LBModel{
+			Classifier: &labelmaker.LBClassifier{
+				Client: lngClient,
+				Gateway: labelmaker.CachedNlpGateway{
+					NlpGateway: &labelmaker.NlpGateway{
+						Client: lngClient,
+					},
+				},
+				Ctx: ctx,
+			},
+		},
+		Settings: HeuprConfigSettings{
+			StartTime: started,
+		},
 	}
 
 	fullname := "skywalker/t-16"
-	created := time.Now()
 	i := []*github.Issue{
 		&github.Issue{
-			ID:     github.Int64(2187),
+			ID:     github.Int64(1),
 			Number: github.Int(1),
+			Title:  github.String("Begger's Canyon"),
+			Body:   github.String("You'll be a damp mark on the dark side of a canyon wall."),
 			User: &github.User{
 				Login: github.String("luke"),
 			},
@@ -60,8 +87,10 @@ func TestWorker(t *testing.T) {
 		RepoID: repoID,
 		Open: []*github.Issue{
 			&github.Issue{
-				ID:     github.Int64(2188),
+				ID:     github.Int64(2),
 				Number: github.Int(2),
+				Title:  github.String("Threading the needle"),
+				Body:   github.String("You'll be a damp mark on the dark side of a canyon wall."),
 				User: &github.User{
 					Login: github.String("luke"),
 				},
@@ -89,7 +118,8 @@ func TestWorker(t *testing.T) {
 		if len(worker.Work) == 0 {
 			worker.Stop()
 			time.Sleep(1 * time.Second)
-			// NOTE: Using Sleep to allow the Stop method / Quit selection to complete in the unit test (avoiding race).
+			// NOTE: Using Sleep to allow the Stop method / Quit selection to
+			// complete in the unit test (avoiding race).
 			break
 		}
 	}

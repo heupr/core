@@ -47,9 +47,13 @@ func (s *Server) NewModel(repoID int64) error {
 
 	s.Repos.Actives[repoID].Labelmaker = &labelmaker.LBModel{
 		Classifier: &labelmaker.LBClassifier{
-			Client:  client,
-			Gateway: labelmaker.CachedNlpGateway{},
-			Ctx:     ctx,
+			Client: client,
+			Gateway: labelmaker.CachedNlpGateway{
+				NlpGateway: &labelmaker.NlpGateway{
+					Client: client,
+				},
+			},
+			Ctx: ctx,
 		},
 		// TOOD: Apply these values from the database:
 		// labels: labels,
