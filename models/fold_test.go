@@ -14,8 +14,9 @@ import (
 func buildTestIssues() []conflation.ExpandedIssue {
 	issues := []conflation.ExpandedIssue{}
 	for i := 1; i < 21; i++ {
-		id := i
+		id := int64(i)
 		number := 10 + i
+		check := new(bool)
 		url := "http://podracing.com"
 		title := "Boonta Eve Classic"
 		assignee := github.User{}
@@ -41,7 +42,13 @@ func buildTestIssues() []conflation.ExpandedIssue {
 			ClosedAt:  &resolved,
 			Labels:    labels,
 		}
-		crIssue := conflation.CRIssue{githubIssue, []int{}, []conflation.CRPullRequest{}, false}
+		crIssue := conflation.CRIssue{
+			githubIssue,
+			[]int{},
+			[]conflation.CRPullRequest{},
+			check,
+			check,
+		}
 		issues = append(issues, conflation.ExpandedIssue{Issue: crIssue})
 	}
 	return issues
