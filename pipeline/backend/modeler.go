@@ -33,12 +33,6 @@ func (s *Server) NewModel(repoID int64) error {
 		&ArchModel{Model: &model},
 	)
 
-	// TODO: These need to be queried from the database:
-	// labels := database call stuff here
-	// bug := database call stuff here
-	// improvement := database call stuff here
-	// feature := database call stuff here
-
 	ctx := context.Background()
 	client, err := language.NewClient(ctx)
 	if err != nil {
@@ -55,11 +49,6 @@ func (s *Server) NewModel(repoID int64) error {
 			},
 			Ctx: ctx,
 		},
-		// TOOD: Apply these values from the database:
-		// labels: labels,
-		// FeatureLabel:     feature,
-		// BugLabel:         bug,
-		// ImprovementLabel: improvement,
 	}
 	return nil
 }

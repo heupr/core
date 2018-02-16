@@ -243,6 +243,23 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 	return settings, nil
 }
 
+func (m *MemSQL) ReadLabels(repoID int64) ([]string, error) {
+	query := `
+    SELECT bug, improvement, feature
+    FROM labels
+    WHERE repo_id = ?
+    `
+
+	output := []string{}
+	b, i, f := "", "", ""
+	err := m.db.QueryRow(query, repoID).Scan(&b, &i, &f)
+	if err != nil {
+		return nil, err
+	}
+	output = append(output, b, i, f)
+	return output, nil
+}
+
 func (m *MemSQL) ReadAssigneeAllocations(repos []interface{}) (map[int64]map[string]int, error) {
 	if len(repos) == 0 {
 		return nil, nil
