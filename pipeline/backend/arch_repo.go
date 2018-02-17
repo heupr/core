@@ -47,14 +47,13 @@ type ArchRepo struct {
 	Settings            HeuprConfigSettings
 }
 
-func (s *Server) NewArchRepo(repoID int64, settings HeuprConfigSettings, labels []string) {
+func (s *Server) NewArchRepo(repoID int64, settings HeuprConfigSettings) {
 	s.Repos.Lock()
 	defer s.Repos.Unlock()
 
 	s.Repos.Actives[repoID] = new(ArchRepo)
 	s.Repos.Actives[repoID].Hive = new(ArchHive)
 	s.Repos.Actives[repoID].Hive.Blender = new(Blender)
-	s.Repos.Actives[repoID].Labels = labels
 	s.Repos.Actives[repoID].Settings = settings
 }
 

@@ -12,8 +12,7 @@ var testBS = &Server{
 
 func TestNewArchRepo(t *testing.T) {
 	settings := HeuprConfigSettings{}
-	labels := []string{}
-	testBS.NewArchRepo(repoID, settings, labels)
+	testBS.NewArchRepo(repoID, settings)
 	if testBS.Repos.Actives[repoID] == nil {
 		t.Error("failure generating new arch repo")
 	}

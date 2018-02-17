@@ -27,6 +27,9 @@ type HeuprConfigSettings struct {
 	Integration            Integration
 	EnableIssueAssignments bool
 	EnableLabeler          bool
+	Bug                    string
+	Improvement            string
+	Feature                string
 	IgnoreUsers            map[string]bool
 	StartTime              time.Time
 	IgnoreLabels           map[string]bool
@@ -157,7 +160,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 
 	settings := make(map[int64]HeuprConfigSettings)
 
-	INTEGRATION_SETTINGS_QUERY := `
+	integrationSettingsQuery := `
 	SELECT g.repo_id, g.start_time, g.email, g.twitter
 	FROM integrations_settings g
 	JOIN (
@@ -167,7 +170,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 	) T
 	on T.id = g.id
 	`
-	results, err := m.db.Query(INTEGRATION_SETTINGS_QUERY, repos...)
+	results, err := m.db.Query(integrationSettingsQuery, repos...)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +189,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 	}
 	time.Sleep(1 * time.Second)
 
-	INTEGRATION_SETTINGS_IGNOREUSERS_QUERY := `
+	integrationSettingsIgnoreUsersQuery := `
 	SELECT g.repo_id, lk.user
 	FROM integrations_settings g
 	JOIN (
@@ -198,7 +201,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 	JOIN integrations_settings_ignoreusers_lk lk
 	on lk.integrations_settings_fk = g.id
 	`
-	results, err = m.db.Query(INTEGRATION_SETTINGS_IGNOREUSERS_QUERY, repos...)
+	results, err = m.db.Query(integrationSettingsIgnoreUsersQuery, repos...)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +216,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 		settings[*repo_id].IgnoreUsers[*user] = true
 	}
 
-	INTEGRATION_SETTINGS_IGNORELABELS_QUERY := `
+	integrationSettingsIgnoreLabelsQuery := `
 	SELECT g.repo_id, lk.label
 	FROM integrations_settings g
 	JOIN (
@@ -225,7 +228,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 	JOIN integrations_settings_ignorelabels_lk lk
 	on lk.integrations_settings_fk = g.id
 	`
-	results, err = m.db.Query(INTEGRATION_SETTINGS_IGNORELABELS_QUERY, repos...)
+	results, err = m.db.Query(integrationSettingsIgnoreLabelsQuery, repos...)
 	if err != nil {
 		return nil, err
 	}
@@ -240,24 +243,39 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 		settings[*repo_id].IgnoreLabels[*label] = true
 	}
 
-	return settings, nil
-}
-
-func (m *MemSQL) ReadLabels(repoID int64) ([]string, error) {
-	query := `
-    SELECT bug, improvement, feature
-    FROM labels
-    WHERE repo_id = ?
+	integrationSettingsLabelsQuery := `
+    SELECT settings.repo_id, bif.bug, bif.improvement, bif.feature
+    FROM integrations_settings settings
+    JOIN (
+        SELECT MAX(id) id
+        FROM integrations_settings
+        WHERE repo_id IN (?` + strings.Repeat(",?", len(repos)-1) + `)
+    ) inner
+    ON inner.id = settings.id
+    JOIN integration_settings_labels_bif bif
+    ON bif.integrations_settings_fk = settings.id
     `
 
-	output := []string{}
-	b, i, f := "", "", ""
-	err := m.db.QueryRow(query, repoID).Scan(&b, &i, &f)
+	results, err = m.db.Query(integrationSettingsLabelsQuery, repos...)
 	if err != nil {
 		return nil, err
 	}
-	output = append(output, b, i, f)
-	return output, nil
+	defer results.Close()
+
+	for results.Next() {
+		repoID := new(int64)
+		b, i, f := "", "", ""
+		if err := results.Scan(repoID, &b, &i, &f); err != nil {
+			return nil, err
+		}
+		if config, ok := settings[*repoID]; ok {
+			config.Bug = b
+			config.Improvement = i
+			config.Feature = f
+		}
+	}
+
+	return settings, nil
 }
 
 func (m *MemSQL) ReadAssigneeAllocations(repos []interface{}) (map[int64]map[string]int, error) {

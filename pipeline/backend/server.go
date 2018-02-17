@@ -63,11 +63,7 @@ func (bs *Server) activateHandler(w http.ResponseWriter, r *http.Request) {
 	for _, repository := range integration.Repositories {
 		if _, ok := bs.Repos.Actives[*repository.ID]; !ok {
 			settings := HeuprConfigSettings{StartTime: time.Now(), IgnoreLabels: make(map[string]bool), IgnoreUsers: make(map[string]bool)}
-			labels, err := bs.Database.ReadLabels(*repository.ID)
-			if err != nil {
-				http.Error(w, "error fetching issue labels", 500)
-			}
-			bs.NewArchRepo(*repository.ID, settings, labels)
+			bs.NewArchRepo(*repository.ID, settings)
 			bs.NewClient(*repository.ID, *integration.HeuprInstallation.AppID, *integration.HeuprInstallation.ID)
 			bs.NewModel(*repository.ID)
 		}
@@ -100,11 +96,7 @@ func (bs *Server) Start() {
 			if settings.StartTime.IsZero() {
 				settings.StartTime = time.Now()
 			}
-			labels, err := bs.Database.ReadLabels(integration.RepoID)
-			if err != nil {
-				panic(err)
-			}
-			bs.NewArchRepo(integration.RepoID, settings, labels)
+			bs.NewArchRepo(integration.RepoID, settings)
 			bs.NewClient(integration.RepoID, integration.AppID, integration.InstallationID)
 			bs.NewModel(integration.RepoID)
 		}
