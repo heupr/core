@@ -250,8 +250,8 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
         SELECT MAX(id) id
         FROM integrations_settings
         WHERE repo_id IN (?` + strings.Repeat(",?", len(repos)-1) + `)
-    ) inner
-    ON inner.id = settings.id
+    ) t
+    ON t.id = settings.id
     JOIN integration_settings_labels_bif bif
     ON bif.integrations_settings_fk = settings.id
     `
