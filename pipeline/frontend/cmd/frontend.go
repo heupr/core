@@ -10,7 +10,9 @@ import (
 
 func main() {
 	defer func() {
-		utils.SlackLog.Fatal("Process crash: ", recover(), bytes.NewBuffer(debug.Stack()).String())
+		if PROD {
+			utils.SlackLog.Fatal("Process crash: ", recover(), bytes.NewBuffer(debug.Stack()).String())
+		}
 	}()
 
 	server := frontend.NewServer()

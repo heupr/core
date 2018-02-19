@@ -31,7 +31,7 @@ func (r *repoInitializerDBStub) continuityCheck(query string) ([][]interface{}, 
 	return nil, nil
 }
 
-func (r *repoInitializerDBStub) restartCheck(query string, repoID int) (int, int, error) {
+func (r *repoInitializerDBStub) restartCheck(query string, repoID int64) (int, int, error) {
 	return 0, 0, nil
 }
 

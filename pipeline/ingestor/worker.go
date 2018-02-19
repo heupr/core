@@ -2,6 +2,7 @@ package ingestor
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
@@ -23,7 +24,7 @@ func (w *Worker) ProcessHeuprInstallationEvent(event HeuprInstallationEvent) {
 		switch *e.Action {
 		case "created":
 			w.RepoInitializer.ActivateBackend(ActivationParams{InstallationEvent: e})
-			client := NewClient(*e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+			client := NewClient(*e.HeuprInstallation.AppID, int(*e.HeuprInstallation.ID))
 			for i := 0; i < len(e.Repositories); i++ {
 				githubRepo, _, err := client.Repositories.GetByID(context.Background(), *e.Repositories[i].ID)
 				if err != nil {
@@ -35,8 +36,16 @@ func (w *Worker) ProcessHeuprInstallationEvent(event HeuprInstallationEvent) {
 					return
 				}
 				go w.RepoInitializer.AddRepo(repo)
+				utils.AppLog.Info("AddRepoIntegration()", zap.Int64("RepoID", *repo.Repo.ID))
 				w.RepoInitializer.AddRepoIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
-				w.RepoInitializer.RaiseRepoWelcomeIssue(repo, *event.Sender.Login)
+				integration, err := w.Database.ReadIntegrationByRepoID(*repo.Repo.ID)
+				if err != nil {
+					utils.AppLog.Error("ingestor get by repo id", zap.Error(err))
+					return
+				}
+				utils.AppLog.Info("AddRepoIntegrationSettings()", zap.Int64("RepoID", *repo.Repo.ID))
+				settings := HeuprConfigSettings{EnableTriager: false, EnableLabeler: true, Integration: *integration, IgnoreUsers: nil, StartTime: time.Now(), IgnoreLabels: nil, Email: "", Twitter: ""}
+				w.Database.InsertRepositoryIntegrationSettings(settings)
 			}
 		case "deleted":
 			w.RepoInitializer.ObliterateIntegration(*e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
@@ -48,18 +57,31 @@ func (w *Worker) ProcessHeuprInstallationRepositoriesEvent(event HeuprInstallati
 	go func(e HeuprInstallationRepositoriesEvent) {
 		switch *e.Action {
 		case "added":
-			client := NewClient(*e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+			client := NewClient(*e.HeuprInstallation.AppID, int(*e.HeuprInstallation.ID))
 			for i := 0; i < len(e.RepositoriesAdded); i++ {
-				repo := AuthenticatedRepo{Repo: e.RepositoriesAdded[i], Client: client}
+				githubRepo, _, err := client.Repositories.GetByID(context.Background(), *e.RepositoriesAdded[i].ID)
+				if err != nil {
+					utils.AppLog.Error("ingestor get by id", zap.Error(err))
+					return
+				}
+				repo := AuthenticatedRepo{Repo: githubRepo, Client: client}
 				if w.RepoInitializer.RepoIntegrationExists(*repo.Repo.ID) {
 					return
 				}
 				go w.RepoInitializer.AddRepo(repo)
+				utils.AppLog.Info("AddRepoIntegration()", zap.Int64("RepoID", *repo.Repo.ID))
 				w.RepoInitializer.AddRepoIntegration(*repo.Repo.ID, *e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
-				w.RepoInitializer.RaiseRepoWelcomeIssue(repo, *event.Sender.Login)
+				integration, err := w.Database.ReadIntegrationByRepoID(*repo.Repo.ID)
+				if err != nil {
+					utils.AppLog.Error("ingestor get by repo id", zap.Error(err))
+					return
+				}
+				utils.AppLog.Info("AddRepoIntegrationSettings()", zap.Int64("RepoID", *repo.Repo.ID))
+				settings := HeuprConfigSettings{EnableTriager: false, EnableLabeler: true, Integration: *integration, IgnoreUsers: nil, StartTime: time.Now(), IgnoreLabels: nil, Email: "", Twitter: ""}
+				w.Database.InsertRepositoryIntegrationSettings(settings)
 			}
 		case "removed":
-			client := NewClient(*e.HeuprInstallation.AppID, *e.HeuprInstallation.ID)
+			client := NewClient(*e.HeuprInstallation.AppID, int(*e.HeuprInstallation.ID))
 			for i := 0; i < len(e.RepositoriesRemoved); i++ {
 				repo := AuthenticatedRepo{Repo: e.RepositoriesRemoved[i], Client: client}
 				if !w.RepoInitializer.RepoIntegrationExists(*repo.Repo.ID) {
@@ -96,7 +118,6 @@ func (w *Worker) Start() {
 					// "reopened".
 					v.Issue.Repository = v.Repo
 					if *v.Action == "edited" && *v.Issue.User.Login == "heupr[bot]" {
-						//go w.ProcessHeuprInteractionIssuesEvent(v)
 						if *v.Sender.Login != "heupr[bot]" && v.Issue.Assignees != nil {
 							for i := 0; i < len(v.Issue.Assignees); i++ {
 								if *v.Sender.Login == *v.Issue.Assignees[i].Login {

@@ -33,7 +33,7 @@ func (c *continuityDA) continuityCheck(query string) ([][]interface{}, error) {
 	return testResults, nil
 }
 
-func (c *continuityDA) restartCheck(query string, repoID int) (int, int, error) {
+func (c *continuityDA) restartCheck(query string, repoID int64) (int, int, error) {
 	return 0, 0, nil
 }
 

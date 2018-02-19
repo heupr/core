@@ -10,7 +10,9 @@ import (
 
 func main() {
 	defer func() {
-		utils.SlackLog.Fatal("Process crash: ", recover(), bytes.NewBuffer(debug.Stack()).String())
+		if ingestor.PROD {
+			utils.SlackLog.Fatal("Process crash: ", recover(), bytes.NewBuffer(debug.Stack()).String())
+		}
 	}()
 
 	ingestorServer := ingestor.IngestorServer{}

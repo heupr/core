@@ -17,7 +17,7 @@ type MemSQL struct {
 type Integration struct {
 	RepoID         int64
 	AppID          int
-	InstallationID int
+	InstallationID int64
 }
 
 func (m *MemSQL) Open() {

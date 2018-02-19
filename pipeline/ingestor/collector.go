@@ -24,7 +24,7 @@ type HeuprInstallationEvent struct {
 // HeuprInstallation is a workaround for the Github API limitation. The
 // go-github library is missing a repositories field.
 type HeuprInstallation struct {
-	ID              *int         `json:"id,omitempty"`
+	ID              *int64        `json:"id,omitempty"`
 	Account         *github.User `json:"account,omitempty"`
 	AppID           *int         `json:"app_id,omitempty"`
 	AccessTokensURL *string      `json:"access_tokens_url,omitempty"`
@@ -33,7 +33,7 @@ type HeuprInstallation struct {
 }
 
 type HeuprRepository struct {
-	ID       *int    `json:"id,omitempty"`
+	ID       *int64    `json:"id,omitempty"`
 	Name     *string `json:"name,omitempty"`
 	FullName *string `json:"full_name,omitempty"`
 }
@@ -54,7 +54,7 @@ var Workload = make(chan interface{}, 100)
 func collectorHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		eventType := r.Header.Get("X-Github-Event")
-		if eventType != "issues" && eventType != "pull_request" && eventType != "installation" && eventType != "issue_comment" {
+		if eventType != "issues" && eventType != "pull_request" && eventType != "installation" && eventType != "installation_repositories" && eventType != "issue_comment" {
 			utils.AppLog.Warn("Ignoring event", zap.String("EventType", eventType))
 			return
 		}

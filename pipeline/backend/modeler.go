@@ -49,9 +49,9 @@ func (s *Server) NewModel(repoID int64) error {
 			},
 			Ctx: ctx,
 		},
-		BugLabel:         &s.Repos.Actives[repoID].Settings.Bug,
-		ImprovementLabel: &s.Repos.Actives[repoID].Settings.Improvement,
-		FeatureLabel:     &s.Repos.Actives[repoID].Settings.Feature,
+		BugLabel:         s.Repos.Actives[repoID].Settings.Bug,
+		ImprovementLabel: s.Repos.Actives[repoID].Settings.Improvement,
+		FeatureLabel:     s.Repos.Actives[repoID].Settings.Feature,
 	}
 	return nil
 }

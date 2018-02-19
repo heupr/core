@@ -14,12 +14,14 @@ import (
 )
 
 type HeuprConfigSettings struct {
-	Integration  Integration
-	IgnoreUsers  []string
-	StartTime    time.Time
-	IgnoreLabels []string
-	Email        string
-	Twitter      string
+	Integration  	Integration
+	EnableTriager	bool
+	EnableLabeler	bool
+	IgnoreUsers  	[]string
+	StartTime    	time.Time
+	IgnoreLabels 	[]string
+	Email        	string
+	Twitter      	string
 }
 
 func extractSettings(issue github.Issue) (ignoreUsers []string, startTime time.Time, ignoreLabels []string, email string, twitter string, err error) {
@@ -73,7 +75,7 @@ func (w *Worker) ProcessHeuprInteractionCommentEvent(event github.IssueCommentEv
 	number := *event.Issue.Number
 	integration, err := w.Database.ReadIntegrationByRepoID(repoID)
 	if err != nil {
-		utils.AppLog.Error("Failed to process HeuprInterectionEvent.", zap.Error(err))
+		utils.AppLog.Error("Failed to process HeuprInteractionEvent.", zap.Error(err))
 	}
 	client := NewClient(integration.AppID, integration.InstallationID)
 
@@ -82,7 +84,7 @@ func (w *Worker) ProcessHeuprInteractionCommentEvent(event github.IssueCommentEv
 		comment := &github.IssueComment{Body: &body}
 		_, _, err = client.Issues.CreateComment(context.Background(), owner, repo, number, comment)
 		if err != nil {
-			utils.AppLog.Error("Failed to process HeuprInterectionEvent.", zap.Error(err))
+			utils.AppLog.Error("Failed to process HeuprInteractionEvent.", zap.Error(err))
 		}
 		return
 	}
@@ -102,10 +104,12 @@ func (w *Worker) ProcessHeuprInteractionCommentEvent(event github.IssueCommentEv
 	comment := &github.IssueComment{Body: &body}
 	_, _, err = client.Issues.CreateComment(context.Background(), owner, repo, number, comment)
 	if err != nil {
-		utils.AppLog.Error("Failed to process HeuprInterectionEvent.", zap.Error(err))
+		utils.AppLog.Error("Failed to process HeuprInteractionEvent.", zap.Error(err))
 	}
 
-	settings := HeuprConfigSettings{Integration: *integration, IgnoreUsers: ignoreUsers, StartTime: startTime, IgnoreLabels: ignoreLabels, Email: email, Twitter: twitter}
+	//Temp (Yarn is the only one using this logic but they won't have these two new fields- but safe to set to true)
+	//Not a big deal as this method will be gone soon.
+	settings := HeuprConfigSettings{EnableTriager: true, EnableLabeler: true, Integration: *integration, IgnoreUsers: ignoreUsers, StartTime: startTime, IgnoreLabels: ignoreLabels, Email: email, Twitter: twitter}
 	w.Database.InsertRepositoryIntegrationSettings(settings)
 	//Workaround: This causes the backend to kick in and pull in the latest settings.
 	action := "opened"
@@ -120,7 +124,7 @@ func (w *Worker) ProcessHeuprInteractionIssuesEvent(event github.IssuesEvent) {
 	number := *event.Issue.Number
 	integration, err := w.Database.ReadIntegrationByRepoID(repoID)
 	if err != nil {
-		utils.AppLog.Error("Failed to process HeuprInterectionEvent.", zap.Error(err))
+		utils.AppLog.Error("Failed to process HeuprInteractionEvent.", zap.Error(err))
 	}
 	client := NewClient(integration.AppID, integration.InstallationID)
 
@@ -134,6 +138,6 @@ func (w *Worker) ProcessHeuprInteractionIssuesEvent(event github.IssuesEvent) {
 	comment := &github.IssueComment{Body: &body}
 	_, _, err = client.Issues.CreateComment(context.Background(), owner, repo, number, comment)
 	if err != nil {
-		utils.AppLog.Error("Failed to process HeuprInterectionEvent.", zap.Error(err))
+		utils.AppLog.Error("Failed to process HeuprInteractionEvent.", zap.Error(err))
 	}
 }

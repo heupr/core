@@ -3,6 +3,7 @@ package backend
 import (
 	"bytes"
 	"core/utils"
+	"database/sql"
 	"encoding/json"
 	"reflect"
 	"strings"
@@ -27,9 +28,9 @@ type HeuprConfigSettings struct {
 	Integration            Integration
 	EnableIssueAssignments bool
 	EnableLabeler          bool
-	Bug                    string
-	Improvement            string
-	Feature                string
+	Bug                    *string
+	Improvement            *string
+	Feature                *string
 	IgnoreUsers            map[string]bool
 	StartTime              time.Time
 	IgnoreLabels           map[string]bool
@@ -142,6 +143,10 @@ func (m *MemSQL) Read() (map[int64]*RepoData, error) {
 
 func (m *MemSQL) ReadHeuprConfigSettingsByRepoID(repoID int64) (HeuprConfigSettings, error) {
 	settingsMap, err := m.ReadHeuprConfigSettings([]interface{}{repoID})
+	if err != nil {
+		//MVP Workaround. This helps avoid inadvertently hiding the original error.
+		panic(err)
+	}
 	if _, ok := settingsMap[repoID]; !ok {
 		settings := HeuprConfigSettings{
 			StartTime:    time.Now(),
@@ -150,14 +155,13 @@ func (m *MemSQL) ReadHeuprConfigSettingsByRepoID(repoID int64) (HeuprConfigSetti
 		}
 		settingsMap[repoID] = settings
 	}
-	return settingsMap[repoID], err
+	return settingsMap[repoID], nil
 }
 
 func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprConfigSettings, error) {
 	if len(repos) == 0 {
 		return nil, nil
 	}
-
 	settings := make(map[int64]HeuprConfigSettings)
 
 	integrationSettingsQuery := `
@@ -252,7 +256,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
         WHERE repo_id IN (?` + strings.Repeat(",?", len(repos)-1) + `)
     ) t
     ON t.id = settings.id
-    JOIN integration_settings_labels_bif bif
+    JOIN integrations_settings_labels_bif_lk bif
     ON bif.integrations_settings_fk = settings.id
     `
 
@@ -264,14 +268,23 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 
 	for results.Next() {
 		repoID := new(int64)
-		b, i, f := "", "", ""
-		if err := results.Scan(repoID, &b, &i, &f); err != nil {
+		var bug sql.NullString
+		var improvement sql.NullString
+		var feature sql.NullString
+		if err := results.Scan(repoID, &bug, &improvement, &feature); err != nil {
 			return nil, err
 		}
 		if config, ok := settings[*repoID]; ok {
-			config.Bug = b
-			config.Improvement = i
-			config.Feature = f
+			if bug.Valid {
+				config.Bug = &bug.String
+			}
+			if improvement.Valid {
+				config.Improvement = &improvement.String
+			}
+			if feature.Valid {
+				config.Feature = &feature.String
+			}
+			settings[*repoID] = config
 		}
 	}
 

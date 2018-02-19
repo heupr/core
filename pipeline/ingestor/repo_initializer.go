@@ -2,14 +2,11 @@ package ingestor
 
 import (
 	"bytes"
-	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/google/go-github/github"
 	"go.uber.org/zap"
 
 	"core/pipeline/gateway"
@@ -52,7 +49,7 @@ func (r *RepoInitializer) AddRepo(authRepo AuthenticatedRepo) {
 	r.Database.BulkInsertIssuesPullRequests(issues, pulls)
 }
 
-func (r *RepoInitializer) RepoIntegrationExists(repoID int) bool {
+func (r *RepoInitializer) RepoIntegrationExists(repoID int64) bool {
 	_, err := r.Database.ReadIntegrationByRepoID(repoID)
 	switch {
 	case err == sql.ErrNoRows:
@@ -65,21 +62,16 @@ func (r *RepoInitializer) RepoIntegrationExists(repoID int) bool {
 	}
 }
 
-func (r *RepoInitializer) AddRepoIntegration(repoID, appID, installationID int) {
+func (r *RepoInitializer) AddRepoIntegration(repoID int64, appID int, installationID int64) {
 	r.Database.InsertRepositoryIntegration(repoID, appID, installationID)
 }
 
-func (r *RepoInitializer) RemoveRepoIntegration(repoID, appID, installationID int) {
+func (r *RepoInitializer) RemoveRepoIntegration(repoID int64, appID int, installationID int64) {
 	r.Database.DeleteRepositoryIntegration(repoID, appID, installationID)
 }
 
-func (r *RepoInitializer) ObliterateIntegration(appID, installationID int) {
+func (r *RepoInitializer) ObliterateIntegration(appID int, installationID int64) {
 	r.Database.ObliterateIntegration(appID, installationID)
-}
-
-func (r *RepoInitializer) RaiseRepoWelcomeIssue(authRepo AuthenticatedRepo, assignee string) {
-	welcomeScreen := &github.IssueRequest{Title: github.String(WelcomeTitle), Body: github.String(fmt.Sprintf(WelcomeBody, time.Now().Format(time.RFC822))), Assignees: &[]string{assignee}}
-	authRepo.Client.Issues.Create(context.Background(), *authRepo.Repo.Owner.Login, *authRepo.Repo.Name, welcomeScreen)
 }
 
 func (r *RepoInitializer) ActivateBackend(params ActivationParams) {

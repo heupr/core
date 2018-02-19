@@ -76,8 +76,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO: Experiment with this setting.
-	oauthFlowSession.Options.MaxAge = 1 * 60 // 1 minute
+	oauthFlowSession.Options.MaxAge = 0
 
 	// Use session ID for state params which protects against CSRF.
 	redirectURL := oauthConfig.AuthCodeURL(sessionID)
@@ -114,6 +113,7 @@ type label struct {
 }
 
 type storage struct {
+	RepoID	 int64
 	FullName string   `schema:"FullName"`
 	Labels   []string `schema:"Labels"`
 	Buckets  map[string][]label
@@ -245,7 +245,8 @@ func repos(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			s := storage{
+			s := storage {
+				RepoID: 	id,
 				FullName: name,
 				Buckets:  make(map[string][]label),
 			}

@@ -23,7 +23,7 @@ func (r *restartDA) continuityCheck(query string) ([][]interface{}, error) {
 
 var testRestartCase = 0
 
-func (r *restartDA) restartCheck(query string, repoID int) (i, p int, err error) {
+func (r *restartDA) restartCheck(query string, repoID int64) (i, p int, err error) {
 	switch testRestartCase {
 	case 1: // Repo exists in the MemSQL database.
 		i, p, err = 1, 1, nil
