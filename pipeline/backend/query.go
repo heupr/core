@@ -26,7 +26,7 @@ type RepoData struct {
 
 type HeuprConfigSettings struct {
 	Integration            Integration
-	EnableIssueAssignments bool
+	EnableTriager					 bool
 	EnableLabeler          bool
 	Bug                    *string
 	Improvement            *string
@@ -165,7 +165,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 	settings := make(map[int64]HeuprConfigSettings)
 
 	integrationSettingsQuery := `
-	SELECT g.repo_id, g.start_time, g.email, g.twitter
+	SELECT g.repo_id, g.start_time, g.email, g.twitter, g.enable_triager, g.enable_labeler
 	FROM integrations_settings g
 	JOIN (
 		SELECT MAX(id) id
@@ -186,7 +186,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 			IgnoreUsers:  make(map[string]bool),
 		}
 		repo_id := new(int64)
-		if err := results.Scan(repo_id, &config.StartTime, &config.Email, &config.Twitter); err != nil {
+		if err := results.Scan(repo_id, &config.StartTime, &config.Email, &config.Twitter, &config.EnableTriager, &config.EnableLabeler); err != nil {
 			return nil, err
 		}
 		settings[*repo_id] = config

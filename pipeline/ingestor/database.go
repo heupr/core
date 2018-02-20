@@ -214,12 +214,12 @@ func (d *Database) InsertGobLabelSettings(settings storage) error {
 func (d *Database) InsertRepositoryIntegrationSettings(settings HeuprConfigSettings) {
 	var settingsID int64
 	var buffer bytes.Buffer
-	settingsInsert := "INSERT INTO integrations_settings(repo_id, start_time, email, twitter) VALUES"
+	settingsInsert := "INSERT INTO integrations_settings(repo_id, start_time, email, twitter, enable_triager, enable_labeler) VALUES"
 	valuesFmt := "(?,?,?,?)"
 
 	buffer.WriteString(settingsInsert)
 	buffer.WriteString(valuesFmt)
-	result, err := d.db.Exec(buffer.String(), settings.Integration.RepoID, settings.StartTime, settings.Email, settings.Twitter)
+	result, err := d.db.Exec(buffer.String(), settings.Integration.RepoID, settings.StartTime, settings.Email, settings.Twitter, settings.EnableTriager, settings.EnableLabeler)
 	if err != nil {
 		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
 		return

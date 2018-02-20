@@ -94,12 +94,23 @@ func (a *ArchRepo) ApplyLabelsOnOpenIssues() {
 	}
 	repo := strings.Split(name, "/")
 
+	skip := false
 	for i := 0; i < len(openIssues); i++ {
 		if openIssues[i].Issue.CreatedAt.After(a.Settings.StartTime) {
+			*openIssues[i].Issue.Labeled = true 
 			label, err := a.Labelmaker.BugOrFeature(openIssues[i])
 			if err != nil {
 				utils.AppLog.Error("AddLabelsToIssue Failed", zap.Error(err))
 				break
+			}
+			for j := 0; j < len(openIssues[i].Issue.Labels); j++ {
+				if *openIssues[i].Issue.Labels[j].Name != "triaged" {
+					skip = true
+				}
+			}
+			if skip == true {
+				skip = false
+				continue
 			}
 			if label != nil && *label != "" {
 				_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), repo[0], repo[1], *openIssues[i].Issue.Number, []string{*label})
@@ -107,14 +118,13 @@ func (a *ArchRepo) ApplyLabelsOnOpenIssues() {
 					utils.AppLog.Error("AddLabelsToIssue Failed", zap.Error(err))
 					break
 				}
-				*openIssues[i].Issue.Labeled = true
 			}
 		}
 	}
 }
 
 func (a *ArchRepo) TriageOpenIssues() {
-	if !a.Settings.EnableIssueAssignments {
+	if !a.Settings.EnableTriager {
 		return
 	}
 	if !a.Hive.Blender.AllModelsBootstrapped() {
