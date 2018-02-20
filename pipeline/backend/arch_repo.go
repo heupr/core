@@ -81,6 +81,10 @@ func (s *Server) NewClient(repoID int64, appID int, installationID int64) {
 }
 
 func (a *ArchRepo) ApplyLabelsOnOpenIssues() {
+	if a.Labelmaker == nil {
+		utils.AppLog.Error("labelmaker not bootstrapped yet.")
+		return
+	}
 	openIssues := a.Hive.Blender.GetAllOpenIssues()
 	utils.AppLog.Info("ApplyLabelsOnOpenIssues()", zap.Int("Total", len(openIssues)))
 	if len(openIssues) == 0 {
@@ -97,7 +101,7 @@ func (a *ArchRepo) ApplyLabelsOnOpenIssues() {
 	skip := false
 	for i := 0; i < len(openIssues); i++ {
 		if openIssues[i].Issue.CreatedAt.After(a.Settings.StartTime) {
-			*openIssues[i].Issue.Labeled = true 
+			*openIssues[i].Issue.Labeled = true
 			label, err := a.Labelmaker.BugOrFeature(openIssues[i])
 			if err != nil {
 				utils.AppLog.Error("AddLabelsToIssue Failed", zap.Error(err))
