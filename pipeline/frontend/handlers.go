@@ -36,7 +36,13 @@ func slackMsg(msg string) {
 
 func init() {
 	if PROD {
-		oauthConfig.RedirectURL = "https://heupr.io/repos"
+		appID = 5535
+		oauthConfig = &oauth2.Config{
+			RedirectURL:  "https://heupr.io/repos",
+			ClientID:     "Iv1.08a7e522bf043e73",
+			ClientSecret: "16e1af1b7437b81d0c0f8e4a51199cbe01e8d68a",
+			Endpoint:     ghoa.Endpoint,
+		}
 		domain = "https://heupr.io"
 	} else {
 		appID = 6807 //This needs to match the "ID" in "Mike/JohnHeuprTest"
