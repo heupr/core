@@ -66,9 +66,11 @@ func (w *Worker) Start() {
 				repo.Settings = repodata.Settings
 
 				//Keep these fields live/updated
-				repo.Labelmaker.BugLabel = repo.Settings.Bug
-				repo.Labelmaker.ImprovementLabel = repo.Settings.Improvement
-				repo.Labelmaker.FeatureLabel = repo.Settings.Feature
+				if repo.Labelmaker != nil {
+					repo.Labelmaker.BugLabel = repo.Settings.Bug
+					repo.Labelmaker.ImprovementLabel = repo.Settings.Improvement
+					repo.Labelmaker.FeatureLabel = repo.Settings.Feature
+				}
 
 				utils.AppLog.Info("TriageOpenIssues() - Begin ", zap.Int64("RepoID", repodata.RepoID))
 				repo.TriageOpenIssues()
