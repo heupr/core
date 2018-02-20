@@ -9,6 +9,9 @@ import (
 	"core/models/bhattacharya"
 	"core/models/labelmaker"
 	"core/pipeline/gateway/conflation"
+	"core/utils"
+
+	"go.uber.org/zap"
 )
 
 func (s *Server) NewModel(repoID int64) error {
@@ -36,6 +39,7 @@ func (s *Server) NewModel(repoID int64) error {
 	ctx := context.Background()
 	client, err := language.NewClient(ctx)
 	if err != nil {
+		utils.AppLog.Error("NewModel() language client", zap.Error(err))
 		return err
 	}
 
