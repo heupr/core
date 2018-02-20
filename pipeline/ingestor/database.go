@@ -156,6 +156,7 @@ func (d *Database) EnableRepo(repoID int) {
 
 func (d *Database) InsertGobLabelSettings(settings storage) (error) {
 	var settingsID int64
+	utils.AppLog.Info("SELECT max(id) id FROM integrations_settings WHERE repo_id =", zap.Int64("RepoID", settings.RepoID))
 	err := d.db.QueryRow("SELECT max(id) id FROM integrations_settings WHERE repo_id = ?", settings.RepoID).Scan(&settingsID)
 	if err != nil {
 		if err == sql.ErrNoRows {

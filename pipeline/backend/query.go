@@ -247,6 +247,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 		settings[*repo_id].IgnoreLabels[*label] = true
 	}
 
+	//We need to pull in the latest integrations_settings_labels_bif_lk key because of a 1:M relationship (due to insert ordering)
 	integrationSettingsLabelsQuery := `
     SELECT settings.repo_id, bif.bug, bif.improvement, bif.feature
     FROM integrations_settings settings
@@ -255,9 +256,15 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
         FROM integrations_settings
         WHERE repo_id IN (?` + strings.Repeat(",?", len(repos)-1) + `)
     ) t
-    ON t.id = settings.id
+		ON t.id = settings.id
     JOIN integrations_settings_labels_bif_lk bif
     ON bif.integrations_settings_fk = settings.id
+		JOIN (
+			 SELECT MAX(id) id
+			 from integrations_settings_labels_bif_lk
+			 group by integrations_settings_fk
+		) t2
+		ON t2.id = bif.id
     `
 
 	results, err = m.db.Query(integrationSettingsLabelsQuery, repos...)
@@ -284,6 +291,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 			if feature.Valid {
 				config.Feature = &feature.String
 			}
+			//TODO: TEST THIS!!!!!
 			settings[*repoID] = config
 		}
 	}

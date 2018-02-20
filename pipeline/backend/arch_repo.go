@@ -37,14 +37,17 @@ type ArchHive struct {
 
 type ArchRepo struct {
 	sync.Mutex
-	Hive                *ArchHive
-	Labelmaker          *labelmaker.LBModel
-	Labels              []string
-	Client              *github.Client
-	Limit               time.Time
-	AssigneeAllocations map[string]int
-	EligibleAssignees   map[string]int
-	Settings            HeuprConfigSettings
+	Hive                			*ArchHive
+	Labelmaker          			*labelmaker.LBModel
+	Labels              			[]string
+	Client              			*github.Client
+	Limit               			time.Time
+	AssigneeAllocations 			map[string]int
+	EligibleAssignees   			map[string]int
+	Settings            			HeuprConfigSettings
+	TriagedLabelEnabledCheck	bool //TEMPORARY FIX
+	TriagedLabel							*github.Label //TEMPORARY FIX
+	TriagedLabelEnabled				bool //TEMPORARY FIX
 }
 
 func (s *Server) NewArchRepo(repoID int64, settings HeuprConfigSettings) {
@@ -102,7 +105,9 @@ func (a *ArchRepo) ApplyLabelsOnOpenIssues() {
 				_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), repo[0], repo[1], *openIssues[i].Issue.Number, []string{*label})
 				if err != nil {
 					utils.AppLog.Error("AddLabelsToIssue Failed", zap.Error(err))
+					break
 				}
+				*openIssues[i].Issue.Labeled = true
 			}
 		}
 	}
@@ -128,6 +133,18 @@ func (a *ArchRepo) TriageOpenIssues() {
 		name = *openIssues[0].Issue.Repository.Name
 	}
 	r := strings.Split(name, "/")
+
+	//TEMPORARY FIX
+	var label *github.Label
+	if a.TriagedLabelEnabledCheck == false {
+		a.TriagedLabelEnabledCheck = true
+		lbl, _, err := a.Client.Issues.GetLabel(context.Background(), r[0], r[1], "triaged")
+		if err != nil {
+			utils.AppLog.Error("could not get triaged label", zap.String("RepoName", r[0]+"/"+r[1]))
+		}
+		a.TriagedLabel = lbl
+	}
+	label = a.TriagedLabel
 
 	for i := 0; i < len(openIssues); i++ {
 		if openIssues[i].Issue.CreatedAt.After(a.Settings.StartTime) {
@@ -188,6 +205,15 @@ func (a *ArchRepo) TriageOpenIssues() {
 								continue
 							}
 
+							if label != nil {
+								if *label.Name == "triaged" {
+									_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), r[0], r[1], number, []string{*label.Name})
+									if err != nil {
+										utils.AppLog.Error("AddLabelsToIssue failed for primary assignee", zap.Error(err))
+									}
+								}
+							}
+
 							assigned = true
 							assignmentsCount++
 							a.AssigneeAllocations[assignee] = assignmentsCount
@@ -205,6 +231,14 @@ func (a *ArchRepo) TriageOpenIssues() {
 				if err != nil {
 					utils.AppLog.Error("AddAssignees Failed", zap.Error(err))
 					break
+				}
+				if label != nil {
+					if *label.Name == "triaged" {
+						_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), r[0], r[1], number, []string{*label.Name})
+						if err != nil {
+							utils.AppLog.Error("AddLabelsToIssue failed for fallback assignee", zap.Error(err))
+						}
+					}
 				}
 				assigned = true
 				a.AssigneeAllocations[fallbackAssignee]++

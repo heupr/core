@@ -86,9 +86,10 @@ func (r *RepoInitializer) ActivateBackend(params ActivationParams) {
 		return
 	}
 	resp, err := r.HTTPClient.Do(req)
-	defer resp.Body.Close()
 	if err != nil {
 		utils.AppLog.Error("failed internal post", zap.Error(err))
 		return
+	} else {
+		defer resp.Body.Close()
 	}
 }

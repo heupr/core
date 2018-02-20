@@ -10,7 +10,7 @@ import (
 
 func main() {
 	defer func() {
-		if PROD {
+		if frontend.PROD {
 			utils.SlackLog.Fatal("Process crash: ", recover(), bytes.NewBuffer(debug.Stack()).String())
 		}
 	}()

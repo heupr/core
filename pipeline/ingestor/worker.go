@@ -57,6 +57,12 @@ func (w *Worker) ProcessHeuprInstallationRepositoriesEvent(event HeuprInstallati
 	go func(e HeuprInstallationRepositoriesEvent) {
 		switch *e.Action {
 		case "added":
+			repos := make([]HeuprRepository, len(e.RepositoriesAdded))
+			for i := 0; i < len(repos); i++ {
+				repos[i] = HeuprRepository{ID: e.RepositoriesAdded[i].ID, Name: e.RepositoriesAdded[i].Name, FullName: e.RepositoriesAdded[i].FullName}
+			}
+			installationEvent := HeuprInstallationEvent{Action: e.Action, Sender: e.Sender, HeuprInstallation: e.HeuprInstallation, Repositories: repos}
+			w.RepoInitializer.ActivateBackend(ActivationParams{InstallationEvent: installationEvent})
 			client := NewClient(*e.HeuprInstallation.AppID, int(*e.HeuprInstallation.ID))
 			for i := 0; i < len(e.RepositoriesAdded); i++ {
 				githubRepo, _, err := client.Repositories.GetByID(context.Background(), *e.RepositoriesAdded[i].ID)
