@@ -24,7 +24,7 @@ type HeuprInstallationEvent struct {
 // HeuprInstallation is a workaround for the Github API limitation. The
 // go-github library is missing a repositories field.
 type HeuprInstallation struct {
-	ID              *int64        `json:"id,omitempty"`
+	ID              *int64       `json:"id,omitempty"`
 	Account         *github.User `json:"account,omitempty"`
 	AppID           *int         `json:"app_id,omitempty"`
 	AccessTokensURL *string      `json:"access_tokens_url,omitempty"`
@@ -33,7 +33,7 @@ type HeuprInstallation struct {
 }
 
 type HeuprRepository struct {
-	ID       *int64    `json:"id,omitempty"`
+	ID       *int64  `json:"id,omitempty"`
 	Name     *string `json:"name,omitempty"`
 	FullName *string `json:"full_name,omitempty"`
 }

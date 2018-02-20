@@ -38,7 +38,7 @@ func (c *ComboAlgorithm) Conflate(issue *ExpandedIssue) bool {
 	} else {
 		linkTitleToBody(issue)
 	}
-		return true
+	return true
 }
 
 // 1:1 Algorithm (Naive) (We may need to exclude 1:M issues)

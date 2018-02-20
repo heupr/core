@@ -7,7 +7,7 @@ import (
 	"golang.org/x/net/context"
 	languagepb "google.golang.org/genproto/googleapis/cloud/language/v1"
 
-    "core/pipeline/gateway/conflation"
+	"core/pipeline/gateway/conflation"
 )
 
 const (

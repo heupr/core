@@ -113,7 +113,7 @@ type label struct {
 }
 
 type storage struct {
-	RepoID	 int64
+	RepoID   int64
 	FullName string   `schema:"FullName"`
 	Labels   []string `schema:"Labels"`
 	Buckets  map[string][]label
@@ -245,8 +245,8 @@ func repos(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			s := storage {
-				RepoID: 	id,
+			s := storage{
+				RepoID:   id,
 				FullName: name,
 				Buckets:  make(map[string][]label),
 			}

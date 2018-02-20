@@ -37,17 +37,17 @@ type ArchHive struct {
 
 type ArchRepo struct {
 	sync.Mutex
-	Hive                			*ArchHive
-	Labelmaker          			*labelmaker.LBModel
-	Labels              			[]string
-	Client              			*github.Client
-	Limit               			time.Time
-	AssigneeAllocations 			map[string]int
-	EligibleAssignees   			map[string]int
-	Settings            			HeuprConfigSettings
-	TriagedLabelEnabledCheck	bool //TEMPORARY FIX
-	TriagedLabel							*github.Label //TEMPORARY FIX
-	TriagedLabelEnabled				bool //TEMPORARY FIX
+	Hive                     *ArchHive
+	Labelmaker               *labelmaker.LBModel
+	Labels                   []string
+	Client                   *github.Client
+	Limit                    time.Time
+	AssigneeAllocations      map[string]int
+	EligibleAssignees        map[string]int
+	Settings                 HeuprConfigSettings
+	TriagedLabelEnabledCheck bool          //TEMPORARY FIX
+	TriagedLabel             *github.Label //TEMPORARY FIX
+	TriagedLabelEnabled      bool          //TEMPORARY FIX
 }
 
 func (s *Server) NewArchRepo(repoID int64, settings HeuprConfigSettings) {

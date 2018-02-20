@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-fsnotify/fsnotify"
 	"github.com/bradleyfalzon/ghinstallation"
+	"github.com/go-fsnotify/fsnotify"
 	"github.com/google/go-github/github"
 	"go.uber.org/zap"
 
@@ -23,7 +23,7 @@ type IngestorServer struct {
 }
 
 type storage struct {
-	RepoID	 int64
+	RepoID   int64
 	FullName string   `schema:"FullName"`
 	Labels   []string `schema:"Labels"`
 	Buckets  map[string][]label
@@ -117,7 +117,6 @@ func (i *IngestorServer) Start() error {
 
 	dispatcher := Dispatcher{Database: i.Database, RepoInitializer: &i.RepoInitializer}
 	dispatcher.Start(5)
-
 
 	//i.Restart()
 	//i.Continuity()

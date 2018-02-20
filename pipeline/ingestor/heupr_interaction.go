@@ -14,14 +14,14 @@ import (
 )
 
 type HeuprConfigSettings struct {
-	Integration  	Integration
-	EnableTriager	bool
-	EnableLabeler	bool
-	IgnoreUsers  	[]string
-	StartTime    	time.Time
-	IgnoreLabels 	[]string
-	Email        	string
-	Twitter      	string
+	Integration   Integration
+	EnableTriager bool
+	EnableLabeler bool
+	IgnoreUsers   []string
+	StartTime     time.Time
+	IgnoreLabels  []string
+	Email         string
+	Twitter       string
 }
 
 func extractSettings(issue github.Issue) (ignoreUsers []string, startTime time.Time, ignoreLabels []string, email string, twitter string, err error) {
