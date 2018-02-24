@@ -25,17 +25,18 @@ type RepoData struct {
 }
 
 type HeuprConfigSettings struct {
-	Integration            Integration
-	EnableTriager					 bool
-	EnableLabeler          bool
-	Bug                    *string
-	Improvement            *string
-	Feature                *string
-	IgnoreUsers            map[string]bool
-	StartTime              time.Time
-	IgnoreLabels           map[string]bool
-	Email                  string
-	Twitter                string
+	Integration   Integration
+	EnableTriager bool
+	EnableLabeler bool
+	DefaultLabels []string
+	Bug           *string
+	Improvement   *string
+	Feature       *string
+	IgnoreUsers   map[string]bool
+	StartTime     time.Time
+	IgnoreLabels  map[string]bool
+	Email         string
+	Twitter       string
 }
 
 func (m *MemSQL) Read() (map[int64]*RepoData, error) {
@@ -174,6 +175,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 	) T
 	on T.id = g.id
 	`
+
 	results, err := m.db.Query(integrationSettingsQuery, repos...)
 	if err != nil {
 		return nil, err
@@ -205,6 +207,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 	JOIN integrations_settings_ignoreusers_lk lk
 	on lk.integrations_settings_fk = g.id
 	`
+
 	results, err = m.db.Query(integrationSettingsIgnoreUsersQuery, repos...)
 	if err != nil {
 		return nil, err
@@ -232,6 +235,7 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 	JOIN integrations_settings_ignorelabels_lk lk
 	on lk.integrations_settings_fk = g.id
 	`
+
 	results, err = m.db.Query(integrationSettingsIgnoreLabelsQuery, repos...)
 	if err != nil {
 		return nil, err
@@ -256,15 +260,15 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
         FROM integrations_settings
         WHERE repo_id IN (?` + strings.Repeat(",?", len(repos)-1) + `)
     ) t
-		ON t.id = settings.id
+	ON t.id = settings.id
     JOIN integrations_settings_labels_bif_lk bif
     ON bif.integrations_settings_fk = settings.id
-		JOIN (
-			 SELECT MAX(id) id
-			 from integrations_settings_labels_bif_lk
-			 group by integrations_settings_fk
-		) t2
-		ON t2.id = bif.id
+	JOIN (
+		 SELECT MAX(id) id
+		 from integrations_settings_labels_bif_lk
+		 group by integrations_settings_fk
+	) t2
+	ON t2.id = bif.id
     `
 
 	results, err = m.db.Query(integrationSettingsLabelsQuery, repos...)
@@ -293,6 +297,44 @@ func (m *MemSQL) ReadHeuprConfigSettings(repos []interface{}) (map[int64]HeuprCo
 			}
 			//TODO: TEST THIS!!!!!
 			settings[*repoID] = config
+		}
+	}
+
+	integrationSettingsDefaultLabelsQuery := `
+    SELECT settings.repo_id, default.labels
+    FROM integrations_settings settings
+    JOIN (
+        SELECT MAX(id) id
+        FROM integrations_settings
+        WHERE repo_id IN (?` + strings.Repeat(",?", len(repos)-1) + `)
+    ) t
+    ON t.id = settings.id
+    JOIN integrations_settings_labels_default default
+    ON default.integrations_settings_fk = settings.id
+    JOIN (
+        SELECT MAX(id) id
+        FROM integrations_settings_labels_default
+        GROUP BY integrations_settings_fk
+    ) t2
+    ON t2.id = default.id
+    `
+
+	results, err = m.db.Query(integrationSettingsDefaultLabelsQuery, repos...)
+	if err != nil {
+		return nil, err
+	}
+	defer results.Close()
+
+	for results.Next() {
+		repoID := new(int64)
+		label := sql.NullString{}
+		if err := results.Scan(repoID, &label); err != nil {
+			return nil, err
+		}
+		if config, ok := settings[*repoID]; ok {
+			if label.Valid {
+				config.DefaultLabels = append(config.DefaultLabels, label.String)
+			}
 		}
 	}
 

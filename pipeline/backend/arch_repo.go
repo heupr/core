@@ -99,12 +99,21 @@ func (a *ArchRepo) ApplyLabelsOnOpenIssues() {
 	repo := strings.Split(name, "/")
 
 	skip := false
+	if len(a.Settings.DefaultLabels) > 0 {
+		for i := 0; i < len(openIssues); i++ {
+			_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), repo[0], repo[1], *openIssues[i].Issue.Number, a.Settings.DefaultLabels)
+			if err != nil {
+				utils.AppLog.Error("failure adding default issue labels", zap.Error(err))
+			}
+		}
+	}
+
 	for i := 0; i < len(openIssues); i++ {
 		if openIssues[i].Issue.CreatedAt.After(a.Settings.StartTime) {
 			*openIssues[i].Issue.Labeled = true
 			label, err := a.Labelmaker.BugOrFeature(openIssues[i])
 			if err != nil {
-				utils.AppLog.Error("AddLabelsToIssue Failed", zap.Error(err))
+				utils.AppLog.Error("failure retrieving issue type labels", zap.Error(err))
 				break
 			}
 			for j := 0; j < len(openIssues[i].Issue.Labels); j++ {
@@ -119,8 +128,7 @@ func (a *ArchRepo) ApplyLabelsOnOpenIssues() {
 			if label != nil && *label != "" {
 				_, _, err := a.Client.Issues.AddLabelsToIssue(context.Background(), repo[0], repo[1], *openIssues[i].Issue.Number, []string{*label})
 				if err != nil {
-					utils.AppLog.Error("AddLabelsToIssue Failed", zap.Error(err))
-					break
+					utils.AppLog.Error("failure adding user-defined issue labels", zap.Error(err))
 				}
 			}
 		}
