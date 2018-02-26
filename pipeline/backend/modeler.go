@@ -14,7 +14,11 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s *Server) NewModel(repoID int64) error {
+var NewLanguageClient = func(ctx context.Context) (*language.Client, error) {
+	return language.NewClient(ctx)
+}
+
+func (s *Server) NewModel(repoID int64) {
 	s.Repos.Lock()
 	defer s.Repos.Unlock()
 	confCxt := &conflation.Context{}
@@ -37,10 +41,9 @@ func (s *Server) NewModel(repoID int64) error {
 	)
 
 	ctx := context.Background()
-	client, err := language.NewClient(ctx)
+	client, err := NewLanguageClient(ctx)
 	if err != nil {
 		utils.AppLog.Error("NewModel() language client", zap.Error(err))
-		return err
 	}
 
 	s.Repos.Actives[repoID].Labelmaker = &labelmaker.LBModel{
@@ -57,5 +60,4 @@ func (s *Server) NewModel(repoID int64) error {
 		ImprovementLabel: s.Repos.Actives[repoID].Settings.Improvement,
 		FeatureLabel:     s.Repos.Actives[repoID].Settings.Feature,
 	}
-	return nil
 }
