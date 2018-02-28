@@ -7,7 +7,9 @@ import (
 const repoID = 66
 
 var testBS = &Server{
-	Repos: &ActiveRepos{Actives: make(map[int64]*ArchRepo)},
+	Repos: &ActiveRepos{
+		Actives: make(map[int64]*ArchRepo),
+	},
 }
 
 func TestNewArchRepo(t *testing.T) {
@@ -16,4 +18,8 @@ func TestNewArchRepo(t *testing.T) {
 	if testBS.Repos.Actives[repoID] == nil {
 		t.Error("failure generating new arch repo")
 	}
+}
+
+func TestApplyLabelsOnOpenIssues(t *testing.T) {
+
 }
