@@ -167,9 +167,6 @@ func (d *Database) InsertGobLabelSettings(settings storage) error {
 		return err
 	}
 
-	defaultsInsert := bytes.NewBufferString("INSERT INTO integrations_settings_labels_default(integrations_settings_fk, repo_id, label) VALUES")
-	defaultsInsert.WriteString("(?,?,?)")
-
 	var buffer bytes.Buffer
 	settingsInsert := "INSERT INTO integrations_settings_labels_bif_lk(integrations_settings_fk, repo_id, bug, feature, improvement) VALUES"
 	valuesFmt := "(?,?,?,?,?)"
@@ -177,14 +174,6 @@ func (d *Database) InsertGobLabelSettings(settings storage) error {
 	buffer.WriteString(settingsInsert)
 	buffer.WriteString(valuesFmt)
 
-	var defaults []string
-	if defaultBucket, ok := settings.Buckets["typedefault"]; ok {
-		for i := 0; i < len(defaultBucket); i++ {
-			if defaultBucket[i].Selected {
-				defaults = append(defaults, &defaultBucket[i].Name)
-			}
-		}
-	}
 	var bug *string
 	if bugBucket, ok := settings.Buckets["typebug"]; ok {
 		for i := 0; i < len(bugBucket); i++ {
@@ -209,18 +198,6 @@ func (d *Database) InsertGobLabelSettings(settings storage) error {
 			}
 		}
 	}
-
-	for i := 0; i < len(defaults); i++ {
-		result, err := d.db.Exec(defaultsInsert.String(), settingsID, settings.RepoID, defaults[i])
-		if err != nil {
-			utils.AppLog.Error("database insert failure", zap.Error(err))
-			return err
-		} else {
-			rows, _ := result.RowsAffected()
-			utils.AppLog.Debug("database insert success", zap.Int64("rows", rows))
-		}
-	}
-
 	result, err := d.db.Exec(buffer.String(), settingsID, settings.RepoID, bug, feature, improvement)
 	if err != nil {
 		utils.AppLog.Error("Database Insert Failure", zap.Error(err))
@@ -238,7 +215,7 @@ func (d *Database) InsertRepositoryIntegrationSettings(settings HeuprConfigSetti
 	var settingsID int64
 	var buffer bytes.Buffer
 	settingsInsert := "INSERT INTO integrations_settings(repo_id, start_time, email, twitter, enable_triager, enable_labeler) VALUES"
-	valuesFmt := "(?,?,?,?)"
+	valuesFmt := "(?,?,?,?,?,?)"
 
 	buffer.WriteString(settingsInsert)
 	buffer.WriteString(valuesFmt)
