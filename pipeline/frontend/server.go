@@ -17,7 +17,7 @@ import (
 
 func routes() *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", render("../templates/home.html"))
+	mux.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("../static/"))))
 	mux.HandleFunc("/login", login)
 	mux.HandleFunc("/repos", repos)
 	mux.HandleFunc("/console", console)
@@ -25,7 +25,6 @@ func routes() *http.ServeMux {
 	mux.HandleFunc("/docs", render("../templates/docs.html"))
 	mux.HandleFunc("/privacy", render("../templates/privacy.html"))
 	mux.HandleFunc("/terms", render("../templates/terms.html"))
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("../static"))))
 	return mux
 }
 

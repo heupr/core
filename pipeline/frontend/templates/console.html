@@ -45,13 +45,13 @@
     <h2>Label options</h2>
     <hr>
     <h4>
-      <small>
+      <small class="hidden">
         <span class="glyphicon glyphicon-info-sign" title="Applied to all newly raised issues"></span>
-      </small> Default label(s)
+      </small> <!--Default label(s)-->
     </h4>
     <div class="row" id="bucket-default">
       <div class="col-sm-4">
-        <div>
+        <div class="hidden">
           <select class="selectpicker show-tick" name="typedefault" data-live-search="true" multiple="true" title="Select label(s)...">
             {{ range $label := .storage.Buckets.typedefault }}
               <option value="{{ $label.Name }}">{{ $label.Name }} {{ if $label.Selected }}&#10004;{{ end }}</option>
