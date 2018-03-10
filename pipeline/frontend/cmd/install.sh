@@ -8,3 +8,4 @@ cp -r ../static/ /home/heupr/golang/bin/core/pipeline/frontend
 cp -r ../templates/ /home/heupr/golang/bin/core/pipeline/frontend
 cp ./heupr.key /home/heupr/golang/bin/core/pipeline/frontend/cmd/heupr.key
 cp ./heupr_io.crt /home/heupr/golang/bin/core/pipeline/frontend/cmd/heupr_io.crt
+cp ./heupr.2017-10-04.private-key.pem /home/heupr/golang/bin/core/pipeline/frontend/cmd/heupr.2017-10-04.private-key.pem
