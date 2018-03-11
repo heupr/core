@@ -181,7 +181,7 @@ func (d *Database) InsertGobLabelSettings(settings storage) error {
 	if defaultBucket, ok := settings.Buckets["typedefault"]; ok {
 		for i := 0; i < len(defaultBucket); i++ {
 			if defaultBucket[i].Selected {
-				defaults = append(defaults, &defaultBucket[i].Name)
+				defaults = append(defaults, defaultBucket[i].Name)
 			}
 		}
 	}

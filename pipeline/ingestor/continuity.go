@@ -38,7 +38,8 @@ func (i *IngestorServer) continuityCheck() ([]*github.Issue, []*github.PullReque
 	issues := []*github.Issue{}
 	pulls := []*github.PullRequest{}
 	for j := range gaps {
-		repoID := gaps[j][0].(int64)
+		//TODO: (verify line 42 before enabling this logic)
+		repoID := int64(gaps[j][0].(int))
 		ctx := context.Background()
 		integration, err := i.Database.ReadIntegrationByRepoID(repoID)
 		if err != nil {

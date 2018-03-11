@@ -35,9 +35,13 @@ func (r *repoInitializerDBStub) restartCheck(query string, repoID int64) (int, i
 	return 0, 0, nil
 }
 
+func (r *repoInitializerDBStub) InsertGobLabelSettings(settings storage) error {
+	return nil
+}
+
 func (r *repoInitializerDBStub) ReadIntegrations() ([]Integration, error) { return nil, nil }
 
-func (r *repoInitializerDBStub) ReadIntegrationByRepoID(id int) (i *Integration, err error) {
+func (r *repoInitializerDBStub) ReadIntegrationByRepoID(id int64) (i *Integration, err error) {
 	// Each case is for each of the test repo IDs passed in for the unit test.
 	switch id {
 	case 1:
@@ -59,13 +63,13 @@ func (r *repoInitializerDBStub) BulkInsertIssuesPullRequests(i []*github.Issue, 
 	r.pulls = p
 }
 
-func (r *repoInitializerDBStub) InsertRepositoryIntegration(repoID, appID, installID int) {}
+func (r *repoInitializerDBStub) InsertRepositoryIntegration(repoID int64, appID int, installID int64) {}
 
 func (r *repoInitializerDBStub) InsertRepositoryIntegrationSettings(settings HeuprConfigSettings) {}
 
-func (r *repoInitializerDBStub) DeleteRepositoryIntegration(repoID, appID, installID int) {}
+func (r *repoInitializerDBStub) DeleteRepositoryIntegration(repoID int64, appID int, installID int64) {}
 
-func (r *repoInitializerDBStub) ObliterateIntegration(appID, installID int) {}
+func (r *repoInitializerDBStub) ObliterateIntegration(appID int, installID int64) {}
 
 func TestAddRepo(t *testing.T) {
 	mux := http.NewServeMux()
@@ -108,7 +112,7 @@ func TestAddRepo(t *testing.T) {
 
 func TestRepoIntegrationExists(t *testing.T) {
 	tests := []struct {
-		id     int
+		id     int64
 		result bool
 	}{
 		{1, false},

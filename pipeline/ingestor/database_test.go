@@ -22,8 +22,9 @@ func TestBulkInsertIssues(t *testing.T) {
 	bufferPool := NewPool()
 	db := Database{BufferPool: bufferPool}
 	db.open()
+	defer db.Close()
 
-	repo := &github.Repository{ID: github.Int(26295345), Organization: &github.Organization{Name: github.String("dotnet")}, Name: github.String("coreclr")}
+	repo := &github.Repository{ID: github.Int64(26295345), Organization: &github.Organization{Name: github.String("dotnet")}, Name: github.String("coreclr")}
 	for i := 0; i < len(githubIssues); i++ {
 		githubIssues[i].Repository = repo
 	}

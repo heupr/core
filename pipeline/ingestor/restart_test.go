@@ -37,8 +37,12 @@ func (r *restartDA) ReadIntegrations() ([]Integration, error) {
 	return []Integration{Integration{1, 1, 1}}, nil
 }
 
-func (r *restartDA) ReadIntegrationByRepoID(id int) (*Integration, error) {
+func (r *restartDA) ReadIntegrationByRepoID(id int64) (*Integration, error) {
 	return nil, nil
+}
+
+func (r *restartDA) InsertGobLabelSettings(settings storage) error {
+	return nil
 }
 
 func (r *restartDA) InsertIssue(i github.Issue, action *string) {}
@@ -47,13 +51,13 @@ func (r *restartDA) InsertPullRequest(p github.PullRequest, action *string) {}
 
 func (r *restartDA) BulkInsertIssuesPullRequests(i []*github.Issue, p []*github.PullRequest) {}
 
-func (r *restartDA) InsertRepositoryIntegration(repoID, appID, installID int) {}
+func (r *restartDA) InsertRepositoryIntegration(repoID int64, appID int, installID int64) {}
 
 func (r *restartDA) InsertRepositoryIntegrationSettings(settings HeuprConfigSettings) {}
 
-func (r *restartDA) DeleteRepositoryIntegration(repoID, appID, installID int) {}
+func (r *restartDA) DeleteRepositoryIntegration(repoID int64, appID int, installID int64) {}
 
-func (r *restartDA) ObliterateIntegration(appID, installID int) {}
+func (r *restartDA) ObliterateIntegration(appID int, installID int64) {}
 
 func TestRestart(t *testing.T) {
 	mux := http.NewServeMux()
