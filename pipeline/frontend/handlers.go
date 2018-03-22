@@ -175,67 +175,74 @@ func repos(w http.ResponseWriter, r *http.Request) {
 
 	ctx := context.Background()
 	opts := &github.ListOptions{Page: 1, PerPage: 50}
-	installationID := int64(0)
+	installationFound := false
+	var installationIDs []int64
 	installations, _, err := listUserInstallations(ctx, client, opts)
 
 	for i := range installations {
 		if *installations[i].AppID == appID {
-			installationID = *installations[i].ID
-			break
+			installationFound = true
+			installationIDs = append(installationIDs, *installations[i].ID)
 		}
 	}
-	if installationID == 0 {
+	if !installationFound {
 		utils.AppLog.Warn("heupr installation not found")
 		http.Error(w, "error detecting heupr installation", http.StatusInternalServerError)
 		return
 	}
 
 	repos := make(map[int64]string)
-	for {
-		repo, resp, err := client.Apps.ListUserRepos(ctx, installationID, opts)
-		if err != nil {
-			utils.AppLog.Error("error collecting user repos", zap.Error(err))
-			http.Error(w, "error collecting user repos", http.StatusInternalServerError)
-			return
-		}
-		for i := range repo {
-			repos[*repo[i].ID] = *repo[i].FullName
-		}
 
-		if resp.NextPage == 0 {
-			break
-		} else {
-			opts.Page = resp.NextPage
-		}
-	}
 
-	client, err = newServerToServerClient(appID, installationID)
-
-	if err != nil {
-		utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
-		http.Error(w, "client failure", http.StatusInternalServerError)
-		return
-	}
-
-	opts = &github.ListOptions{PerPage: 100}
-	labels := make(map[int64][]string)
-	for key, value := range repos {
-		name := strings.Split(value, "/")
+	for i := range installationIDs {
 		for {
-			l, resp, err := client.Issues.ListLabels(ctx, name[0], name[1], opts)
+			repo, resp, err := client.Apps.ListUserRepos(ctx, installationIDs[i], opts)
 			if err != nil {
-				utils.AppLog.Error("error collecting repo labels", zap.Error(err))
-				http.Error(w, "error collecting repo labels", http.StatusInternalServerError)
+				utils.AppLog.Error("error collecting user repos", zap.Error(err))
+				http.Error(w, "error collecting user repos", http.StatusInternalServerError)
 				return
 			}
-			for i := range l {
-				labels[key] = append(labels[key], *l[i].Name)
+			for j := range repo {
+				repos[*repo[j].ID] = *repo[j].FullName
 			}
 
 			if resp.NextPage == 0 {
 				break
 			} else {
 				opts.Page = resp.NextPage
+			}
+		}
+	}
+
+	labels := make(map[int64][]string)
+	for i := range installationIDs {
+		client, err = newServerToServerClient(appID, installationIDs[i])
+
+		if err != nil {
+			utils.AppLog.Error("could not obtain github installation key", zap.Error(err))
+			http.Error(w, "client failure", http.StatusInternalServerError)
+			return
+		}
+
+		opts = &github.ListOptions{PerPage: 100}
+		for key, value := range repos {
+			name := strings.Split(value, "/")
+			for {
+				l, resp, err := client.Issues.ListLabels(ctx, name[0], name[1], opts)
+				if err != nil {
+					utils.AppLog.Error("error collecting repo labels", zap.Error(err))
+					http.Error(w, "error collecting repo labels", http.StatusInternalServerError)
+					return
+				}
+				for i := range l {
+					labels[key] = append(labels[key], *l[i].Name)
+				}
+
+				if resp.NextPage == 0 {
+					break
+				} else {
+					opts.Page = resp.NextPage
+				}
 			}
 		}
 	}
