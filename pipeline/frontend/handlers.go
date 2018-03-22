@@ -234,8 +234,8 @@ func repos(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, "error collecting repo labels", http.StatusInternalServerError)
 					return
 				}
-				for i := range l {
-					labels[key] = append(labels[key], *l[i].Name)
+				for k := range l {
+					labels[key] = append(labels[key], *l[k].Name)
 				}
 
 				if resp.NextPage == 0 {
