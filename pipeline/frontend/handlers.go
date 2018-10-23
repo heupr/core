@@ -40,7 +40,7 @@ func init() {
 		oauthConfig = &oauth2.Config{
 			RedirectURL:  "https://heupr.io/repos",
 			ClientID:     "Iv1.08a7e522bf043e73",
-			ClientSecret: "16e1af1b7437b81d0c0f8e4a51199cbe01e8d68a",
+			ClientSecret: "",
 			Endpoint:     ghoa.Endpoint,
 		}
 		domain = "https://heupr.io"
@@ -48,8 +48,8 @@ func init() {
 		appID = 6807 //This needs to match the "ID" in "Mike/JohnHeuprTest"
 		oauthConfig = &oauth2.Config{
 			RedirectURL:  "https://127.0.0.1:8081/repos",             //This needs to match the "User authorization callback URL" in "Mike/JohnHeuprTest"
-			ClientID:     "Iv1.83cc17f7f984aeec",                     //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
-			ClientSecret: "c9c5f71edcf1a85121ae86bae5295413dff46fad", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
+			ClientID:     "",                     //This needs to match the "ClientID" in "Mike/JohnHeuprTest"
+			ClientSecret: "", //This needs to match the "ClientSecret" in "Mike/JohnHeuprTest"
 			Endpoint:     ghoa.Endpoint,
 		}
 		domain = "https://127.0.0.1:8081"
