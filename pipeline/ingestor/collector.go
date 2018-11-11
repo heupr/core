@@ -47,7 +47,7 @@ type HeuprInstallationRepositoriesEvent struct {
 	HeuprInstallation   *HeuprInstallation   `json:"installation,omitempty"`
 }
 
-const secretKey = "figrin-dan-and-the-modal-nodes"
+const secretKey = ""
 
 var Workload = make(chan interface{}, 100)
 
