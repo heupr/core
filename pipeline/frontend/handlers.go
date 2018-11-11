@@ -59,7 +59,7 @@ func init() {
 var (
 	appID                int
 	oauthConfig          *oauth2.Config
-	store                = sessions.NewCookieStore([]byte("yoda-dooku-jinn-kenobi-skywalker-tano"))
+	store                = sessions.NewCookieStore([]byte("add key"))
 	oauthTokenSessionKey = "oauth_token"
 	// templatePath is for testing purposes only; a better solution is needed.
 	templatePath = "../"
