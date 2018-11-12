@@ -1,25 +1,11 @@
 # Heupr Core
 
-### Build well
+> Get Heupr working for your project :octocat:
+
+<img src="https://img.shields.io/badge/solve-problems-blue.svg"> <img src="https://img.shields.io/badge/be-creative-yellow.svg"> <img src="https://img.shields.io/badge/have-fun-red.svg">
 
 ## Description
 
-This is the internal, private repository containing all relevant code for the
-**Heupr** software platform. The code here is proprietary in nature and should
-be treated as such.  
+This is the fully functioning It can be used right now if you choose to set it app for the Heupr platform. It can be used right now if you choose to set it up on your own server. There's still work to be done and we're planning on making a variety of improvements to the codebase.
 
-Updates to the repository will be posted into the #beta channel in **Slack**.  
-
-Please see the [**Heupr**](https://paper.dropbox.com/folder/show/Heupr-e.iX7ZavGxujPFwhjOZcQrZyUA7J53Q5J9ZNO9Vs282Ly5kW9CiL)
-folder on **Dropbox Paper** for guidelines and development references.  
-
-All rights are reserved to the owners of this project listed under the **Team**
-section below.  
-
-## Team
-
-**John Forstmeier**  
-*Co-creator*   
-
-**Mike Taylor**  
-*Co-creator*  
+Check out our [contribution](https://github.com/heupr/docs/blob/master/.github/CONTRIBUTING.md) and [conduct](https://github.com/heupr/docs/blob/master/.github/CODE_OF_CONDUCT.md) guidelines; jump in and get involved! We track our projects on our [org project here](https://github.com/orgs/heupr/projects/1) - take a look!
