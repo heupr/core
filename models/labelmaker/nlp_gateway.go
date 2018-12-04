@@ -7,6 +7,11 @@ import (
 	languagepb "google.golang.org/genproto/googleapis/cloud/language/v1"
 )
 
+type NlpGatewayInterface interface {
+	AnalyzeSentiment(input string) (*languagepb.AnalyzeSentimentResponse, error)
+	AnalyzeSyntax(input string) (sentiment *languagepb.AnalyzeSyntaxResponse, err error)
+}
+
 type NlpGateway struct {
 	Client *language.Client
 }
