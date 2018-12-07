@@ -2,14 +2,15 @@ package labelmaker
 
 import languagepb "google.golang.org/genproto/googleapis/cloud/language/v1"
 
-type MockLanguageClient struct {
+type NlpGatewayInterface interface {
+	AnalyzeSentiment(input string) (*languagepb.AnalyzeSentimentResponse, error)
+	AnalyzeSyntax(input string) (syntax *languagepb.AnalyzeSyntaxResponse, err error)
 }
 
 type MockNlpGateway struct {
-	Client MockLanguageClient
 }
 
-func (client *MockLanguageClient) AnalyzeSentiment() (*languagepb.AnalyzeSentimentResponse, error) {
+func (gateway *MockNlpGateway) AnalyzeSentiment(input string) (*languagepb.AnalyzeSentimentResponse, error) {
 	// Response as shown at https://cloud.google.com/natural-language/docs/analyzing-sentiment
 	documentSentiment := *languagepb.Sentiment{0.8, 0.8}
 	sentences := []*languagepb.Sentence{
@@ -18,7 +19,7 @@ func (client *MockLanguageClient) AnalyzeSentiment() (*languagepb.AnalyzeSentime
 	return *languagepb.AnalyzeSentimentResponse{documentSentiment, "en", sentences}
 }
 
-func (client *MockLanguageClient) AnalyzeSyntax() {
+func (gateway *MockNlpGateway) AnalyzeSyntax(input string) (syntax *languagepb.AnalyzeSyntaxResponse, err error) {
 	// Response as shown at https://cloud.google.com/natural-language/docs/analyzing-syntax
 	sentences := []*languagepb.Sentence{
 		*languagepb.Sentence{1, *languagepb.TextSpan{0,"Google, headquartered in Mountain View, unveiled the new Android phone at the Consumer Electronic Show."}},
