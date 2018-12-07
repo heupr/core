@@ -10,11 +10,16 @@ type MockNlpGateway struct {
 }
 
 func (client *MockLanguageClient) AnalyzeSentiment() (*languagepb.AnalyzeSentimentResponse, error) {
-	documentSentiment := *languagepb.Sentiment{10.0, 0.5}
-	return *languagepb.AnalyzeSentimentResponse{documentSentiment, "en"}, nil
+	// Response as shown at https://cloud.google.com/natural-language/docs/analyzing-sentiment
+	documentSentiment := *languagepb.Sentiment{0.8, 0.8}
+	sentences := []*languagepb.Sentence{
+		*languagepb.Sentence{*languagepb.TextSpan{"Enjoy your vacation!", 0}, *languagepb.Sentiment{0.8, 0.8}}
+	}
+	return *languagepb.AnalyzeSentimentResponse{documentSentiment, "en", sentences}
 }
 
 func (client *MockLanguageClient) AnalyzeSyntax() {
+	// Response as shown at https://cloud.google.com/natural-language/docs/analyzing-syntax
 	sentences := []*languagepb.Sentence{
 		*languagepb.Sentence{1, *languagepb.TextSpan{0,"Google, headquartered in Mountain View, unveiled the new Android phone at the Consumer Electronic Show."}},
 		*languagepb.Sentence{1, *languagepb.TextSpan{105, "Sundar Pichai said in his keynote that users love their new Android phones."}}
