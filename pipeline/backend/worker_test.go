@@ -1,6 +1,5 @@
 package backend
 
-/*
 import (
 	"context"
 	"net/url"
@@ -49,13 +48,9 @@ func TestWorker(t *testing.T) {
 		},
 		Labelmaker: &labelmaker.LBModel{
 			Classifier: &labelmaker.LBClassifier{
-				Client: lngClient,
-				Gateway: labelmaker.CachedNlpGateway{
-					NlpGateway: &labelmaker.NlpGateway{
-						Client: lngClient,
-					},
-				},
-				Ctx: ctx,
+				Client:  lngClient,
+				Gateway: labelmaker.Gateway,
+				Ctx:     ctx,
 			},
 		},
 		Settings: HeuprConfigSettings{
@@ -125,4 +120,3 @@ func TestWorker(t *testing.T) {
 		}
 	}
 }
-*/
