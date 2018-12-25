@@ -9,8 +9,12 @@ import (
 	language "cloud.google.com/go/language/apiv1"
 	"github.com/google/go-github/github"
 
+	"core/models"
+	"core/models/bhattacharya"
 	"core/models/labelmaker"
 	"core/pipeline/gateway/conflation"
+
+	"github.com/google/go-github/github"
 )
 
 func TestWorker(t *testing.T) {
@@ -78,6 +82,25 @@ func TestWorker(t *testing.T) {
 
 	bs.Repos.Actives[repoID].Hive.Blender.Conflator.SetIssueRequests(i)
 	bs.Repos.Actives[repoID].Limit = time.Now() //.AddDate(0, 0, -1)
+	model := models.Model{Algorithm: &bhattacharya.NBModel{}}
+	bs.Repos.Actives[repoID].Hive.Blender.Models = append(
+		bs.Repos.Actives[repoID].Hive.Blender.Models,
+		&ArchModel{Model: &model},
+	)
+	bs.Repos.Actives[repoID].Labelmaker = &labelmaker.LBModel{
+		Classifier: &labelmaker.LBClassifier{
+			Client: lngClient,
+			Gateway: labelmaker.CachedNlpGateway{
+				NlpGateway: &labelmaker.MockNlpGateway{
+					Client: lngClient,
+				},
+			},
+			Ctx: ctx,
+		},
+		BugLabel:         s.Repos.Actives[repoID].Settings.Bug,
+		ImprovementLabel: s.Repos.Actives[repoID].Settings.Improvement,
+		FeatureLabel:     s.Repos.Actives[repoID].Settings.Feature,
+	}
 
 	work := &RepoData{
 		RepoID: repoID,
