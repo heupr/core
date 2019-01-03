@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2018 Michael Taylor and John Forstmeier
+Copyright (c) 2019 Michael Taylor and John Forstmeier
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
