@@ -71,7 +71,7 @@ func (c *LBModel) BugOrFeature(input conflation.ExpandedIssue) (*string, error) 
 
 type LBClassifier struct {
 	Client  *language.Client
-	Gateway CachedNlpGateway
+	Gateway NlpGatewayInterface
 	Ctx     context.Context
 	classes []LBLabel
 }
